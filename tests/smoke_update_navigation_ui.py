@@ -116,7 +116,13 @@ assert not window.check_button.isEnabled()
 # Complete the mocked timer-triggered request with an actual newer release.
 reply = fake_network.replies[-1]
 asset_name = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
-latest = 'v0.09.0'
+# Compute a genuinely newer version, independent of the release milestone.
+from password_core import parse_version
+major, minor, _patch = parse_version(APP_VERSION)
+latest = (
+    f'v0.{minor + 1:02d}.0' if major == 0 and minor < 99 else
+    'v1.0.0' if major == 0 else f'v{major}.{minor}.{_patch + 1}'
+)
 reply._data = json.dumps({
     'tag_name': latest,
     'assets': [{
