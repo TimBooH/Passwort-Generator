@@ -15,7 +15,9 @@ from PySide6.QtWidgets import (
     QScrollArea, QSizePolicy, QSlider, QSpinBox, QVBoxLayout, QWidget,
 )
 
+from diagnostics import CrashReporter, default_state_directory
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
+from updater import install_staged_appimage, restart_updated_app, staging_path
 from password_core import make_password, parse_version
 from version import APP_VERSION
 
@@ -52,8 +54,9 @@ def field_color(hex_color):
 
 
 class PasswordWindow(QMainWindow):
-    def __init__(self, auto_check=True):
+    def __init__(self, auto_check=True, reporter=None):
         super().__init__()
+        self.reporter = reporter
         self.settings = QSettings('TimBooH', 'PasswortGenerator')
         self.network = QNetworkAccessManager(self)
         self.check_reply = None
@@ -63,6 +66,7 @@ class PasswordWindow(QMainWindow):
         self.download_hash = None
         self.download_bytes = 0
         self.download_target = None
+        self.download_stage = None
         self.download_installed = False
         self.latest_version = None
         self.latest_asset = None
@@ -81,18 +85,17 @@ class PasswordWindow(QMainWindow):
         scroll.setWidget(root)
         # A centered column stays readable even when the window becomes ultrawide.
         outer_layout = QHBoxLayout(root)
-        outer_layout.setContentsMargins(10, 0, 10, 0)
+        outer_layout.setContentsMargins(8, 0, 8, 0)
         outer_layout.setSpacing(0)
-        outer_layout.addStretch(1)
         content = QWidget()
         content.setObjectName('contentColumn')
-        content.setMaximumWidth(940)
+        content.setMinimumWidth(0)
         content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        outer_layout.addWidget(content, 5)
-        outer_layout.addStretch(1)
+        outer_layout.addWidget(content, 1)
+        # All three panels expand with the window, without a fixed maximum width.
         layout = QVBoxLayout(content)
         layout.setSpacing(12)
-        layout.setContentsMargins(20, 22, 20, 26)
+        layout.setContentsMargins(12, 18, 12, 22)
         self.glass_cards = []
         self._applied_palette = None
         self._restoring = False
@@ -110,6 +113,7 @@ class PasswordWindow(QMainWindow):
 
         group = GlossyGlassCard('PASSWORT ERSTELLEN')
         self.glass_cards.append(group)
+        group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         group_layout = group.body
         self.output = QLineEdit()
         self.output.setReadOnly(True)
@@ -128,7 +132,8 @@ class PasswordWindow(QMainWindow):
         self.upper = QCheckBox('Großbuchstaben (A–Z)')
         self.digits = QCheckBox('Zahlen (0–9)')
         self.symbols = QCheckBox('Sonderzeichen')
-        self.exclude = QCheckBox('Ähnliche Zeichen ausschließen (I, l, 1, O, 0)')
+        self.exclude = QCheckBox('Ähnliche Zeichen ausschließen')
+        self.exclude.setToolTip('I, l, 1, O und 0 ausschließen')
         for control in (self.lower, self.upper, self.digits, self.symbols):
             control.setChecked(True)
         for control in (self.lower, self.upper, self.digits, self.symbols, self.exclude):
@@ -142,10 +147,11 @@ class PasswordWindow(QMainWindow):
         copy_button.clicked.connect(self.copy)
         actions.addWidget(copy_button)
         group_layout.addLayout(actions)
-        layout.addWidget(group)
+        layout.addWidget(group, 2)
 
         colors = GlossyGlassCard('DESIGN & FARBEN')
         self.glass_cards.append(colors)
+        colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         colors_layout = colors.body
         bg_row = QHBoxLayout()
         bg_row.addWidget(QLabel('Hintergrund:'))
@@ -205,10 +211,11 @@ class PasswordWindow(QMainWindow):
         colors_note = QLabel('Glas-Effekt und Bilddarstellung werden automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
-        layout.addWidget(colors)
+        layout.addWidget(colors, 3)
 
         updates = GlossyGlassCard('UPDATES & VERSIONEN')
         self.glass_cards.append(updates)
+        updates.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         updates_layout = updates.body
         repo_label = QLabel('GitHub · TimBooH/Passwort-Generator')
         repo_label.setObjectName('supportText')
@@ -216,11 +223,11 @@ class PasswordWindow(QMainWindow):
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
         updates_layout.addWidget(self.update_status)
-        update_actions = QHBoxLayout()
+        update_actions = QVBoxLayout()
         self.check_button = QPushButton('Auf Updates prüfen')
         self.check_button.clicked.connect(self.check_for_updates)
         update_actions.addWidget(self.check_button)
-        self.download_button = QPushButton('Update herunterladen')
+        self.download_button = QPushButton('Update installieren & neu starten')
         self.download_button.setObjectName('primaryButton')
         self.download_button.clicked.connect(self.download_update)
         self.download_button.hide()
@@ -231,16 +238,19 @@ class PasswordWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.progress_bar.hide()
         updates_layout.addWidget(self.progress_bar)
-        update_note = QLabel('Ein Klick lädt die neue AppImage-Version direkt von GitHub. '
-                             'Bei Menü-Installation wird sie ersetzt und ist beim nächsten Start aktiv.')
+        update_note = QLabel('Nach erfolgreicher Überprüfung startet die neue Version automatisch. '
+                             'Die bisherige Version bleibt als previous AppImage erhalten.')
         update_note.setWordWrap(True)
         updates_layout.addWidget(update_note)
-        layout.addWidget(updates)
+        diagnostic_button = QPushButton('Crash-Log öffnen')
+        diagnostic_button.clicked.connect(self.open_crash_log)
+        updates_layout.addWidget(diagnostic_button)
+        layout.addWidget(updates, 2)
 
         self.status = QLabel('')
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
-        layout.addStretch()
+        layout.addStretch(0)
 
         self.bg_combo.currentIndexChanged.connect(self.apply_colors)
         self.fg_combo.currentIndexChanged.connect(self.apply_colors)
@@ -252,6 +262,8 @@ class PasswordWindow(QMainWindow):
         self.generate()
         if auto_check:
             QTimer.singleShot(800, self.check_for_updates)
+        if self.reporter is not None:
+            self.reporter.note('UI_STARTED', 'interface ready', force=True)
 
     @staticmethod
     def select_color(combo, color, default):
@@ -284,6 +296,18 @@ class PasswordWindow(QMainWindow):
         if selected.isValid():
             self.select_color(combo, selected.name(), '#101827')
 
+    def open_crash_log(self):
+        path = self.reporter.path if self.reporter is not None else default_state_directory() / 'crash.log'
+        if not path.exists():
+            QMessageBox.information(self, 'Crash-Log', 'Noch kein Fehlerprotokoll vorhanden.')
+            return
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.reporter is not None:
+            self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
+
     def apply_colors(self, *_):
         if self._restoring:
             return
@@ -299,6 +323,8 @@ class PasswordWindow(QMainWindow):
             self.setStyleSheet(build_glass_stylesheet(bg, fg, 54))
             self.settings.setValue('background_color', bg)
             self.settings.setValue('text_color', fg)
+            if self.reporter is not None:
+                self.reporter.note('PALETTE_CHANGED', f'background={bg}, text={fg}', force=True)
 
     def update_glass_opacity(self, *_):
         if self._restoring:
@@ -309,6 +335,8 @@ class PasswordWindow(QMainWindow):
             card.set_glass_color(background, value)
         self.glass_value.setText(f'{value} %')
         self.settings.setValue('glass_opacity', value)
+        if self.reporter is not None:
+            self.reporter.note('GLASS_OPACITY', f'value={value}')
 
     def restore_background_image(self):
         mode = self.settings.value('background_image_mode', 'cover', type=str)
@@ -340,17 +368,23 @@ class PasswordWindow(QMainWindow):
         self.clear_background_button.setEnabled(True)
         self.settings.setValue('background_image_path', selected)
         self.status.setText('Hintergrundbild geladen.')
+        if self.reporter is not None:
+            self.reporter.note('BACKGROUND_LOADED', f'format={Path(selected).suffix.lower()}', force=True)
 
     def remove_background_image(self):
         self.background_surface.clear_background_image()
         self.background_file_label.setText('Kein Hintergrundbild ausgewählt')
         self.clear_background_button.setEnabled(False)
         self.settings.remove('background_image_path')
+        if self.reporter is not None:
+            self.reporter.note('BACKGROUND_REMOVED', force=True)
 
     def update_image_mode(self, *_):
         mode = self.image_mode_combo.currentData() or 'cover'
         self.background_surface.set_image_mode(mode)
         self.settings.setValue('background_image_mode', mode)
+        if self.reporter is not None:
+            self.reporter.note('BACKGROUND_MODE', f'mode={mode}', force=True)
 
     def generate(self):
         try:
@@ -426,6 +460,8 @@ class PasswordWindow(QMainWindow):
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:
             return
+        if self.reporter is not None:
+            self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self.latest_version}', force=True)
         self.download_installed = INSTALLED_APPIMAGE.is_file() and os.access(INSTALLED_APPIMAGE.parent, os.W_OK)
         if self.download_installed:
             target = INSTALLED_APPIMAGE
@@ -433,9 +469,10 @@ class PasswordWindow(QMainWindow):
             download_location = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
             download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
             target = download_dir / f'PasswortGenerator-{self.latest_version}-x86_64.AppImage'
+        stage = staging_path(target) if self.download_installed else target
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
-            save_file = QSaveFile(str(target))
+            save_file = QSaveFile(str(stage))
             if not save_file.open(QIODevice.OpenModeFlag.WriteOnly):
                 raise OSError(save_file.errorString())
         except OSError as error:
@@ -443,6 +480,7 @@ class PasswordWindow(QMainWindow):
             return
 
         self.save_file = save_file
+        self.download_stage = stage
         self.download_target = target
         self.download_hash = hashlib.sha256()
         self.download_bytes = 0
@@ -485,6 +523,7 @@ class PasswordWindow(QMainWindow):
         self.download_reply = None
         self.download_button.setEnabled(True)
         self.check_button.setEnabled(True)
+        installed_successfully = False
         try:
             if self.download_error:
                 raise ValueError(self.download_error)
@@ -499,62 +538,79 @@ class PasswordWindow(QMainWindow):
             if actual_digest.lower() != expected_digest.split(':', 1)[1].lower():
                 raise ValueError('Die SHA-256-Prüfsumme stimmt nicht überein!')
             if not self.save_file.commit():
-                raise ValueError(self.save_file.errorString())
-            os.chmod(self.download_target, 0o755)
+                raise OSError(self.save_file.errorString())
+            os.chmod(self.download_stage, 0o755)
+            if self.download_installed:
+                previous = install_staged_appimage(self.download_stage, self.download_target)
+                if self.reporter is not None:
+                    self.reporter.note(
+                        'UPDATE_INSTALLED',
+                        f'version={self.latest_version}, previous={bool(previous)}',
+                        force=True,
+                    )
+            else:
+                if self.reporter is not None:
+                    self.reporter.note(
+                        'UPDATE_DOWNLOADED',
+                        f'version={self.latest_version}, standalone=True',
+                        force=True,
+                    )
+            installed_successfully = True
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(100)
-            if self.download_installed:
-                message = (f'{self.latest_version} wurde installiert. Schließe den PasswortGenerator '
-                           'und öffne ihn über das Anwendungsmenü erneut.')
-            else:
-                message = (f'{self.latest_version} wurde gespeichert:\n{self.download_target}\n'
-                           'Starte das AppImage oder installiere es mit install.sh --file.')
-            self.update_status.setText(message)
-            QMessageBox.information(self, 'Update heruntergeladen', message)
+            self.update_status.setText(
+                f'{self.latest_version} installiert. Die aktualisierte App wird neu gestartet …'
+            )
             self.download_button.hide()
+
+            # Start a clean process with a short delay; then shut down old Qt.
+            try:
+                restart_updated_app(self.download_target)
+            except (OSError, ValueError) as error:
+                if self.reporter is not None:
+                    self.reporter.error('UPDATE_RESTART_FAILED', error)
+                msg = (
+                    f'Update {self.latest_version} installiert, aber der automatische '
+                    f'Neustart ist fehlgeschlagen: {error}\n'
+                    'Bitte die App über das KDE-Menü erneut öffnen.'
+                )
+                self.update_status.setText(msg)
+                QMessageBox.warning(self, 'Manueller Neustart erforderlich', msg)
+            else:
+                if self.reporter is not None:
+                    self.reporter.note('UPDATE_RESTART', 'old application will exit', force=True)
+                QTimer.singleShot(120, QApplication.instance().quit)
         except (ValueError, OSError, TypeError) as error:
-            if self.save_file is not None:
+            if self.reporter is not None:
+                self.reporter.error('UPDATE_FAILED', error)
+            if self.save_file is not None and self.save_file.isOpen():
                 self.save_file.cancelWriting()
             self.progress_bar.hide()
-            self.update_status.setText(f'Download fehlgeschlagen: {error}')
+            self.update_status.setText(f'Download/Installation fehlgeschlagen: {error}')
             QMessageBox.warning(self, 'Update fehlgeschlagen', str(error))
         finally:
+            if not installed_successfully and self.download_installed and self.download_stage:
+                try:
+                    self.download_stage.unlink(missing_ok=True)
+                except OSError:
+                    pass
             self.save_file = None
+            self.download_stage = None
             reply.deleteLater()
 
 
-def enable_crash_logging():
-    """Keep a local traceback for unexpected Python errors and native signals.
-
-    No logs are uploaded. Qt/C++ faults are not always diagnosable from Python.
-    """
-    import faulthandler
-    import traceback
-    state_dir = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local' / 'state'))
-    try:
-        target = state_dir / 'passwort-generator'
-        target.mkdir(parents=True, exist_ok=True)
-        handle = (target / 'crash.log').open('a', encoding='utf-8', buffering=1)
-        faulthandler.enable(file=handle, all_threads=True)
-    except (OSError, RuntimeError):
-        return None
-    default_hook = sys.excepthook
-
-    def record_exception(kind, value, tb):
-        try:
-            traceback.print_exception(kind, value, tb, file=handle)
-            handle.flush()
-        finally:
-            default_hook(kind, value, tb)
-
-    sys.excepthook = record_exception
-    return handle
-
-
 if __name__ == '__main__':
-    crash_log_handle = enable_crash_logging()
+    reporter = CrashReporter()
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    window = PasswordWindow()
+    window = PasswordWindow(reporter=reporter)
+    app.aboutToQuit.connect(reporter.close)
+    heartbeat = QTimer()
+    heartbeat.setInterval(15000)
+    heartbeat.timeout.connect(reporter.heartbeat)
+    heartbeat.start()
     window.show()
-    sys.exit(app.exec())
+    try:
+        sys.exit(app.exec())
+    finally:
+        reporter.close()
