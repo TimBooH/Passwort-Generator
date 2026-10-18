@@ -20,6 +20,12 @@ assert window.centralWidget() is window.background_surface
 assert not window.findChildren(QScrollArea)
 assert not hasattr(window, 'scroll_area')
 assert window.tabs.count() == 4
+assert window.check_button.text() == '↻ Auf Update prüfen'
+assert window.check_button.width() == 175
+assert window.appearance_card.body.spacing() == 3
+assert window.appearance_card.layout().contentsMargins().top() == 6
+assert window.changelog_card.body.spacing() == 3
+assert window.changelog_card.layout().contentsMargins().top() == 5
 
 controls = (
     (window.generate_button, window.history_button, window.length_slider),
@@ -56,7 +62,7 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
             assert window.release_combo.isVisible()
             assert window.changelog_card.isAncestorOf(window.release_combo)
             assert window.changelog_card.isAncestorOf(window.changelog_view)
-            assert window.check_button.width() <= 125
+            assert window.check_button.width() <= 190
             assert window.check_button.mapTo(window, QPoint(0, 0)).x() < window.width() // 2
 
 # All fifty release entries are in the dropdown; no page buttons or
