@@ -1,5 +1,6 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.16.0 simplifies README documentation while preserving app behavior.
 Version 0.15.0 compacts the appearance and Changelog card spacing and
 renames the update checker action to Auf Update prüfen.
 Version 0.14.1 preserves the Glass styling of both combined tiles and
@@ -49,7 +50,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.15.0"
+APP_VERSION = "0.16.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
