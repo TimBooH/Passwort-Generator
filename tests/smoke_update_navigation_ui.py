@@ -127,6 +127,8 @@ latest = (
 )
 reply._data = json.dumps({
     'tag_name': latest,
+    'body': ('## Deutsch\n- Verbesserter Update-Bereich\n- Profile gespeichert'
+             '\n## English\n- Improved update area\n- Saved profiles'),
     'assets': [{
         'name': asset_name,
         'browser_download_url':
@@ -148,6 +150,19 @@ window.tabs.setCurrentIndex(2)
 app.processEvents()
 assert 'NEU' in window.nav_buttons[2].text()
 assert window.download_button.isVisible()
+assert window.update_compare.isVisible()
+assert f'v{APP_VERSION}' in window.update_compare.text()
+assert latest in window.update_compare.text()
+assert 'Verbesserter Update-Bereich' in window.update_preview.text()
+window.tabs.setCurrentIndex(1)
+window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
+app.processEvents()
+window.tabs.setCurrentIndex(2)
+assert 'Installed:' in window.update_compare.text()
+assert 'Improved update area' in window.update_preview.text()
+window.tabs.setCurrentIndex(1)
+window.language_combo.setCurrentIndex(window.language_combo.findData('de'))
+app.processEvents()
 window.tabs.setCurrentIndex(0)
 window.resize(620, 720)
 app.processEvents()
