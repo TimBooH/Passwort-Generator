@@ -1,5 +1,6 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.05.0 adds configurable glass schemes and release-history browsing.
 The earlier 1.2.x–1.5.x tags were published before the scheme reset.
 They are retained on GitHub for transparency and are treated as legacy builds.
 """
