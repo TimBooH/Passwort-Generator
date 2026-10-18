@@ -374,7 +374,6 @@ class PasswordWindow(QMainWindow):
         settings_page_layout.setContentsMargins(3, 4, 3, 3)
 
         colors = GlossyGlassCard('ERSCHEINUNGSBILD')
-        colors.setObjectName('appearanceCard')
         self.appearance_card = colors
         self.glass_cards.append(colors)
         colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -488,7 +487,6 @@ class PasswordWindow(QMainWindow):
         updates_page_layout.addWidget(updates, 0)
         # One CHANGELOG tile includes both version selection and release notes.
         changelog_card = GlossyGlassCard('CHANGELOG')
-        changelog_card.setObjectName('changelogCard')
         self.changelog_card = changelog_card
         self.secondary_cards.append(changelog_card)
         changelog_card.setSizePolicy(QSizePolicy.Policy.Expanding,
