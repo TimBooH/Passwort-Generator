@@ -24,7 +24,12 @@ assert window.tabs.count() == 4
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert window.check_button.width() == 175
 assert window.generate_button.objectName() == 'generatePasswordButton'
-assert window.generate_button.height() == 40
+assert window.generate_button.height() == 40, (
+    f'Actual height={window.generate_button.height()} '
+    f'min={window.generate_button.minimumHeight()} '
+    f'max={window.generate_button.maximumHeight()} '
+    f'hint={window.generate_button.sizeHint().height()}'
+)
 assert window.generate_button.maximumWidth() == 360
 assert 'QPushButton#generatePasswordButton' in window.styleSheet()
 assert 'QPushButton#primaryButton' in window.styleSheet()  # Update CTA unchanged.
