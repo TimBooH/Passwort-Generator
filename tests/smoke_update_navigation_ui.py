@@ -102,7 +102,7 @@ for width, height in ((610, 700), (530, 700), (850, 760)):
 window.resize(850, 760)
 app.processEvents()
 top_labels = [button.text() for button in window.nav_buttons]
-assert 'Changelog' in top_labels[2]
+assert 'Update' in top_labels[2]
 assert all(len(label) <= 23 for label in top_labels)
 assert window.info_nav_button.height() <= 42
 assert all(button.height() <= 42 for button in window.nav_buttons)
