@@ -1,24 +1,21 @@
-# PasswortGenerator v1.3.0 – Glass Edition
+# PasswortGenerator v1.3.1 – Glossy Glass Refinement
 
-Diese Version bringt eine vollständig überarbeitete Benutzeroberfläche im Glassmorphism-Stil.
+Ein visuelles Design-Update für die drei zentralen Kacheln: Passwortgenerator, Design und Updateverwaltung.
 
-## Neu
-- Milchig-transparente, abgerundete Glas-Karten für Passwort, Farben und Updates
-- Weiche Schatten, farbige Lichtreflexe und ein dynamischer Aurora-Hintergrund
-- Glas-Deckkraft über einen Schieberegler von 30 bis 85 % einstellbar
-- Hintergrund- und Textfarben bleiben unabhängig wählbar
-- Die gewählte Glas-Deckkraft und alle Farben werden dauerhaft lokal gespeichert
-- Modernisierte Buttons, Eingabefelder, Statusanzeige und Update-Fortschrittsbalken
+## Verbessert
+- Alte, milchig-weiße Glas-Kacheln komplett ersetzt
+- Individuell gezeichnete Glossy-Glasflächen mit sanfter Lichtbrechungs-Anmutung
+- Spiegelstreifen, feine Reflexe, helle Kanten, subtile Glas-Dicke und weichere Schatten
+- Dunkles, besser lesbares Premium-Design mit dezenten blauen Lichtquellen
+- Schlankere Kacheln mit aufgeräumten Überschriften und konsistenten Abständen
+- Der Glas-Deckkraft-Regler und die unabhängigen Hintergrund-/Textfarben bleiben erhalten
 
-## Weiterhin enthalten
-- Sichere lokale Passwortgenerierung mit Python secrets
-- Direkte Update-Downloads aus TimBooH/Passwort-Generator mit SHA-256-Prüfung
-- Installation mit KDE-/Linux-Anwendungsmenü über install.sh
-- Automatischer Build und Release als Linux-AppImage
+## Unverändert
+- Sichere lokale Passwortgenerierung
+- GitHub-Updateprüfung und verifizierter AppImage-Download
+- Installation und Startmenüeintrag für CachyOS/KDE
 
-**Technischer Hinweis:** Der Glas-Look entsteht in der Anwendung selbst. Ein Blur des echten Desktops hinter dem Fenster wird nicht erzwungen.
+**Hinweis:** Das Glas wird mit Qt gezeichnet. Ein Blur des tatsächlichen Desktops hinter der App ist nicht vorausgesetzt.
 
-## Installation und Aktualisierung
-Neue Installation: `install.sh` aus den Assets herunterladen und `bash install.sh` ausführen.
-
-Bestehende v1.2.0-Installation: in der App **Auf Updates prüfen** und **Update herunterladen** anklicken, danach die App schließen und über das Anwendungsmenü neu öffnen.
+## Update
+In der bisherigen App: **Auf Updates prüfen** → **Update herunterladen**. Bei installierter App anschließend neu über das KDE-Menü öffnen.

@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QScrollArea, QSlider, QSpinBox, QVBoxLayout, QWidget,
 )
 
-from glass_ui import GlassBackground, apply_glass_shadow, build_glass_stylesheet
+from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet
 from password_core import make_password, parse_version
 from version import APP_VERSION
 
@@ -68,8 +68,8 @@ class PasswordWindow(QMainWindow):
         self.latest_asset = None
 
         self.setWindowTitle(f'PasswortGenerator v{APP_VERSION}')
-        self.resize(720, 820)
-        self.setMinimumSize(540, 610)
+        self.resize(710, 790)
+        self.setMinimumSize(520, 590)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -80,8 +80,9 @@ class PasswordWindow(QMainWindow):
         self.background_surface = root
         scroll.setWidget(root)
         layout = QVBoxLayout(root)
-        layout.setSpacing(18)
-        layout.setContentsMargins(34, 24, 34, 28)
+        layout.setSpacing(12)
+        layout.setContentsMargins(28, 23, 28, 28)
+        self.glass_cards = []
 
         title = QLabel('PASSWORT GENERATOR')
         title.setObjectName('heroTitle')
@@ -92,15 +93,11 @@ class PasswordWindow(QMainWindow):
         subtitle.setObjectName('heroSubtitle')
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
-        glass_badge = QLabel('✦  GLASS EDITION  ✦')
-        glass_badge.setObjectName('glassTag')
-        glass_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(glass_badge, 0, Qt.AlignmentFlag.AlignHCenter)
+        layout.addSpacing(8)
 
-        group = QGroupBox('Passwort erstellen')
-        group.setObjectName('passwordPanel')
-        apply_glass_shadow(group)
-        group_layout = QVBoxLayout(group)
+        group = GlossyGlassCard('PASSWORT ERSTELLEN')
+        self.glass_cards.append(group)
+        group_layout = group.body
         self.output = QLineEdit()
         self.output.setReadOnly(True)
         self.output.setMinimumHeight(44)
@@ -134,10 +131,9 @@ class PasswordWindow(QMainWindow):
         group_layout.addLayout(actions)
         layout.addWidget(group)
 
-        colors = QGroupBox('Design & Farben')
-        colors.setObjectName('appearancePanel')
-        apply_glass_shadow(colors)
-        colors_layout = QVBoxLayout(colors)
+        colors = GlossyGlassCard('DESIGN & FARBEN')
+        self.glass_cards.append(colors)
+        colors_layout = colors.body
         bg_row = QHBoxLayout()
         bg_row.addWidget(QLabel('Hintergrund:'))
         self.bg_combo = QComboBox()
@@ -169,15 +165,17 @@ class PasswordWindow(QMainWindow):
         self.glass_value.setMinimumWidth(40)
         opacity_row.addWidget(self.glass_value)
         colors_layout.addLayout(opacity_row)
-        colors_note = QLabel('Milchglas-Panels, sanfte Lichtreflexe und deine eigenen Farben – automatisch gespeichert.')
+        colors_note = QLabel('Passe den Glanz und die Glas-Tiefe an. Deine Auswahl bleibt gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         layout.addWidget(colors)
 
-        updates = QGroupBox('Updates · GitHub: TimBooH/Passwort-Generator')
-        updates.setObjectName('updatePanel')
-        apply_glass_shadow(updates)
-        updates_layout = QVBoxLayout(updates)
+        updates = GlossyGlassCard('UPDATES & VERSIONEN')
+        self.glass_cards.append(updates)
+        updates_layout = updates.body
+        repo_label = QLabel('GitHub · TimBooH/Passwort-Generator')
+        repo_label.setObjectName('supportText')
+        updates_layout.addWidget(repo_label)
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
         updates_layout.addWidget(self.update_status)
@@ -243,6 +241,8 @@ class PasswordWindow(QMainWindow):
         fg = self.fg_combo.currentData() or '#FFFFFF'
         opacity = self.glass_slider.value()
         self.background_surface.set_base_color(bg)
+        for card in self.glass_cards:
+            card.set_glass_color(bg, opacity)
         self.setStyleSheet(build_glass_stylesheet(bg, fg, opacity))
         self.glass_value.setText(f'{opacity} %')
         self.settings.setValue('background_color', bg)

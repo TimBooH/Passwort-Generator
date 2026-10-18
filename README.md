@@ -1,6 +1,6 @@
 # 🔐 PasswortGenerator
 
-**Ein sicherer Passwortgenerator für Linux – im modernen Glassmorphism-Look, mit Farbauswahl, Updateprüfung und Startmenü-Installation.**
+**Ein sicherer Passwortgenerator für Linux – mit hochwertigen Glossy-Glas-Panels, Farbauswahl, Updateprüfung und Startmenü-Installation.**
 
 [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-238636?logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 [![Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Version)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
@@ -15,7 +15,7 @@ Der PasswortGenerator ist eine grafische Desktop-Anwendung auf Basis von **Pytho
 - Ähnliche Zeichen wie `I`, `l`, `1`, `O` und `0` ausschließen
 - Jede aktivierte Zeichengruppe ist im Passwort mindestens einmal enthalten
 - Passwort auf Knopfdruck in die Zwischenablage kopieren
-- **Glassmorphism-Oberfläche** mit milchig-transparenten Karten, Lichtreflexen, weichen Schatten und abgerundeten Elementen
+- **Neu gestaltete Glossy-Glas-Panels:** individuell mit Qt gezeichnete Glasflächen mit echten Glanzreflexen, feinen Lichtkanten, tiefem Farbverlauf und weichen Schatten
 - **Glas-Deckkraft** mit einem Schieberegler anpassen (30–85 %)
 - Unterschiedliche **Hintergrund- und Textfarben** wählen oder eine eigene Farbe einstellen
 - Farben werden gespeichert und beim nächsten Start wiederhergestellt
@@ -89,7 +89,7 @@ Es werden **keine Updates ungefragt installiert**. Nur die Versionsprüfung erfo
 
 ## 🎨 Design ändern
 
-Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Der neue **„Glas-Deckkraft“**-Regler verändert, wie stark die halbtransparenten Milchglas-Karten den farbigen Hintergrund durchscheinen lassen. Die Oberfläche hat zusätzlich sanfte Farbreflexe, abgerundete Ecken und weiche Schatten. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
+Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Mit **„Glas-Deckkraft“** bestimmst du die Stärke der transparenten Glasflächen. Die Kacheln werden direkt mit Qt gezeichnet und besitzen feine, realistische Spiegelreflexe, beleuchtete Kanten und abgestufte Glastiefe statt greller, weißer Rechtecke. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
 
 **Hinweis:** Das Design erzeugt den Glas-Look innerhalb des App-Fensters. Eine echte Unschärfe des *Desktops hinter dem Fenster* hängt vom KDE/KWin-Compositor ab und wird nicht vorausgesetzt.
 

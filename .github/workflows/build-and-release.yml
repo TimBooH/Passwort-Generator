@@ -26,8 +26,19 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m py_compile main.py password_core.py version.py
+          python -m py_compile main.py glass_ui.py password_core.py version.py
           python -m unittest discover -s tests -v
+      - name: Render glossy interface offscreen (GUI smoke test)
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python tests/smoke_glossy_ui.py
+      - name: Save design preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: PasswortGenerator-Glass-Preview
+          path: glossy-preview.png
+          if-no-files-found: error
       - name: Build AppImage
         env:
           APPIMAGE_EXTRACT_AND_RUN: '1'
