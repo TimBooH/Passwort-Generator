@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.14.1 preserves the Glass styling of both combined tiles and
+checks the appearance layout on both platforms.
 Version 0.14.0 restores the Update navigation and merges the release history
 and notes into one Changelog glass tile, and appearance settings into one tile.
 Version 0.13.0 renames the Updates navigation to Changelog while retaining
@@ -45,7 +47,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.14.0"
+APP_VERSION = "0.14.1"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
