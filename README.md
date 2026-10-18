@@ -17,14 +17,17 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | Bereich | Möglichkeiten |
 | --- | --- |
 | **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
+| **Passphrasen** | 4–10 lokal zufällig erzeugte zusammengesetzte Wörter, jeweils 1.024 Möglichkeiten |
 | **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
-| **Bedienung** | Passwort mit einem Klick erstellen und in die Zwischenablage kopieren |
-| **Design** | Skalierbare Glossy-Glas-Kacheln mit fester Glastransparenz, eigene Hintergrund- und Textfarben |
+| **Bedienung** | Längenregler, Passwort anzeigen/verbergen, kopieren und erneut erzeugen |
+| **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
+| **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
+| **Design** | Dunkelblauer Neon-Look mit Schaltkreis-Hintergrund, glänzende Glas-Kacheln und eigene Farben |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
 | **Updates** | GitHub-Releaseprüfung, SHA-256-Verifizierung, Installation und automatischer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
 
-Die Oberfläche ist in drei Reiter gegliedert, die **oben links** im Fenster erreichbar sind. Glas-Kacheln und Inhalte passen sich an die Fenstergröße an; Design-Einstellungen werden gespeichert.
+Der PasswortGenerator wurde nach dem futuristischen dunkelblauen Designentwurf umgestaltet: Schloss-Symbol, blaue Neon-Umrandungen, Passwort/Passphrase-Umschalter, Stärkeanzeige, Längenregler und eine große Generieren-Taste. Die Reiter **Passwort**, **Einstellungen** und **Updates** bleiben oben links erreichbar. Das Einstellungen-Symbol im Kopf führt ebenfalls zu Design & Farben.
 
 ## Versionsplan: 100 Schritte bis Version 1.0
 
@@ -34,7 +37,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | --- | --- | --- |
 | **1 von 100** | `0.01.0` | Beginn der neuen Entwicklungsreihe |
 | **2 von 100** | `0.02.0` | Glas-Deckkraft-Regler entfernt |
-| **3 von 100** | **`0.03.0`** | **Aktueller Stand: Navigation mit drei Reitern** |
+| **3 von 100** | `0.03.0` | Drei Reiter |
+| **4 von 100** | **`0.04.0`** | **Aktueller Stand: Neon-Design und Passwort/Passphrase** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -121,7 +125,7 @@ Die Navigation befindet sich **oben links** und bietet drei Bereiche:
 
 | Reiter | Inhalt |
 | --- | --- |
-| **Passwort** | Passwortlänge, Zeichengruppen, Generieren und Kopieren |
+| **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen, Verlauf und Info |
 | **Einstellungen** | Design & Farben, eigene Hintergrundbilder und Bilddarstellung |
 | **Updates** | Versionsinformationen, Updateprüfung, Installation und Crash-Log |
 

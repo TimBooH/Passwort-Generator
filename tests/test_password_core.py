@@ -1,7 +1,10 @@
 import string
 import unittest
 
-from password_core import SIMILAR_CHARS, SYMBOLS, make_password, parse_version
+from password_core import (
+    PHRASE_FIRST, PHRASE_LAST, SIMILAR_CHARS, SYMBOLS,
+    make_password, make_passphrase, estimate_strength, parse_version,
+)
 from version import APP_VERSION, TOTAL_RELEASE_STEPS, is_newer_release, release_step, version_status
 
 
@@ -14,7 +17,7 @@ class PasswordGeneratorTests(unittest.TestCase):
         self.assertIsNone(parse_version('latest'))
 
     def test_100_step_release_plan(self):
-        self.assertEqual(APP_VERSION, '0.03.0')
+        self.assertEqual(APP_VERSION, '0.04.0')
         self.assertEqual(TOTAL_RELEASE_STEPS, 100)
         for step in range(1, 100):
             self.assertEqual(release_step(f'v0.{step:02d}.0'), step)
@@ -37,6 +40,29 @@ class PasswordGeneratorTests(unittest.TestCase):
         # New code can compare migration order, but old binaries cannot.
         self.assertTrue(is_newer_release('v0.01.0', 'v1.5.1'))
         self.assertFalse(is_newer_release('latest', 'v0.01.0'))
+
+    def test_passphrase_wordlists_and_generation(self):
+        self.assertEqual(len(PHRASE_FIRST), 32)
+        self.assertEqual(len(PHRASE_LAST), 32)
+        vocabulary = {a + b for a in PHRASE_FIRST for b in PHRASE_LAST}
+        self.assertEqual(len(vocabulary), 1024)
+        seen = set()
+        for _ in range(30):
+            phrase = make_passphrase(6)
+            words = phrase.split('-')
+            self.assertEqual(len(words), 6)
+            self.assertTrue(all(word in vocabulary for word in words))
+            seen.add(phrase)
+        self.assertGreater(len(seen), 25)
+        with self.assertRaises(ValueError):
+            make_passphrase(3)
+        with self.assertRaises(ValueError):
+            make_passphrase(11)
+        with self.assertRaises(ValueError):
+            make_passphrase(6, separator='unsafe')
+        self.assertEqual(estimate_strength(''), ('--', 0))
+        self.assertEqual(estimate_strength('valid', phrase_words=6)[0], 'Stark')
+        self.assertEqual(estimate_strength('valid', phrase_words=10)[0], 'Sehr stark')
 
     def test_all_selected_groups_and_length(self):
         for length in (8, 20, 64, 128):

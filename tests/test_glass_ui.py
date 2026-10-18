@@ -4,6 +4,7 @@ import unittest
 from PySide6.QtGui import QColor
 
 from glass_ui import blend, build_glass_stylesheet, is_dark_background, rgba, with_alpha
+from neon_style import circuit_texture, neon_stylesheet
 
 
 class GlassStyleTests(unittest.TestCase):
@@ -33,6 +34,15 @@ class GlassStyleTests(unittest.TestCase):
             self.assertIn('QTabWidget#mainTabs::pane', style)
             self.assertIn('rgba(', style)
             self.assertIn(fg, style)
+
+    def test_neon_theme_and_circuit_texture(self):
+        style = neon_stylesheet('#071322', '#FFFFFF')
+        self.assertIn('QPushButton#modeButton:checked', style)
+        self.assertIn('QSlider::handle:horizontal', style)
+        self.assertIn('QProgressBar#strengthBar', style)
+        pixmap = circuit_texture(220, 300)
+        self.assertFalse(pixmap.isNull())
+        self.assertEqual((pixmap.width(), pixmap.height()), (220, 300))
 
     def test_known_accent(self):
         self.assertTrue(QColor('#75DDF9').isValid())

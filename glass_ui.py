@@ -7,7 +7,6 @@ bounded resolution; resize uses only source/destination geometry.
 
 from pathlib import Path
 
-from PySide6.QtGui import QPainter
 
 from PySide6.QtCore import QPointF, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import (

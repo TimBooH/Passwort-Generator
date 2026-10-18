@@ -343,13 +343,6 @@ class PasswordWindow(QMainWindow):
         self.updates_page.setObjectName('updatesPage')
         updates_page_layout = QVBoxLayout(self.updates_page)
         updates_page_layout.setSpacing(12)
-        updates_page_layout.setContentsMargins(4, 12, 4, 14)
-
-
-        self.updates_page = QWidget()
-        self.updates_page.setObjectName('updatesPage')
-        updates_page_layout = QVBoxLayout(self.updates_page)
-        updates_page_layout.setSpacing(12)
         updates_page_layout.setContentsMargins(4, 10, 4, 8)
 
         updates = GlossyGlassCard('UPDATES & VERSIONEN')

@@ -5,7 +5,7 @@ Circuit art is rendered once into a pixmap, not on every paintEvent/resize.
 
 import random
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 
 from glass_ui import is_dark_background, rgba
@@ -45,7 +45,7 @@ def circuit_texture(width=1100, height=1450):
         y = rng.randrange(height)
         radius = rng.choice((1.1, 1.7, 2.4, 3.5))
         painter.setBrush(QColor(0, 125, 255, rng.randrange(30, 90)))
-        painter.drawEllipse(x - radius, y - radius, radius * 2, radius * 2)
+        painter.drawEllipse(QRectF(x - radius, y - radius, radius * 2, radius * 2))
     painter.end()
     return texture
 

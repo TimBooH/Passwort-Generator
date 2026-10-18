@@ -33,7 +33,9 @@ assert window.tabs.currentIndex() == 0
 assert window.glass_cards[0].isVisible()
 assert not window.glass_cards[1].isVisible()
 assert not window.glass_cards[2].isVisible()
-assert not window.findChildren(QSlider), 'The glass-opacity slider must be removed'
+assert len(window.findChildren(QSlider)) == 1, 'Only the password-length slider is allowed'
+assert window.length_slider.minimum() == 8
+assert window.length_slider.maximum() == 128
 assert not hasattr(window, 'glass_slider')
 assert not window.settings.contains('glass_opacity'), 'Legacy opacity setting must be removed'
 assert window.grab().save('glossy-preview.png'), 'Unable to render preview'
@@ -116,4 +118,4 @@ with tempfile.TemporaryDirectory() as temp:
 
 window.close()
 app.processEvents()
-print('Tabbed GUI stress test passed: 3 tabs, 6 image modes, 60 resizes, 25 UI changes.')
+print('Neon GUI stress test passed: 3 tabs, length slider, 6 image modes, 60 resizes, 25 UI changes.')

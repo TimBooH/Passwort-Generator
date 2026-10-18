@@ -1,21 +1,25 @@
-# PasswortGenerator v0.03.0 – Übersichtliche Reiter-Navigation
+# PasswortGenerator v0.04.0 – Dunkelblaues Neon-Design
 
-**Entwicklungsschritt 3 von 100** auf dem Weg zu v1.0.0.
+**Entwicklungsschritt 4 von 100** auf dem Weg zur Vollversion v1.0.0.
 
-## Neues Oberflächendesign
+## Neuer Look
 
-- Drei Reiter oben links: **Passwort**, **Einstellungen** und **Updates**
-- **Passwort:** Passwort erstellen, Länge und Zeichengruppen festlegen, kopieren
-- **Einstellungen:** Design & Farben und alle Einstellungen für Hintergrundbilder
-- **Updates:** Versionsstatus, Updateprüfung, Installation mit Neustart und Crash-Log
-- Die glänzenden Glas-Kacheln und das Hintergrundbild bleiben auf allen Reitern erhalten
-- Responsive Größenänderungen und bestehende Farb-/Bildeinstellungen funktionieren weiterhin
-- Die Statusanzeige bleibt beim Wechsel zwischen den Reitern sichtbar
-- GUI-Tests prüfen Tabwechsel, Bedienbarkeit und Fenster-Skalierung
+- Futuristisches dunkelblaues Design mit einmal erzeugtem Schaltkreis-Hintergrund
+- Leuchtend blaue Rahmen, glänzende Glas-Kacheln, Schloss-Logo und Titel „Stark. Sicher. Einzigartig.“
+- Umschalter **Passwort / Passphrase**, großer Generieren-Button sowie Kopieren und Erneuern direkt am Ergebnis
+- Synchronisierter Längenregler und Zahlenfeld, Stärkeanzeige, Checkboxen in zwei Spalten
+- **Anzeigen/Verbergen**, **Verlauf** und **Info** am unteren Rand
+- Passwort-, Einstellungen- und Updates-Reiter bleiben oben links erreichbar
 
-## Unverändert
+## Neue Funktionen
 
-- Sichere lokale Passwortgenerierung
-- Updates über GitHub mit SHA-256-Prüfung und automatischem Neustart
-- Aktuelle und vorherige AppImage-Version werden aufbewahrt
-- Lokaler Crash-Log mit Zeitstempel und Versionsnummer
+- Kryptografisch zufällige Passphrasen mit 4–10 Wörtern aus jeweils 1.024 zusammengesetzten Möglichkeiten
+- Entropiebasierte Stärkeanzeige (grobe Schätzung, keine Sicherheitsgarantie)
+- Sitzungsspeicher für maximal 20 Einträge; kopieren oder löschen, beim Schließen verworfen
+- Zusätzliche Tests für Bedienung, Passphrase, Grafiken und Fenster-Skalierung
+
+## Weiterhin verfügbar
+
+- Eigene Hintergrund- und Textfarben, Hintergrundbilder und responsive Kacheln
+- SHA-256-geprüfte Updates mit automatischem Neustart und previous-Backup
+- Lokale Crash-Logs mit Zeitstempeln
