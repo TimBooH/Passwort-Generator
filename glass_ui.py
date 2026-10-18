@@ -7,6 +7,8 @@ bounded resolution; resize uses only source/destination geometry.
 
 from pathlib import Path
 
+from PySide6.QtGui import QPainter
+
 from PySide6.QtCore import QPointF, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import (
     QColor, QBrush, QImageReader, QPalette, QPixmap,
@@ -247,7 +249,7 @@ class GlassBackground(QWidget):
         super().__init__(parent)
         self.setObjectName('appRoot')
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._base_color = '#101827'
+        self._base_color = '#071322'
         self._image = QPixmap()
         self._mode = 'cover'
 
@@ -260,6 +262,15 @@ class GlassBackground(QWidget):
         self._shade.setObjectName('wallpaperShade')
         self._shade.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self._shade.hide()
+        # A stable QLabel displays cached, decorative circuit artwork.
+        # Import locally to avoid a module cycle with neon_style.
+        from neon_style import circuit_texture
+        self._circuit = QLabel(self)
+        self._circuit.setObjectName('circuitWallpaper')
+        self._circuit.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._circuit.setScaledContents(True)
+        self._circuit.setPixmap(circuit_texture())
+        self._circuit.lower()
         self._apply_color_style()
 
         self._resize_timer = QTimer(self)
@@ -293,6 +304,7 @@ class GlassBackground(QWidget):
     def set_background_image(self, path):
         loaded = read_background_image(path)
         self._image = loaded
+        self._circuit.hide()
         self._backdrop.show()
         self._shade.show()
         self._render_image()
@@ -303,6 +315,8 @@ class GlassBackground(QWidget):
         self._backdrop.clear()
         self._backdrop.hide()
         self._shade.hide()
+        self._circuit.show()
+        self._circuit.lower()
 
     def has_background_image(self):
         return not self._image.isNull()
@@ -317,7 +331,13 @@ class GlassBackground(QWidget):
         super().resizeEvent(event)
         self._backdrop.setGeometry(self.rect())
         self._shade.setGeometry(self.rect())
-        self._backdrop.lower()
+        self._circuit.setGeometry(self.rect())
+        if self.has_background_image():
+            self._backdrop.lower()
+            self._circuit.hide()
+        else:
+            self._circuit.show()
+            self._circuit.lower()
         if self.has_background_image():
             self._resize_timer.start()
 
@@ -373,7 +393,7 @@ class GlossyGlassCard(QWidget):
         super().__init__(parent)
         self.setObjectName('glossyCard')
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
-        self._base_color = QColor('#101827')
+        self._base_color = QColor('#071322')
         self._last_style = None
 
         column = QVBoxLayout(self)
@@ -409,23 +429,23 @@ class GlossyGlassCard(QWidget):
     def _refresh_style(self):
         dark = is_dark_background(self._base_color)
         base = self._base_color
-        top = blend(base, '#4B6988' if dark else '#FFFFFF', .43 if dark else .65)
-        mid = blend(base, '#223851' if dark else '#E8F2FA', .42 if dark else .58)
-        end = blend(base, '#080F20' if dark else '#C4D3DF', .6 if dark else .31)
-        alpha = 174  # Consistent glossy finish; no adjustable opacity.
-        top_rgba = rgba(top, alpha - 20)
+        top = blend(base, '#084B8B' if dark else '#FFFFFF', .22 if dark else .65)
+        mid = blend(base, '#042B57' if dark else '#E8F2FA', .24 if dark else .58)
+        end = blend(base, '#001122' if dark else '#C4D3DF', .24 if dark else .31)
+        alpha = 231 if dark else 174
+        top_rgba = rgba(top, alpha - 17)
         mid_rgba = rgba(mid, alpha)
-        end_rgba = rgba(end, min(248, alpha + 12))
-        edge = rgba('#E3F5FF' if dark else '#7E9AB2', 92 if dark else 101)
-        light_edge = rgba('#F3FBFF', 157 if dark else 189)
-        white_spot = rgba('#FFFFFF', 168 if dark else 209)
+        end_rgba = rgba(end, min(250, alpha + 8))
+        edge = rgba('#008DFF' if dark else '#7E9AB2', 190 if dark else 101)
+        light_edge = rgba('#1AC5FF' if dark else '#F3FBFF', 192 if dark else 189)
+        white_spot = rgba('#5CD6FF', 145 if dark else 209)
         css = f"""
 QWidget#glossyCard {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
         stop:0 {top_rgba}, stop:0.47 {mid_rgba}, stop:1 {end_rgba});
     border: 1px solid {edge};
     border-top: 1px solid {light_edge};
-    border-radius: 18px;
+    border-radius: 16px;
 }}
 QFrame#glassRim {{
     border: none;
