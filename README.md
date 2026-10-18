@@ -18,7 +18,9 @@
 
 ## Vorschau
 
-![PasswortGenerator mit Glass-Oberfläche](assets/screenshots/passwort-generator.png)
+![Original-Screenshot des PasswortGenerators unter Linux mit Glass-Design](assets/screenshots/passwort-generator-live.png)
+
+*Originalaufnahme der laufenden Linux-Version (Qt/PySide6) im Glass-Dark-Design. Das angezeigte Passwort wurde nur für die Vorschau zufällig generiert.*
 
 ## Funktionen
 
