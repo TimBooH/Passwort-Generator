@@ -22,6 +22,7 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(decode_profile(encoded), profile)
         self.assertNotIn('password', encoded.lower())
         self.assertEqual(set(json.loads(encoded)), set(profile))
+        self.assertNotIn('secret', encoded.lower())
 
     def test_rejects_bad_or_incomplete_profiles(self):
         invalid = [None, {}, {'length': '20'}, {'length': True},
