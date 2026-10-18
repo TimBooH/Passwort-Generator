@@ -1,6 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
 Version 0.06.0 streamlines sidebar navigation, responsive cards, and release history.
+The GUI smoke test checks concise release notes rather than obsolete headings.
 Version 0.05.0 added configurable glass schemes and release-history browsing.
 Neon artwork stays cached across palette changes to avoid native Qt crashes.
 The earlier 1.2.x–1.5.x tags were published before the scheme reset.

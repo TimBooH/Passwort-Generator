@@ -134,7 +134,7 @@ assert 'neueste oben' in window.release_history_status.text()
 window.release_list.setCurrentRow(2)
 app.processEvents()
 assert window.changelog_title.text().endswith('v1.5.1')
-assert 'Historische Version' in window.changelog_view.toPlainText()
+assert 'Schnellerer Build' in window.changelog_view.toPlainText()
 assert '• ' in window.changelog_view.toPlainText()
 assert '## ' not in window.changelog_view.toPlainText()
 assert len(window.changelog_view.toPlainText().splitlines()) <= 5
