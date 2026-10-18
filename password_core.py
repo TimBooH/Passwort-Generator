@@ -4,7 +4,6 @@ import re
 import secrets
 import string
 import math
-from collections import Counter
 
 SYMBOLS = "!@#$%&*()-_=+[]{}:,.?"
 SIMILAR_CHARS = "Il1O0"
@@ -42,11 +41,11 @@ def password_groups(*, use_lower=True, use_upper=True, use_digits=True,
 def make_password(length, *, use_lower=True, use_upper=True, use_digits=True,
                   use_symbols=True, exclude_similar=False,
                   excluded_chars='', min_digits=0, min_symbols=0):
-    """Uniform CSPRNG sampling conditional on minimum-group requirements.
+    """Generate a secure random password satisfying every selected rule.
 
-    Rejection sampling yields a uniform distribution of passwords satisfying
-    the restrictions. With very restrictive configurations the fixed iteration
-    cap gives a useful error rather than blocking the UI.
+    Mandatory characters are sampled with secrets and uniformly shuffled;
+    all constraints are guaranteed, rather than relying on repeated retries.
+    The conditional distribution is not uniform across all valid passwords.
     """
     if type(length) is not int or not 8 <= length <= 128:
         raise ValueError('Die Passwortlänge muss zwischen 8 und 128 liegen.')
