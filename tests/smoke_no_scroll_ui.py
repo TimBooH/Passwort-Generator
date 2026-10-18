@@ -24,6 +24,9 @@ assert window.check_button.text() == '↻ Auf Update prüfen'
 assert window.check_button.width() == 175
 assert window.appearance_card.body.spacing() == 3
 assert window.appearance_card.layout().contentsMargins().top() == 6
+assert window.language_card.objectName() == 'glossyCard'
+assert window.language_card.header.text() == 'SPRACHE'
+assert window.language_card.layout().contentsMargins().top() == 5
 assert window.changelog_card.body.spacing() == 3
 assert window.changelog_card.layout().contentsMargins().top() == 5
 
@@ -32,7 +35,8 @@ controls = (
      window.preset_combo, window.save_preset_button),
     (window.scheme_combo, window.bg_combo, window.choose_background_button,
      window.clear_background_button, window.image_mode_combo,
-     window.clear_clipboard_checkbox, window.clipboard_timeout_combo),
+     window.language_combo, window.clear_clipboard_checkbox,
+     window.clipboard_timeout_combo),
     (window.check_button, window.changelog_view, window.release_combo,
      window.release_history_status),
     (window.info_credit, window.info_version, window.visual_guide_button,
