@@ -1,3 +1,3 @@
 """Versionsnummer für die App und für das automatisierte GitHub-Release."""
 
-APP_VERSION = "1.3.1"
+APP_VERSION = "1.4.0"

@@ -1,6 +1,6 @@
 # 🔐 PasswortGenerator
 
-**Ein sicherer Passwortgenerator für Linux – mit hochwertigen Glossy-Glas-Panels, Farbauswahl, Updateprüfung und Startmenü-Installation.**
+**Ein sicherer Passwortgenerator für Linux – mit stabiler, skalierbarer Glasoberfläche, eigenen Hintergrundbildern, Updateprüfung und Startmenü-Installation.**
 
 [![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-238636?logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 [![Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Version)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
@@ -17,6 +17,9 @@ Der PasswortGenerator ist eine grafische Desktop-Anwendung auf Basis von **Pytho
 - Passwort auf Knopfdruck in die Zwischenablage kopieren
 - **Neu gestaltete Glossy-Glas-Panels:** individuell mit Qt gezeichnete Glasflächen mit echten Glanzreflexen, feinen Lichtkanten, tiefem Farbverlauf und weichen Schatten
 - **Glas-Deckkraft** mit einem Schieberegler anpassen (30–85 %)
+- **Eigene Hintergrundbilder** auswählen und zwischen Ausfüllen, Einpassen, Strecken, Zentriert, Originalgröße und Kacheln wechseln
+- **Bessere Fenster-Skalierung:** zentrierter Inhaltsbereich, weniger horizontales Überlaufen bei schmalen Fenstern
+- **Stabilitätsoptimierungen:** direkter Schattenauftrag ohne teure Widget-Grafikeffekte; Slider-Änderungen lösen keine komplette Stylesheet-Neuberechnung aus
 - Unterschiedliche **Hintergrund- und Textfarben** wählen oder eine eigene Farbe einstellen
 - Farben werden gespeichert und beim nächsten Start wiederhergestellt
 - **Automatische und manuelle Updateprüfung** über GitHub Releases
@@ -92,6 +95,30 @@ Es werden **keine Updates ungefragt installiert**. Nur die Versionsprüfung erfo
 Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Mit **„Glas-Deckkraft“** bestimmst du die Stärke der transparenten Glasflächen. Die Kacheln werden direkt mit Qt gezeichnet und besitzen feine, realistische Spiegelreflexe, beleuchtete Kanten und abgestufte Glastiefe statt greller, weißer Rechtecke. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
 
 **Hinweis:** Das Design erzeugt den Glas-Look innerhalb des App-Fensters. Eine echte Unschärfe des *Desktops hinter dem Fenster* hängt vom KDE/KWin-Compositor ab und wird nicht vorausgesetzt.
+
+## 🖼️ Eigene Hintergrundbilder
+
+Öffne **Design & Farben → Bild auswählen …** und wähle eine PNG-, JPG-, WEBP- oder BMP-Datei.
+
+| Modus | Darstellung |
+| --- | --- |
+| **Ausfüllen** | Fenster vollständig ausfüllen; überstehende Bildränder werden mittig abgeschnitten |
+| **Einpassen** | Ganzes Bild proportional anzeigen; seitliche oder obere Ränder möglich |
+| **Gestreckt** | Bild auf Fensterbreite und -höhe dehnen, auch wenn es verzerrt wird |
+| **Zentriert (100 %)** | Ohne Skalierung mittig platzieren |
+| **Original (links oben)** | Ohne Skalierung an der linken oberen Ecke beginnen |
+| **Gekachelt** | Bild in Originalgröße wiederholen |
+
+Mit **Bild entfernen** kehrst du zum animierungsfreien Farbverlauf zurück. Der Bildpfad und der Darstellungsmodus werden gespeichert. Das Originalbild bleibt **auf deinem Rechner** und wird nicht in die App kopiert. Wird die Datei verschoben oder gelöscht, musst du sie erneut auswählen.
+
+**Schutz gegen große Bilder:** Dateien über 30 MB bzw. extrem große Pixelmaße werden nicht angenommen. Größere Bilder können außerdem beim Laden auf maximal 4096 Pixel Kantenlänge verkleinert werden. Damit bezieht sich „Originalgröße“ auf die sicher geladene Vorschauauflösung.
+
+## 🛠️ Abstürze diagnostizieren
+
+Ab Version **1.4.0** versucht die App, Python-Ausnahmen und native Fehlersignale lokal in
+`~/.local/state/passwort-generator/crash.log` zu protokollieren (bzw. unter `$XDG_STATE_HOME/passwort-generator/crash.log`).
+
+Das Protokoll wird **nicht hochgeladen**. Falls die App unter CachyOS erneut abstürzt, starte sie zusätzlich über ein Terminal und notiere die Meldungen. Native Grafiktreiber-/Qt-Fehler lassen sich nicht immer aus dem Python-Log rekonstruieren.
 
 ## 🧑‍💻 Aus dem Quellcode starten
 

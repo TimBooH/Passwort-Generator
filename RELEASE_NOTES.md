@@ -1,21 +1,21 @@
-# PasswortGenerator v1.3.1 – Glossy Glass Refinement
+# PasswortGenerator v1.4.0 – Stabilität, Skalierung und Hintergrundbilder
 
-Ein visuelles Design-Update für die drei zentralen Kacheln: Passwortgenerator, Design und Updateverwaltung.
+Dieses Update behebt mehrere potenzielle Qt-Absturzursachen und erweitert die Design-Einstellungen.
 
-## Verbessert
-- Alte, milchig-weiße Glas-Kacheln komplett ersetzt
-- Individuell gezeichnete Glossy-Glasflächen mit sanfter Lichtbrechungs-Anmutung
-- Spiegelstreifen, feine Reflexe, helle Kanten, subtile Glas-Dicke und weichere Schatten
-- Dunkles, besser lesbares Premium-Design mit dezenten blauen Lichtquellen
-- Schlankere Kacheln mit aufgeräumten Überschriften und konsistenten Abständen
-- Der Glas-Deckkraft-Regler und die unabhängigen Hintergrund-/Textfarben bleiben erhalten
+## Neu
+- Hintergrundbild aus lokaler PNG/JPG/WEBP/BMP-Datei auswählen und wieder entfernen
+- Sechs Darstellungsmodi: **Ausfüllen, Einpassen, Gestreckt, Zentriert, Originalgröße, Gekachelt**
+- Die Auswahl des Bilds und der Modus werden über Qt QSettings gespeichert
+- Zentrierter, maximal 940 px breiter Inhaltsbereich für große Monitore und bessere Darstellung bei schmalen Fenstern
+- Lokale Fehlerprotokollierung: `~/.local/state/passwort-generator/crash.log`
 
-## Unverändert
-- Sichere lokale Passwortgenerierung
-- GitHub-Updateprüfung und verifizierter AppImage-Download
-- Installation und Startmenüeintrag für CachyOS/KDE
-
-**Hinweis:** Das Glas wird mit Qt gezeichnet. Ein Blur des tatsächlichen Desktops hinter der App ist nicht vorausgesetzt.
+## Stabilität und Performance
+- Ressourcenintensive `QGraphicsDropShadowEffect`-Instanzen der Kacheln entfernt und durch direktes, leichtgewichtiges Zeichnen ersetzt
+- Der Glas-Deckkraft-Regler aktualisiert nur die gezeichneten Kacheln statt bei jeder Bewegung das komplette Stylesheet zu setzen
+- Bilddateien werden mit Größenbegrenzung einmalig dekodiert, nicht bei jedem Fenster-Resize
+- Zusätzliche Tests für Bildausschnitte, Einstellungen, Farbauswahl und zahlreiche Fenstergrößen
 
 ## Update
-In der bisherigen App: **Auf Updates prüfen** → **Update herunterladen**. Bei installierter App anschließend neu über das KDE-Menü öffnen.
+In der installierten Version: **Auf Updates prüfen → Update herunterladen**, danach die App über das KDE-Menü neu öffnen. Alternativ das AppImage unter Assets herunterladen.
+
+**Hinweis:** Ob damit alle Absturzursachen auf jeder CachyOS-/KDE-Konfiguration behoben sind, kann erst ein Test auf der jeweiligen Maschine bestätigen. Bitte im Fehlerfall das lokale crash.log prüfen.

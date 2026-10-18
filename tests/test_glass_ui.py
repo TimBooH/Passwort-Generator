@@ -32,8 +32,9 @@ class GlassStyleTests(unittest.TestCase):
             self.assertIn('rgba(', style)
             self.assertIn(fg, style)
 
-    def test_opacity_changes_stylesheet(self):
-        self.assertNotEqual(
+    def test_opacity_changes_only_card_paint_not_stylesheet(self):
+        # Slider movement must NOT repolish/rebuild every QWidget (crash fix).
+        self.assertEqual(
             build_glass_stylesheet('#101827', '#FFFFFF', 30),
             build_glass_stylesheet('#101827', '#FFFFFF', 85),
         )

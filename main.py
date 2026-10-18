@@ -10,12 +10,12 @@ from PySide6.QtCore import QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUr
 from PySide6.QtGui import QColor, QDesktopServices, QFont
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QColorDialog, QComboBox, QGroupBox, QHBoxLayout,
+    QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSlider, QSpinBox, QVBoxLayout, QWidget,
+    QScrollArea, QSizePolicy, QSlider, QSpinBox, QVBoxLayout, QWidget,
 )
 
-from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet
+from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from password_core import make_password, parse_version
 from version import APP_VERSION
 
@@ -52,7 +52,7 @@ def field_color(hex_color):
 
 
 class PasswordWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, auto_check=True):
         super().__init__()
         self.settings = QSettings('TimBooH', 'PasswortGenerator')
         self.network = QNetworkAccessManager(self)
@@ -68,8 +68,8 @@ class PasswordWindow(QMainWindow):
         self.latest_asset = None
 
         self.setWindowTitle(f'PasswortGenerator v{APP_VERSION}')
-        self.resize(710, 790)
-        self.setMinimumSize(520, 590)
+        self.resize(740, 810)
+        self.setMinimumSize(460, 540)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -79,10 +79,23 @@ class PasswordWindow(QMainWindow):
         root.setObjectName('appRoot')
         self.background_surface = root
         scroll.setWidget(root)
-        layout = QVBoxLayout(root)
+        # A centered column stays readable even when the window becomes ultrawide.
+        outer_layout = QHBoxLayout(root)
+        outer_layout.setContentsMargins(10, 0, 10, 0)
+        outer_layout.setSpacing(0)
+        outer_layout.addStretch(1)
+        content = QWidget()
+        content.setObjectName('contentColumn')
+        content.setMaximumWidth(940)
+        content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        outer_layout.addWidget(content, 5)
+        outer_layout.addStretch(1)
+        layout = QVBoxLayout(content)
         layout.setSpacing(12)
-        layout.setContentsMargins(28, 23, 28, 28)
+        layout.setContentsMargins(20, 22, 20, 26)
         self.glass_cards = []
+        self._applied_palette = None
+        self._restoring = False
 
         title = QLabel('PASSWORT GENERATOR')
         title.setObjectName('heroTitle')
@@ -142,8 +155,8 @@ class PasswordWindow(QMainWindow):
         bg_row.addWidget(self.bg_combo, 1)
         bg_custom = QPushButton('Eigene Farbe …')
         bg_custom.clicked.connect(lambda: self.pick_color(self.bg_combo))
-        bg_row.addWidget(bg_custom)
         colors_layout.addLayout(bg_row)
+        colors_layout.addWidget(bg_custom, 0, Qt.AlignmentFlag.AlignRight)
         fg_row = QHBoxLayout()
         fg_row.addWidget(QLabel('Text:'))
         self.fg_combo = QComboBox()
@@ -152,8 +165,8 @@ class PasswordWindow(QMainWindow):
         fg_row.addWidget(self.fg_combo, 1)
         fg_custom = QPushButton('Eigene Farbe …')
         fg_custom.clicked.connect(lambda: self.pick_color(self.fg_combo))
-        fg_row.addWidget(fg_custom)
         colors_layout.addLayout(fg_row)
+        colors_layout.addWidget(fg_custom, 0, Qt.AlignmentFlag.AlignRight)
         opacity_row = QHBoxLayout()
         opacity_row.addWidget(QLabel('Glas-Deckkraft:'))
         self.glass_slider = QSlider(Qt.Orientation.Horizontal)
@@ -165,7 +178,31 @@ class PasswordWindow(QMainWindow):
         self.glass_value.setMinimumWidth(40)
         opacity_row.addWidget(self.glass_value)
         colors_layout.addLayout(opacity_row)
-        colors_note = QLabel('Passe den Glanz und die Glas-Tiefe an. Deine Auswahl bleibt gespeichert.')
+        # The chosen image stays on disk; only its path and display mode are stored.
+        picture_title = QLabel('Eigenes Hintergrundbild')
+        picture_title.setObjectName('supportText')
+        colors_layout.addWidget(picture_title)
+        picture_actions = QHBoxLayout()
+        self.choose_background_button = QPushButton('Bild auswählen …')
+        self.choose_background_button.clicked.connect(self.choose_background_image)
+        picture_actions.addWidget(self.choose_background_button)
+        self.clear_background_button = QPushButton('Bild entfernen')
+        self.clear_background_button.clicked.connect(self.remove_background_image)
+        picture_actions.addWidget(self.clear_background_button)
+        colors_layout.addLayout(picture_actions)
+        self.background_file_label = QLabel('Kein Hintergrundbild ausgewählt')
+        self.background_file_label.setObjectName('supportText')
+        self.background_file_label.setWordWrap(True)
+        colors_layout.addWidget(self.background_file_label)
+        mode_row = QHBoxLayout()
+        mode_row.addWidget(QLabel('Bilddarstellung:'))
+        self.image_mode_combo = QComboBox()
+        for label, mode in IMAGE_MODES:
+            self.image_mode_combo.addItem(label, mode)
+        mode_row.addWidget(self.image_mode_combo, 1)
+        colors_layout.addLayout(mode_row)
+
+        colors_note = QLabel('Glas-Effekt und Bilddarstellung werden automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         layout.addWidget(colors)
@@ -207,10 +244,14 @@ class PasswordWindow(QMainWindow):
 
         self.bg_combo.currentIndexChanged.connect(self.apply_colors)
         self.fg_combo.currentIndexChanged.connect(self.apply_colors)
-        self.glass_slider.valueChanged.connect(self.apply_colors)
+        # Slider movement redraws only the glass cards, not the whole QSS tree.
+        self.glass_slider.valueChanged.connect(self.update_glass_opacity)
+        self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.restore_colors()
+        self.restore_background_image()
         self.generate()
-        QTimer.singleShot(800, self.check_for_updates)
+        if auto_check:
+            QTimer.singleShot(800, self.check_for_updates)
 
     @staticmethod
     def select_color(combo, color, default):
@@ -225,10 +266,17 @@ class PasswordWindow(QMainWindow):
         combo.setCurrentIndex(combo.count() - 1)
 
     def restore_colors(self):
-        self.select_color(self.bg_combo, self.settings.value('background_color', '#101827'), '#101827')
-        self.select_color(self.fg_combo, self.settings.value('text_color', '#FFFFFF'), '#FFFFFF')
-        saved_glass = self.settings.value('glass_opacity', 54, type=int)
-        self.glass_slider.setValue(max(30, min(85, saved_glass)))
+        self._restoring = True
+        try:
+            self.select_color(self.bg_combo, self.settings.value('background_color', '#101827'), '#101827')
+            self.select_color(self.fg_combo, self.settings.value('text_color', '#FFFFFF'), '#FFFFFF')
+            try:
+                saved = int(self.settings.value('glass_opacity', 54))
+            except (TypeError, ValueError):
+                saved = 54
+            self.glass_slider.setValue(max(30, min(85, saved)))
+        finally:
+            self._restoring = False
         self.apply_colors()
 
     def pick_color(self, combo):
@@ -237,17 +285,72 @@ class PasswordWindow(QMainWindow):
             self.select_color(combo, selected.name(), '#101827')
 
     def apply_colors(self, *_):
+        if self._restoring:
+            return
         bg = self.bg_combo.currentData() or '#101827'
         fg = self.fg_combo.currentData() or '#FFFFFF'
-        opacity = self.glass_slider.value()
         self.background_surface.set_base_color(bg)
+        self.update_glass_opacity()
+        palette_key = (bg, fg)
+        if self._applied_palette != palette_key:
+            self._applied_palette = palette_key
+            # Replacing the complete stylesheet while a slider repaints dozens
+            # of frames is expensive and has caused native Qt instability.
+            self.setStyleSheet(build_glass_stylesheet(bg, fg, 54))
+            self.settings.setValue('background_color', bg)
+            self.settings.setValue('text_color', fg)
+
+    def update_glass_opacity(self, *_):
+        if self._restoring:
+            return
+        value = self.glass_slider.value()
+        background = self.bg_combo.currentData() or '#101827'
         for card in self.glass_cards:
-            card.set_glass_color(bg, opacity)
-        self.setStyleSheet(build_glass_stylesheet(bg, fg, opacity))
-        self.glass_value.setText(f'{opacity} %')
-        self.settings.setValue('background_color', bg)
-        self.settings.setValue('text_color', fg)
-        self.settings.setValue('glass_opacity', opacity)
+            card.set_glass_color(background, value)
+        self.glass_value.setText(f'{value} %')
+        self.settings.setValue('glass_opacity', value)
+
+    def restore_background_image(self):
+        mode = self.settings.value('background_image_mode', 'cover', type=str)
+        index = self.image_mode_combo.findData(mode)
+        self.image_mode_combo.setCurrentIndex(index if index >= 0 else 0)
+        path = self.settings.value('background_image_path', '', type=str)
+        if path:
+            try:
+                self.background_surface.set_background_image(path)
+                self.background_file_label.setText(Path(path).name)
+            except (OSError, ValueError):
+                self.background_file_label.setText('Gespeichertes Bild nicht gefunden oder ungültig.')
+                self.background_surface.clear_background_image()
+        self.clear_background_button.setEnabled(self.background_surface.has_background_image())
+
+    def choose_background_image(self):
+        selected, _ = QFileDialog.getOpenFileName(
+            self, 'Hintergrundbild auswählen', str(Path.home()),
+            'Bilder (*.png *.jpg *.jpeg *.webp *.bmp)',
+        )
+        if not selected:
+            return
+        try:
+            self.background_surface.set_background_image(selected)
+        except (ValueError, OSError) as error:
+            QMessageBox.warning(self, 'Hintergrundbild nicht geladen', str(error))
+            return
+        self.background_file_label.setText(Path(selected).name)
+        self.clear_background_button.setEnabled(True)
+        self.settings.setValue('background_image_path', selected)
+        self.status.setText('Hintergrundbild geladen.')
+
+    def remove_background_image(self):
+        self.background_surface.clear_background_image()
+        self.background_file_label.setText('Kein Hintergrundbild ausgewählt')
+        self.clear_background_button.setEnabled(False)
+        self.settings.remove('background_image_path')
+
+    def update_image_mode(self, *_):
+        mode = self.image_mode_combo.currentData() or 'cover'
+        self.background_surface.set_image_mode(mode)
+        self.settings.setValue('background_image_mode', mode)
 
     def generate(self):
         try:
@@ -420,7 +523,36 @@ class PasswordWindow(QMainWindow):
             reply.deleteLater()
 
 
+def enable_crash_logging():
+    """Keep a local traceback for unexpected Python errors and native signals.
+
+    No logs are uploaded. Qt/C++ faults are not always diagnosable from Python.
+    """
+    import faulthandler
+    import traceback
+    state_dir = Path(os.environ.get('XDG_STATE_HOME', Path.home() / '.local' / 'state'))
+    try:
+        target = state_dir / 'passwort-generator'
+        target.mkdir(parents=True, exist_ok=True)
+        handle = (target / 'crash.log').open('a', encoding='utf-8', buffering=1)
+        faulthandler.enable(file=handle, all_threads=True)
+    except (OSError, RuntimeError):
+        return None
+    default_hook = sys.excepthook
+
+    def record_exception(kind, value, tb):
+        try:
+            traceback.print_exception(kind, value, tb, file=handle)
+            handle.flush()
+        finally:
+            default_hook(kind, value, tb)
+
+    sys.excepthook = record_exception
+    return handle
+
+
 if __name__ == '__main__':
+    crash_log_handle = enable_crash_logging()
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     window = PasswordWindow()

@@ -31,13 +31,16 @@ jobs:
       - name: Render glossy interface offscreen (GUI smoke test)
         env:
           QT_QPA_PLATFORM: offscreen
+          PYTHONFAULTHANDLER: "1"
         run: |
           PYTHONPATH=. python tests/smoke_glossy_ui.py
       - name: Save design preview
         uses: actions/upload-artifact@v4
         with:
           name: PasswortGenerator-Glass-Preview
-          path: glossy-preview.png
+          path: |
+            glossy-preview.png
+            glossy-wallpaper-preview.png
           if-no-files-found: error
       - name: Build AppImage
         env:
