@@ -204,7 +204,8 @@ EN = {
 # Messages with variable version numbers, counts, colors and errors.
 DYNAMIC = (
     (r'^Passwort-Generator v(.+) · Entwicklung ([0-9]+)/100$', r'Passwort-Generator v\1 · Development \2/100'),
-    (r'^Installiert: v(.+)  →  Neu: (.+)
+    (r'^Installiert: v(.+)  →  Neu: (.+)$', r'Installed: v\1  →  New: \2'),
+    (r'^Installiert: v(.+) · Noch nicht geprüft$', r'Installed: v\1 · Not checked yet'),
     (r'^Installiert: v(.+) · Prüfe GitHub …$', r'Installed: v\1 · Checking GitHub …'),
     (r'^v(.+) ist aktuell\. Kein Update verfügbar\.$', r'v\1 is up to date. No update available.'),
     (r'^Neue Version (.+) verfügbar! Installiert: v(.+)$', r'New version \1 available! Installed: v\2'),
