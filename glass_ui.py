@@ -227,6 +227,7 @@ class GlassBackground(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = '#071322'
         self.wallpaper_color = None
+        self._clear_glass = False
         self._image = QPixmap()
         self._mode = 'cover'
 
@@ -266,11 +267,19 @@ class GlassBackground(QWidget):
             f'stop:0 {first.name()}, stop:0.58 {base.name()}, '
             f'stop:1 {last.name()}); }}'
         )
+        # Pure Glass means the wallpaper behind the cards stays visible.
+        shade_alpha = 8 if self._clear_glass else (79 if dark else 39)
         self._shade.setStyleSheet(
             'QFrame#wallpaperShade { '
-            f'background: {rgba("#050912" if dark else "#FAFCFF", 79 if dark else 39)}; '
+            f'background: {rgba("#050912" if dark else "#FAFCFF", shade_alpha)}; '
             'border: none; }'
         )
+
+    def set_transparent_glass(self, enabled):
+        enabled = bool(enabled)
+        if self._clear_glass != enabled:
+            self._clear_glass = enabled
+            self._apply_color_style()
 
     def set_base_color(self, value):
         color = QColor(value)
@@ -377,6 +386,7 @@ class GlossyGlassCard(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = QColor('#071322')
         self._accent = QColor(accent_for_background('#071322'))
+        self._clear_glass = False
         self._last_style = None
 
         column = QVBoxLayout(self)
@@ -413,6 +423,13 @@ class GlossyGlassCard(QWidget):
         self._accent = color
         self._refresh_timer.start()
 
+    def set_glass_mode(self, transparent):
+        transparent = bool(transparent)
+        if self._clear_glass != transparent:
+            self._clear_glass = transparent
+            # Switching themes needs a refresh even if color is unchanged.
+            self._refresh_timer.start()
+
     def _refresh_style(self):
         dark = is_dark_background(self._base_color)
         base = self._base_color
@@ -422,7 +439,9 @@ class GlossyGlassCard(QWidget):
         mid = blend(base, self._accent, .14 if dark else .10)
         end = blend(base, '#000000' if dark else '#FFFFFF', .25 if dark else .10)
         alpha = 158 if dark else 147
-        top_rgba = rgba(top, alpha - 17)
+        if self._clear_glass:
+            alpha = 48  # Clearly reveals the app wallpaper through the glass.
+        top_rgba = rgba(top, max(0, alpha - 17))
         mid_rgba = rgba(mid, alpha)
         end_rgba = rgba(end, min(250, alpha + 8))
         edge = rgba(self._accent, 190 if dark else 145)

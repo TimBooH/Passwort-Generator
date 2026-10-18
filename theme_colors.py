@@ -9,6 +9,7 @@ from PySide6.QtGui import QColor
 
 COLOR_SCHEMES = (
     ('neon_blue', 'Neon Blue', '#071322', '#FFFFFF'),
+    ('glass', 'Glass (durchsichtig)', '#142638', '#F6FAFF'),
     ('glass_dark', 'Glass Dark', '#171C26', '#F0F4FC'),
     ('glass_light', 'Glass Light', '#F0F4FA', '#142436'),
     ('violet_glass', 'Violet Glass', '#2B1D3A', '#F6EDFF'),
