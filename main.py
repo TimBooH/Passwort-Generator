@@ -7,8 +7,8 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
-from PySide6.QtGui import QColor, QFont, QIcon
+from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
+from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
@@ -27,10 +27,12 @@ from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_
                           accessible_text_color, preset_colors)
 from release_history import normalized_releases
 from release_notes_i18n import release_changelog
-from updater import install_staged_appimage, restart_updated_app, staging_path
+from updater import (install_staged_appimage, restart_updated_app,
+                     restore_previous_appimage, previous_path, staging_path)
 from windows_support import WINDOWS_INSTALLER_NAME, start_verified_windows_installer
-from password_core import (PHRASE_SEPARATORS, make_password, make_passphrase,
-                           estimate_strength, parse_version)
+from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
+                            make_passphrase, estimate_strength,
+                            password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
 
 REPO = 'TimBooH/Passwort-Generator'
@@ -113,6 +115,14 @@ class PasswordWindow(QMainWindow):
         self._update_popup_dialog = None
         self._first_run_tour = None
         self._phrase_mode = False
+        self._last_entropy_bits = 0.0
+        self._advanced_rules = {
+            'min_digits': self.settings.value('password/min_digits', 0, type=int),
+            'min_symbols': self.settings.value('password/min_symbols', 0, type=int),
+            'excluded_chars': self.settings.value('password/excluded_chars', '', type=str),
+        }
+        self._rollback_reply = None
+        self._rollback_pending = False
         self._applying_preset = False
         self._clipboard_secret = None
         self._history = []  # Session-only, never persisted to QSettings or disk.
@@ -286,6 +296,11 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
         group_layout.addWidget(self.strength_bar)
+        self.analysis_button = QPushButton('ⓘ Sicherheitsanalyse')
+        self.analysis_button.setObjectName('analysisButton')
+        self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
+        self.analysis_button.clicked.connect(self.show_security_analysis)
+        group_layout.addWidget(self.analysis_button, 0, Qt.AlignmentFlag.AlignRight)
         group_layout.addSpacing(2)
 
         length_row = QHBoxLayout()
@@ -359,6 +374,10 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.symbols, 0, 1)
         check_layout.addWidget(self.exclude, 1, 1)
         group_layout.addWidget(self.options_widget)
+        self.rules_button = QPushButton('⚙ Erweiterte Regeln')
+        self.rules_button.setObjectName('advancedPasswordRulesButton')
+        self.rules_button.clicked.connect(self.show_advanced_rules)
+        group_layout.addWidget(self.rules_button, 0, Qt.AlignmentFlag.AlignLeft)
 
         # These controls only appear in Passphrase mode. The checkbox adds
         # one cryptographically random 10–99 number, separated as selected.
@@ -380,6 +399,18 @@ class PasswordWindow(QMainWindow):
             self.phrase_separator.addItem(label, separator)
         self.phrase_separator.setMinimumWidth(125)
         phrase_layout.addWidget(self.phrase_separator, 1, 1)
+        phrase_layout.addWidget(QLabel('Wortliste:'), 2, 0)
+        self.phrase_language = QComboBox()
+        self.phrase_language.setObjectName('phraseLanguageCombo')
+        self.phrase_language.addItem('Deutsch', 'de')
+        self.phrase_language.addItem('English', 'en')
+        stored_phrase_language = self.settings.value('passphrase/language', 'de', type=str)
+        self.phrase_language.setCurrentIndex(max(0, self.phrase_language.findData(stored_phrase_language)))
+        self.phrase_language.currentIndexChanged.connect(
+            lambda *_: self.settings.setValue('passphrase/language',
+                                             self.phrase_language.currentData())
+        )
+        phrase_layout.addWidget(self.phrase_language, 2, 1)
         phrase_layout.setColumnStretch(1, 1)
         self.phrase_options_widget.hide()
         group_layout.addWidget(self.phrase_options_widget)
@@ -534,6 +565,28 @@ class PasswordWindow(QMainWindow):
         self.clipboard_timeout_combo.setEnabled(self.clear_clipboard_checkbox.isChecked())
         clipboard_row.addWidget(self.clipboard_timeout_combo)
         security_card.body.addLayout(clipboard_row)
+        self.privacy_focus_checkbox = QCheckBox(
+            'Passwort beim Fensterwechsel verbergen'
+        )
+        self.privacy_focus_checkbox.setObjectName('privacyOnDeactivate')
+        self.privacy_focus_checkbox.setChecked(
+            self.settings.value('security/hide_on_deactivate', True, type=bool)
+        )
+        self.privacy_focus_checkbox.toggled.connect(
+            lambda v: self.settings.setValue('security/hide_on_deactivate', v)
+        )
+        security_card.body.addWidget(self.privacy_focus_checkbox)
+        self.history_confirm_checkbox = QCheckBox(
+            'Vor dem Öffnen des Verlaufs bestätigen'
+        )
+        self.history_confirm_checkbox.setObjectName('confirmPasswordHistory')
+        self.history_confirm_checkbox.setChecked(
+            self.settings.value('security/confirm_history', False, type=bool)
+        )
+        self.history_confirm_checkbox.toggled.connect(
+            lambda v: self.settings.setValue('security/confirm_history', v)
+        )
+        security_card.body.addWidget(self.history_confirm_checkbox)
         self.clear_clipboard_checkbox.setToolTip(
             'Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.'
         )
@@ -588,6 +641,11 @@ class PasswordWindow(QMainWindow):
         update_actions.addWidget(self.download_button, 0, Qt.AlignmentFlag.AlignLeft)
         update_actions.addStretch(1)
         updates_layout.addLayout(update_actions)
+        self.rollback_button = QPushButton('↶ Vorherige Version wiederherstellen')
+        self.rollback_button.setObjectName('rollbackButton')
+        self.rollback_button.clicked.connect(self.rollback_update)
+        self.rollback_button.setToolTip('Nach Bestätigung eine frühere Version wiederherstellen')
+        updates_layout.addWidget(self.rollback_button, 0, Qt.AlignmentFlag.AlignLeft)
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
@@ -753,6 +811,19 @@ class PasswordWindow(QMainWindow):
         self._translate_interface()
         self.update_navigation_labels()
         self.restore_window_geometry()
+        self._shortcuts = []
+        for key, callback in (
+            ('Ctrl+G', self.generate),
+            ('Ctrl+Shift+C', self.copy),
+            ('Ctrl+H', self.show_history),
+            ('Ctrl+1', lambda: self.tabs.setCurrentIndex(0)),
+            ('Ctrl+2', lambda: self.tabs.setCurrentIndex(2)),
+            ('Ctrl+3', lambda: self.tabs.setCurrentIndex(1)),
+            ('Ctrl+4', self.show_info),
+        ):
+            shortcut = QShortcut(QKeySequence(key), self)
+            shortcut.activated.connect(callback)
+            self._shortcuts.append(shortcut)
         if self.reporter is not None:
             self.reporter.note('UI_STARTED', 'neon interface ready', force=True)
 
