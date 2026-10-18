@@ -157,6 +157,11 @@ QPushButton {{
 }}
 QPushButton:hover {{ border: 1px solid {bright}; background: {panel_hover}; }}
 QPushButton:pressed {{ background: {tab_selected}; }}
+QPushButton:focus {{ border: 1px solid {bright}; }}
+QComboBox:hover, QComboBox:focus {{ border: 1px solid {bright}; }}
+QPushButton#savePresetButton {{ min-height: 22px; font-size: 11px; padding: 3px 7px; }}
+QLabel#updateVersionCompare {{ color: {bright}; font-weight: 800; font-size: 12px; }}
+QLabel#updatePreview {{ color: {fg}; font-size: 11px; padding: 3px 6px; }}
 QPushButton#modeButton {{
     background: {field}; border: 1px solid {border}; border-radius: 8px;
     font-size: 12px; font-weight: 700; padding: 5px 5px;
