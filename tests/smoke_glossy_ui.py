@@ -23,13 +23,15 @@ window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
 assert window.appearance_card.objectName() == 'glossyCard'
+assert window.language_card.objectName() == 'glossyCard'
+assert window.language_card.isAncestorOf(window.language_combo)
 assert window.changelog_card.objectName() == 'glossyCard'
 assert window.appearance_card.isAncestorOf(window.choose_background_button)
 assert window.changelog_card.isAncestorOf(window.release_combo)
 assert window.changelog_card.isAncestorOf(window.changelog_view)
 assert isinstance(window.tabs, QStackedWidget)
 assert len(window.nav_buttons) == 3
-assert len(window.secondary_cards) == 3
+assert len(window.secondary_cards) == 4
 assert window.nav_container.y() < window.tabs.y()
 assert window.info_nav_button.isVisible()
 assert not hasattr(window, 'nav_sidebar')
