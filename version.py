@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.11.0 preloads all graphical explanation previews so hidden tabs
+are immediately illustrated on Windows and Linux.
 Version 0.11.0 keeps three navigation action labels with a separate fourth
 Info action and validates that page without legacy modal assumptions.
 Version 0.11.0 precisely targets real widgets with the arrow tour, embeds
