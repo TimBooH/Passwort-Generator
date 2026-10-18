@@ -15,10 +15,10 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
 | :--- | :--- |
 | **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
-| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.14.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.14.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.14.1/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.14.1/PasswortGenerator-x86_64.AppImage) |
 | Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
 
-**Aktuelle Version: v0.14.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
+**Aktuelle Version: v0.14.1** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
