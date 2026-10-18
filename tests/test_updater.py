@@ -89,8 +89,8 @@ class UpdaterTests(unittest.TestCase):
         fake_image(self.current, 'v2')
         fake_image(self.previous, 'v1')
         self.assertEqual(updater.restore_previous_appimage(self.current), self.current)
-        self.assertEqual(self.current.read_bytes(), b'\\x7fELFv1')
-        self.assertEqual(self.previous.read_bytes(), b'\\x7fELFv2')
+        self.assertEqual(self.current.read_bytes(), b'\x7fELFv1')
+        self.assertEqual(self.previous.read_bytes(), b'\x7fELFv2')
 
     def test_rollback_requires_real_verified_previous(self):
         fake_image(self.current, 'v2')
@@ -114,8 +114,8 @@ class UpdaterTests(unittest.TestCase):
         with mock.patch('updater.os.replace', side_effect=fail_on_previous):
             with self.assertRaises(OSError):
                 updater.restore_previous_appimage(self.current)
-        self.assertEqual(self.current.read_bytes(), b'\\x7fELFv2')
-        self.assertEqual(self.previous.read_bytes(), b'\\x7fELFv1')
+        self.assertEqual(self.current.read_bytes(), b'\x7fELFv2')
+        self.assertEqual(self.previous.read_bytes(), b'\x7fELFv1')
 
     def test_restart_cleans_appimage_environment(self):
         fake_image(self.current, 'v2')
