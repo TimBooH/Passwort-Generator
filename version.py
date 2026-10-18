@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.13.0 renames the Updates navigation to Changelog while retaining
+update checks and release history on Linux and Windows.
 Version 0.12.0 provides release history in a newest-first dropdown,
 a separate changelog glass tile, distinct creator/help cards, compact
 left-aligned update checks, and persistent size/position via QSettings.
@@ -41,7 +43,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.12.0"
+APP_VERSION = "0.13.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
