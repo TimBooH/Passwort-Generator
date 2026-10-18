@@ -787,21 +787,21 @@ class PasswordWindow(QMainWindow):
     def show_history(self):
         """Show only passwords from this session; never persist history."""
         dialog = QDialog(self)
-        dialog.setWindowTitle('Verlauf – nur diese Sitzung')
+        dialog.setWindowTitle(self._t('Verlauf – nur diese Sitzung'))
         dialog.resize(560, 360)
         dialog.setModal(True)
         layout = QVBoxLayout(dialog)
         explanation = QLabel(
-            'Maximal 20 Einträge. Der Verlauf wird beim Schließen der App gelöscht.'
+            self._t('Maximal 20 Einträge. Der Verlauf wird beim Schließen der App gelöscht.')
         )
         explanation.setWordWrap(True)
         layout.addWidget(explanation)
         entries = QListWidget()
         for kind, secret in reversed(self._history):
-            entries.addItem(f'{kind}: {secret}')
+            entries.addItem(f'{self._t(kind)}: {secret}')
         layout.addWidget(entries, 1)
         actions = QHBoxLayout()
-        copy_button = QPushButton('Ausgewähltes kopieren')
+        copy_button = QPushButton(self._t('Ausgewähltes kopieren'))
         copy_button.setEnabled(bool(self._history))
 
         def copy_selected():
@@ -815,7 +815,7 @@ class PasswordWindow(QMainWindow):
 
         copy_button.clicked.connect(copy_selected)
         actions.addWidget(copy_button)
-        clear_button = QPushButton('Verlauf löschen')
+        clear_button = QPushButton(self._t('Verlauf löschen'))
 
         def clear_history():
             self._history.clear()
@@ -824,7 +824,7 @@ class PasswordWindow(QMainWindow):
 
         clear_button.clicked.connect(clear_history)
         actions.addWidget(clear_button)
-        close_button = QPushButton('Schließen')
+        close_button = QPushButton(self._t('Schließen'))
         close_button.clicked.connect(dialog.accept)
         actions.addWidget(close_button)
         layout.addLayout(actions)
@@ -886,16 +886,16 @@ class PasswordWindow(QMainWindow):
         popup = QMessageBox(self)
         popup.setObjectName('startupUpdatePopup')
         popup.setIcon(QMessageBox.Icon.Information)
-        popup.setWindowTitle('PasswortGenerator · Update verfügbar')
-        popup.setText(f'Eine neue Version {version} ist verfügbar!')
-        popup.setInformativeText(
+        popup.setWindowTitle(self._t('PasswortGenerator · Update verfügbar'))
+        popup.setText(self._t(f'Eine neue Version {version} ist verfügbar!'))
+        popup.setInformativeText(self._t(
             f'Du verwendest v{APP_VERSION}. Möchtest du die Aktualisierung '
             'jetzt im Update-Bereich ansehen? Es wird nichts automatisch installiert.'
-        )
+        ))
         show_button = popup.addButton(
-            'Update öffnen', QMessageBox.ButtonRole.AcceptRole
+            self._t('Update öffnen'), QMessageBox.ButtonRole.AcceptRole
         )
-        popup.addButton('Später', QMessageBox.ButtonRole.RejectRole)
+        popup.addButton(self._t('Später'), QMessageBox.ButtonRole.RejectRole)
         popup.buttonClicked.connect(
             lambda clicked: self.tabs.setCurrentIndex(2)
             if clicked is show_button else None
