@@ -12,7 +12,7 @@ os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.*=false')
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter
-from PySide6.QtWidgets import QApplication, QScrollArea
+from PySide6.QtWidgets import QApplication, QScrollArea, QSlider
 
 from main import PasswordWindow
 
@@ -22,6 +22,9 @@ window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
+assert not window.findChildren(QSlider), 'The glass-opacity slider must be removed'
+assert not hasattr(window, 'glass_slider')
+assert not window.settings.contains('glass_opacity'), 'Legacy opacity setting must be removed'
 assert window.grab().save('glossy-preview.png'), 'Unable to render preview'
 
 with tempfile.TemporaryDirectory() as temp:
@@ -57,7 +60,6 @@ with tempfile.TemporaryDirectory() as temp:
     for iteration in range(25):
         window.bg_combo.setCurrentIndex(iteration % window.bg_combo.count())
         window.fg_combo.setCurrentIndex(iteration % window.fg_combo.count())
-        window.glass_slider.setValue(30 + (iteration * 7) % 56)
         window.length.setValue(8 + (iteration * 5) % 121)
         window.generate()
         app.processEvents()
@@ -89,4 +91,4 @@ with tempfile.TemporaryDirectory() as temp:
 
 window.close()
 app.processEvents()
-print('Responsive GUI stress test passed: 6 image modes, 60 resizes, 25 UI changes.')
+print('Responsive GUI stress test passed: no opacity slider, 6 image modes, 60 resizes, 25 UI changes.')

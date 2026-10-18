@@ -12,7 +12,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSizePolicy, QSlider, QSpinBox, QVBoxLayout, QWidget,
+    QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout, QWidget,
 )
 
 from diagnostics import CrashReporter, default_state_directory
@@ -174,17 +174,6 @@ class PasswordWindow(QMainWindow):
         fg_custom.clicked.connect(lambda: self.pick_color(self.fg_combo))
         colors_layout.addLayout(fg_row)
         colors_layout.addWidget(fg_custom, 0, Qt.AlignmentFlag.AlignRight)
-        opacity_row = QHBoxLayout()
-        opacity_row.addWidget(QLabel('Glas-Deckkraft:'))
-        self.glass_slider = QSlider(Qt.Orientation.Horizontal)
-        self.glass_slider.setRange(30, 85)
-        self.glass_slider.setValue(54)
-        self.glass_slider.setToolTip('Niedriger = durchscheinendere Glasflächen, höher = milchiger.')
-        opacity_row.addWidget(self.glass_slider, 1)
-        self.glass_value = QLabel('54 %')
-        self.glass_value.setMinimumWidth(40)
-        opacity_row.addWidget(self.glass_value)
-        colors_layout.addLayout(opacity_row)
         # The chosen image stays on disk; only its path and display mode are stored.
         picture_title = QLabel('Eigenes Hintergrundbild')
         picture_title.setObjectName('supportText')
@@ -209,7 +198,7 @@ class PasswordWindow(QMainWindow):
         mode_row.addWidget(self.image_mode_combo, 1)
         colors_layout.addLayout(mode_row)
 
-        colors_note = QLabel('Glas-Effekt und Bilddarstellung werden automatisch gespeichert.')
+        colors_note = QLabel('Farben und Bilddarstellung werden automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         layout.addWidget(colors, 3)
@@ -255,8 +244,6 @@ class PasswordWindow(QMainWindow):
 
         self.bg_combo.currentIndexChanged.connect(self.apply_colors)
         self.fg_combo.currentIndexChanged.connect(self.apply_colors)
-        # Slider movement redraws only the glass cards, not the whole QSS tree.
-        self.glass_slider.valueChanged.connect(self.update_glass_opacity)
         self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.restore_colors()
         self.restore_background_image()
@@ -283,13 +270,10 @@ class PasswordWindow(QMainWindow):
         try:
             self.select_color(self.bg_combo, self.settings.value('background_color', '#101827'), '#101827')
             self.select_color(self.fg_combo, self.settings.value('text_color', '#FFFFFF'), '#FFFFFF')
-            try:
-                saved = int(self.settings.value('glass_opacity', 54))
-            except (TypeError, ValueError):
-                saved = 54
-            self.glass_slider.setValue(max(30, min(85, saved)))
         finally:
             self._restoring = False
+        # Remove the legacy preference: glass now has one fixed finish.
+        self.settings.remove('glass_opacity')
         self.apply_colors()
 
     def pick_color(self, combo):
@@ -315,29 +299,17 @@ class PasswordWindow(QMainWindow):
         bg = self.bg_combo.currentData() or '#101827'
         fg = self.fg_combo.currentData() or '#FFFFFF'
         self.background_surface.set_base_color(bg)
-        self.update_glass_opacity()
+        for card in self.glass_cards:
+            card.set_glass_color(bg)
         palette_key = (bg, fg)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
-            # Replacing the complete stylesheet while a slider repaints dozens
-            # of frames is expensive and has caused native Qt instability.
-            self.setStyleSheet(build_glass_stylesheet(bg, fg, 54))
+            # Reapply widget styles only when the color palette changes.
+            self.setStyleSheet(build_glass_stylesheet(bg, fg))
             self.settings.setValue('background_color', bg)
             self.settings.setValue('text_color', fg)
             if self.reporter is not None:
                 self.reporter.note('PALETTE_CHANGED', f'background={bg}, text={fg}', force=True)
-
-    def update_glass_opacity(self, *_):
-        if self._restoring:
-            return
-        value = self.glass_slider.value()
-        background = self.bg_combo.currentData() or '#101827'
-        for card in self.glass_cards:
-            card.set_glass_color(background, value)
-        self.glass_value.setText(f'{value} %')
-        self.settings.setValue('glass_opacity', value)
-        if self.reporter is not None:
-            self.reporter.note('GLASS_OPACITY', f'value={value}')
 
     def restore_background_image(self):
         mode = self.settings.value('background_image_mode', 'cover', type=str)

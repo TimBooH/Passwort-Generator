@@ -1,26 +1,18 @@
-# PasswortGenerator v0.01.0 – Start der 100-Schritte-Entwicklung
+# PasswortGenerator v0.02.0 – Aufgeräumte Design-Einstellungen
 
-Mit diesem Release beginnt ein neues, bewusst kleinschrittiges Versionsschema. **Version 1.0.0 ist künftig die erste Vollversion.**
+**Entwicklungsschritt 2 von 100** auf dem Weg zur Vollversion `1.0.0`.
 
-## Neues Versionsschema
+## Änderungen
 
-- `0.01.0` – Entwicklungsschritt **1 von 100** (diese Version)
-- `0.02.0` bis `0.99.0` – Entwicklungsschritte 2–99
-- `1.0.0` – Schritt 100, **erste Vollversion**
-- Korrektur-Releases erhöhen nur die letzte Stelle, etwa `0.01.1`
-- Entwicklungsfortschritt wird in der App neben der Versionsnummer angezeigt
+- Den Regler **„Glas-Deckkraft“** und die zugehörige Prozentanzeige vollständig aus der Oberfläche entfernt.
+- Die Glas-Kacheln behalten eine feste, einheitliche Transparenz mit glänzenden Lichtkanten.
+- Die nicht mehr benötigte Einstellung `glass_opacity` wird aus den lokal gespeicherten App-Einstellungen entfernt.
+- Nicht mehr benötigte Slider-Ereignisse, Codepfade und Qt-Stylesheet-Regeln entfernt.
+- GUI-Belastungstest und Design-Tests an die vereinfachte Oberfläche angepasst.
 
-## Übergang von den bisherigen Releases
+## Weiterhin verfügbar
 
-Die bereits veröffentlichten Versionen `v1.2.0` bis `v1.5.1` gehören zum **alten** Nummerierungssystem und bleiben als Historie erhalten. Bei einem Wechsel auf die neue Reihe kann die automatische Updateprüfung einer alten App `0.01.0` als niedrigere Version behandeln. Deshalb muss **dieser eine Umstieg** über den [aktuellen Installer](https://github.com/TimBooH/Passwort-Generator/releases/latest) erfolgen. Die Installation sichert wie bisher die unmittelbar vorherige AppImage-Version als `previous`.
-
-Innerhalb der neuen `0.xx`-Reihe ist der automatische Updatevergleich angepasst; ältere historische `1.x`-Releases werden nicht als neuer angezeigt.
-
-## Unverändert
-
-- Sichere lokale Passwortgenerierung
-- Skalierbare Glossy-Glas-Kacheln und frei auswählbare Hintergrundbilder
-- SHA-256-Prüfung der AppImage-Updates mit automatischem Neustart
-- Zwei installierte AppImage-Stände: aktuell und `previous`
-- Lokale Crash-Logs mit Version und Zeitstempel
-- Beschleunigter GitHub-Actions-Workflow für Releases
+- Eigene Hintergrund- und Textfarben sowie Hintergrundbilder mit sechs Darstellungsmodi
+- Responsive Glossy-Kacheln beim Ändern der Fenstergröße
+- Automatische GitHub-Updateprüfung mit Neustart
+- Sicherung der vorherigen AppImage-Version und Crash-Logs mit Zeitstempel

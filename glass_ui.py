@@ -116,7 +116,7 @@ def read_background_image(path):
     return pixmap
 
 
-def build_glass_stylesheet(background, foreground, opacity=54):
+def build_glass_stylesheet(background, foreground):
     """Style fields and buttons once per palette change, never on resize."""
     dark = is_dark_background(background)
     field = rgba('#0C1B2B' if dark else '#F2F8FF', 174 if dark else 215)
@@ -188,15 +188,6 @@ QPushButton#primaryButton {{
 }}
 QPushButton#primaryButton:hover {{ background: {primary_start}; }}
 QPushButton:disabled {{ color: {muted}; background: {button}; }}
-QSlider::groove:horizontal {{ height: 5px; border-radius: 2px; background: {line}; }}
-QSlider::sub-page:horizontal {{ background: {progress}; border-radius: 2px; }}
-QSlider::handle:horizontal {{
-    width: 15px;
-    background: {primary_start};
-    border: 2px solid {rgba('#FFFFFF', 130)};
-    border-radius: 9px;
-    margin: -7px 0;
-}}
 QProgressBar {{
     color: {foreground};
     border: 1px solid {border};
@@ -354,7 +345,6 @@ class GlossyGlassCard(QWidget):
         self.setObjectName('glossyCard')
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = QColor('#101827')
-        self._opacity = 54
         self._last_style = None
 
         column = QVBoxLayout(self)
@@ -373,34 +363,27 @@ class GlossyGlassCard(QWidget):
         self.body.setSpacing(8)
         column.addLayout(self.body)
 
-        # Coalesce many slider changes into one native style refresh.
+        # Coalesce rapid background color changes into a single Qt style update.
         self._refresh_timer = QTimer(self)
         self._refresh_timer.setSingleShot(True)
         self._refresh_timer.setInterval(75)
         self._refresh_timer.timeout.connect(self._refresh_style)
         self._refresh_style()
 
-    def set_glass_color(self, background, opacity):
+    def set_glass_color(self, background):
         candidate = QColor(background)
-        opacity = max(30, min(85, int(opacity)))
-        if not candidate.isValid():
-            return
-        if candidate.name() == self._base_color.name() and opacity == self._opacity:
+        if not candidate.isValid() or candidate.name() == self._base_color.name():
             return
         self._base_color = candidate
-        self._opacity = opacity
-        # The slider text changes immediately, while the expensive style change
-        # occurs at most once after the user stops dragging for 75 ms.
         self._refresh_timer.start()
 
     def _refresh_style(self):
         dark = is_dark_background(self._base_color)
         base = self._base_color
-        strength = self._opacity
         top = blend(base, '#4B6988' if dark else '#FFFFFF', .43 if dark else .65)
         mid = blend(base, '#223851' if dark else '#E8F2FA', .42 if dark else .58)
         end = blend(base, '#080F20' if dark else '#C4D3DF', .6 if dark else .31)
-        alpha = min(233, max(135, 120 + strength))
+        alpha = 174  # Consistent glossy finish; no adjustable opacity.
         top_rgba = rgba(top, alpha - 20)
         mid_rgba = rgba(mid, alpha)
         end_rgba = rgba(end, min(248, alpha + 12))

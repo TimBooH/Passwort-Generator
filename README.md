@@ -19,7 +19,7 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
 | **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
 | **Bedienung** | Passwort mit einem Klick erstellen und in die Zwischenablage kopieren |
-| **Design** | Skalierbare Glossy-Glas-Kacheln, eigene Hintergrund- und Textfarben, einstellbare Glas-Deckkraft |
+| **Design** | Skalierbare Glossy-Glas-Kacheln mit fester Glastransparenz, eigene Hintergrund- und Textfarben |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
 | **Updates** | GitHub-Releaseprüfung, SHA-256-Verifizierung, Installation und automatischer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
@@ -33,7 +33,7 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | Meilenstein | Version | Status |
 | --- | --- | --- |
 | **1 von 100** | `0.01.0` | Beginn der neuen Entwicklungsreihe |
-| **2 von 100** | `0.02.0` | Nächster Entwicklungsschritt |
+| **2 von 100** | **`0.02.0`** | Aktueller Stand: Glas-Deckkraft-Regler entfernt |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -116,7 +116,7 @@ Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klic
 
 ## Oberfläche und Hintergrundbilder
 
-Unter **„Design & Farben“** kannst du Hintergrundfarbe, Textfarbe und Glas-Deckkraft einstellen. Die Einstellungen werden lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
+Unter **„Design & Farben“** kannst du Hintergrund- und Textfarbe auswählen. Die Glas-Kacheln verwenden eine feste, abgestimmte Transparenz ohne Deckkraft-Regler. Die Farbauswahl wird lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 
 Mit **„Bild auswählen …“** kannst du ein eigenes Hintergrundbild laden und dessen Darstellung festlegen:
 

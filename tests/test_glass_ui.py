@@ -26,18 +26,11 @@ class GlassStyleTests(unittest.TestCase):
 
     def test_stylesheet_dark_and_light(self):
         for bg, fg in (('#101827', '#FFFFFF'), ('#F1F4F8', '#121820')):
-            style = build_glass_stylesheet(bg, fg, 54)
+            style = build_glass_stylesheet(bg, fg)
             self.assertIn('QPushButton#primaryButton', style)
-            self.assertIn('QSlider::handle:horizontal', style)
+            self.assertNotIn('QSlider::', style)
             self.assertIn('rgba(', style)
             self.assertIn(fg, style)
-
-    def test_opacity_changes_only_card_paint_not_stylesheet(self):
-        # Slider movement must NOT repolish/rebuild every QWidget (crash fix).
-        self.assertEqual(
-            build_glass_stylesheet('#101827', '#FFFFFF', 30),
-            build_glass_stylesheet('#101827', '#FFFFFF', 85),
-        )
 
     def test_known_accent(self):
         self.assertTrue(QColor('#75DDF9').isValid())
