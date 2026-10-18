@@ -1,17 +1,24 @@
-# PasswortGenerator v1.2.0
+# PasswortGenerator v1.3.0 – Glass Edition
 
-Die Linux-Version zieht in das neue Repository **TimBooH/Passwort-Generator** um.
+Diese Version bringt eine vollständig überarbeitete Benutzeroberfläche im Glassmorphism-Stil.
 
 ## Neu
-- **Benutzerinstallation** mit `install.sh`: KDE-/CachyOS-Menüeintrag mit Icon, ohne Root-Rechte.
-- **Update herunterladen** lädt neue AppImages direkt aus den GitHub Releases dieses Repositorys.
-- Bei Installation über `install.sh` wird die installierte Datei nach Download und SHA-256-Prüfung atomar ersetzt (neuer Start notwendig).
-- Ohne Benutzerinstallation landet das neue AppImage im Downloadordner.
-- Automatische und manuelle Updateprüfung, Fortschrittsanzeige und Fehlermeldungen.
-- Farbauswahl für Hintergrund und Text, auf Wunsch eigene Farben, Speicherung durch Qt.
-- Überarbeitetes README und Tests, automatisierte Builds und Release-Veröffentlichung.
+- Milchig-transparente, abgerundete Glas-Karten für Passwort, Farben und Updates
+- Weiche Schatten, farbige Lichtreflexe und ein dynamischer Aurora-Hintergrund
+- Glas-Deckkraft über einen Schieberegler von 30 bis 85 % einstellbar
+- Hintergrund- und Textfarben bleiben unabhängig wählbar
+- Die gewählte Glas-Deckkraft und alle Farben werden dauerhaft lokal gespeichert
+- Modernisierte Buttons, Eingabefelder, Statusanzeige und Update-Fortschrittsbalken
 
-## Installieren
-Lade `install.sh` herunter und starte `bash install.sh`. Der Installer lädt die neueste AppImage-Version und erstellt einen Eintrag im Anwendungsmenü.
+## Weiterhin enthalten
+- Sichere lokale Passwortgenerierung mit Python secrets
+- Direkte Update-Downloads aus TimBooH/Passwort-Generator mit SHA-256-Prüfung
+- Installation mit KDE-/Linux-Anwendungsmenü über install.sh
+- Automatischer Build und Release als Linux-AppImage
 
-Alternativ das AppImage direkt starten: `chmod +x PasswortGenerator-x86_64.AppImage && ./PasswortGenerator-x86_64.AppImage`.
+**Technischer Hinweis:** Der Glas-Look entsteht in der Anwendung selbst. Ein Blur des echten Desktops hinter dem Fenster wird nicht erzwungen.
+
+## Installation und Aktualisierung
+Neue Installation: `install.sh` aus den Assets herunterladen und `bash install.sh` ausführen.
+
+Bestehende v1.2.0-Installation: in der App **Auf Updates prüfen** und **Update herunterladen** anklicken, danach die App schließen und über das Anwendungsmenü neu öffnen.

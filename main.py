@@ -12,9 +12,10 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QGroupBox, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSpinBox, QVBoxLayout, QWidget,
+    QScrollArea, QSlider, QSpinBox, QVBoxLayout, QWidget,
 )
 
+from glass_ui import GlassBackground, apply_glass_shadow, build_glass_stylesheet
 from password_core import make_password, parse_version
 from version import APP_VERSION
 
@@ -67,29 +68,38 @@ class PasswordWindow(QMainWindow):
         self.latest_asset = None
 
         self.setWindowTitle(f'PasswortGenerator v{APP_VERSION}')
-        self.resize(675, 760)
-        self.setMinimumSize(490, 580)
+        self.resize(720, 820)
+        self.setMinimumSize(540, 610)
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.NoFrame)
         self.setCentralWidget(scroll)
-        root = QWidget()
+        root = GlassBackground()
         root.setObjectName('appRoot')
+        self.background_surface = root
         scroll.setWidget(root)
         layout = QVBoxLayout(root)
-        layout.setSpacing(14)
-        layout.setContentsMargins(22, 18, 22, 18)
+        layout.setSpacing(18)
+        layout.setContentsMargins(34, 24, 34, 28)
 
         title = QLabel('PASSWORT GENERATOR')
-        title.setFont(QFont('Sans Serif', 20, QFont.Weight.Bold))
+        title.setObjectName('heroTitle')
+        title.setFont(QFont('Sans Serif', 22, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
         subtitle = QLabel(f'Sichere Passwörter lokal erstellen  ·  v{APP_VERSION}')
+        subtitle.setObjectName('heroSubtitle')
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
+        glass_badge = QLabel('✦  GLASS EDITION  ✦')
+        glass_badge.setObjectName('glassTag')
+        glass_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(glass_badge, 0, Qt.AlignmentFlag.AlignHCenter)
 
         group = QGroupBox('Passwort erstellen')
+        group.setObjectName('passwordPanel')
+        apply_glass_shadow(group)
         group_layout = QVBoxLayout(group)
         self.output = QLineEdit()
         self.output.setReadOnly(True)
@@ -115,6 +125,7 @@ class PasswordWindow(QMainWindow):
             group_layout.addWidget(control)
         actions = QHBoxLayout()
         generate_button = QPushButton('Neues Passwort')
+        generate_button.setObjectName('primaryButton')
         generate_button.clicked.connect(self.generate)
         actions.addWidget(generate_button)
         copy_button = QPushButton('Kopieren')
@@ -124,6 +135,8 @@ class PasswordWindow(QMainWindow):
         layout.addWidget(group)
 
         colors = QGroupBox('Design & Farben')
+        colors.setObjectName('appearancePanel')
+        apply_glass_shadow(colors)
         colors_layout = QVBoxLayout(colors)
         bg_row = QHBoxLayout()
         bg_row.addWidget(QLabel('Hintergrund:'))
@@ -145,12 +158,25 @@ class PasswordWindow(QMainWindow):
         fg_custom.clicked.connect(lambda: self.pick_color(self.fg_combo))
         fg_row.addWidget(fg_custom)
         colors_layout.addLayout(fg_row)
-        colors_note = QLabel('Die Farben bleiben nach dem Neustart erhalten.')
+        opacity_row = QHBoxLayout()
+        opacity_row.addWidget(QLabel('Glas-Deckkraft:'))
+        self.glass_slider = QSlider(Qt.Orientation.Horizontal)
+        self.glass_slider.setRange(30, 85)
+        self.glass_slider.setValue(54)
+        self.glass_slider.setToolTip('Niedriger = durchscheinendere Glasflächen, höher = milchiger.')
+        opacity_row.addWidget(self.glass_slider, 1)
+        self.glass_value = QLabel('54 %')
+        self.glass_value.setMinimumWidth(40)
+        opacity_row.addWidget(self.glass_value)
+        colors_layout.addLayout(opacity_row)
+        colors_note = QLabel('Milchglas-Panels, sanfte Lichtreflexe und deine eigenen Farben – automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         layout.addWidget(colors)
 
         updates = QGroupBox('Updates · GitHub: TimBooH/Passwort-Generator')
+        updates.setObjectName('updatePanel')
+        apply_glass_shadow(updates)
         updates_layout = QVBoxLayout(updates)
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
@@ -160,6 +186,7 @@ class PasswordWindow(QMainWindow):
         self.check_button.clicked.connect(self.check_for_updates)
         update_actions.addWidget(self.check_button)
         self.download_button = QPushButton('Update herunterladen')
+        self.download_button.setObjectName('primaryButton')
         self.download_button.clicked.connect(self.download_update)
         self.download_button.hide()
         update_actions.addWidget(self.download_button)
@@ -182,6 +209,7 @@ class PasswordWindow(QMainWindow):
 
         self.bg_combo.currentIndexChanged.connect(self.apply_colors)
         self.fg_combo.currentIndexChanged.connect(self.apply_colors)
+        self.glass_slider.valueChanged.connect(self.apply_colors)
         self.restore_colors()
         self.generate()
         QTimer.singleShot(800, self.check_for_updates)
@@ -201,6 +229,8 @@ class PasswordWindow(QMainWindow):
     def restore_colors(self):
         self.select_color(self.bg_combo, self.settings.value('background_color', '#101827'), '#101827')
         self.select_color(self.fg_combo, self.settings.value('text_color', '#FFFFFF'), '#FFFFFF')
+        saved_glass = self.settings.value('glass_opacity', 54, type=int)
+        self.glass_slider.setValue(max(30, min(85, saved_glass)))
         self.apply_colors()
 
     def pick_color(self, combo):
@@ -211,25 +241,13 @@ class PasswordWindow(QMainWindow):
     def apply_colors(self, *_):
         bg = self.bg_combo.currentData() or '#101827'
         fg = self.fg_combo.currentData() or '#FFFFFF'
-        field = field_color(bg)
-        border = QColor(bg).lighter(175).name() if contrast_color(bg) == '#FFFFFF' else '#ABB8C8'
-        accent = '#287FAB' if contrast_color(bg) == '#FFFFFF' else '#19658B'
-        accent_fg = contrast_color(accent)
-        self.setStyleSheet(
-            'QMainWindow, QScrollArea, QWidget#appRoot {'
-            f'background: {bg}; color: {fg}; }}'
-            f'QLabel, QCheckBox, QGroupBox {{ color: {fg}; }}'
-            f'QGroupBox {{ border: 1px solid {border}; border-radius: 11px;'
-            'margin-top: 10px; padding: 12px 9px 9px 9px; font-weight: bold; }'
-            'QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 5px; }'
-            f'QLineEdit, QSpinBox, QComboBox {{ background: {field}; color: {fg};'
-            f'border: 1px solid {border}; border-radius: 7px; padding: 7px; }}'
-            f'QPushButton {{ background: {accent}; color: {accent_fg}; border: none;'
-            'border-radius: 8px; padding: 9px 12px; font-weight: bold; }'
-            f'QPushButton:hover {{ background: {QColor(accent).lighter(120).name()}; }}'
-        )
+        opacity = self.glass_slider.value()
+        self.background_surface.set_base_color(bg)
+        self.setStyleSheet(build_glass_stylesheet(bg, fg, opacity))
+        self.glass_value.setText(f'{opacity} %')
         self.settings.setValue('background_color', bg)
         self.settings.setValue('text_color', fg)
+        self.settings.setValue('glass_opacity', opacity)
 
     def generate(self):
         try:
