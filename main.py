@@ -106,6 +106,7 @@ class PasswordWindow(QMainWindow):
         self._release_history_loaded = False
         self._history_releases = {}
         self._latest_release_note = None  # (tag, raw GitHub Markdown)
+        self._new_update_note = ''
         self._auto_check = auto_check
         self._startup_update_check_pending = bool(auto_check)
         self._pending_update_popup = None
@@ -553,6 +554,17 @@ class PasswordWindow(QMainWindow):
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
         updates_layout.addWidget(self.update_status)
+        self.update_compare = QLabel('')
+        self.update_compare.setObjectName('updateVersionCompare')
+        self.update_compare.setWordWrap(True)
+        self.update_compare.hide()
+        updates_layout.addWidget(self.update_compare)
+        self.update_preview = QLabel('')
+        self.update_preview.setObjectName('updatePreview')
+        self.update_preview.setProperty('_i18n_de_text', '')
+        self.update_preview.setWordWrap(True)
+        self.update_preview.hide()
+        updates_layout.addWidget(self.update_preview)
         update_actions = QHBoxLayout()
         update_actions.setSpacing(6)
         self.check_button = QPushButton('↻ Auf Update prüfen')
@@ -826,6 +838,7 @@ class PasswordWindow(QMainWindow):
         self._translate_interface()
         self.apply_colors()
         self.set_update_indicator(self._available_update)
+        self.refresh_update_preview()
         # Changelog is a remote QTextBrowser, not a QLabel. Re-render it
         # immediately in the global UI language, even when already loaded.
         tag = self.release_combo.currentData()
@@ -1387,6 +1400,24 @@ class PasswordWindow(QMainWindow):
         request.setTransferTimeout(30000)
         return request
 
+    def refresh_update_preview(self):
+        """Refresh the bilingual version comparison and two-point summary."""
+        if not self.latest_version:
+            self.update_compare.hide()
+            self.update_preview.hide()
+            return
+        self._set_ui(self.update_compare,
+                     f'Installiert: v{APP_VERSION}  →  Neu: {self.latest_version}')
+        self.update_compare.show()
+        summary = release_changelog(
+            self._new_update_note, self.latest_version, self.language, max_items=2
+        )
+        if self._new_update_note and summary:
+            self.update_preview.setText(summary)
+            self.update_preview.show()
+        else:
+            self.update_preview.hide()
+
     def check_for_updates(self):
         if self.check_reply is not None or self.download_reply is not None:
             return
@@ -1396,6 +1427,8 @@ class PasswordWindow(QMainWindow):
             self.load_release_history()
         self.check_button.setEnabled(False)
         self.download_button.hide()
+        self.update_compare.hide()
+        self.update_preview.hide()
         self._set_ui(self.update_status, f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
         self.check_reply = self.network.get(self.make_request(LATEST_RELEASE_API))
         self.check_reply.finished.connect(self.check_finished)
@@ -1426,7 +1459,9 @@ class PasswordWindow(QMainWindow):
             if not is_newer_release(latest_version, APP_VERSION):
                 self.latest_asset = None
                 self.latest_version = None
+                self._new_update_note = ''
                 self.set_update_indicator()
+                self.refresh_update_preview()
                 self._set_ui(self.update_status, f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
                 return
             assets = response.get('assets', [])
@@ -1442,13 +1477,19 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Der GitHub-Downloadlink ist ungültig.')
             self.latest_asset = asset
             self.latest_version = latest_version
+            note = response.get('body', '')
+            self._new_update_note = note if isinstance(note, str) else ''
             self.set_update_indicator(latest_version)
+            self.refresh_update_preview()
             self._set_ui(self.update_status, f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
             self.download_button.show()
             if startup_check:
                 self.queue_update_popup(latest_version)
         except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
             self.latest_asset = None
+            self.latest_version = None
+            self._new_update_note = ''
+            self.refresh_update_preview()
             self._set_ui(self.update_status, f'Updateprüfung fehlgeschlagen: {error}')
         finally:
             reply.deleteLater()
