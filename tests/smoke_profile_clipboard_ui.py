@@ -79,6 +79,7 @@ window.clear_copied_password()
 assert clipboard.text() == ''
 assert window._clipboard_secret is None
 window.tabs.setCurrentIndex(1)
+assert window.language_card.isAncestorOf(window.language_combo)
 assert window.clipboard_timeout_combo.currentData() == 60
 window.clipboard_timeout_combo.setCurrentIndex(window.clipboard_timeout_combo.findData(30))
 assert settings.value('security/clipboard_seconds', type=int) == 30
@@ -98,6 +99,7 @@ window.clear_clipboard_checkbox.setChecked(True)
 window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
 app.processEvents()
 assert window.security_card.header.text() == 'SECURITY'
+assert window.language_card.header.text() == 'LANGUAGE'
 assert window.clear_clipboard_checkbox.text() == 'Clear clipboard automatically'
 assert window.preset_combo.itemText(window.preset_combo.findData('strong')) == 'Very secure'
 assert window.nav_buttons[1].text().endswith('Settings')
