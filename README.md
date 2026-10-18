@@ -15,15 +15,15 @@ Der PasswortGenerator ist eine grafische Desktop-Anwendung auf Basis von **Pytho
 - Ähnliche Zeichen wie `I`, `l`, `1`, `O` und `0` ausschließen
 - Jede aktivierte Zeichengruppe ist im Passwort mindestens einmal enthalten
 - Passwort auf Knopfdruck in die Zwischenablage kopieren
-- **Neu gestaltete Glossy-Glas-Panels:** individuell mit Qt gezeichnete Glasflächen mit echten Glanzreflexen, feinen Lichtkanten, tiefem Farbverlauf und weichen Schatten
+- **Responsive Glossy-Glas-Panels:** mitwachsende, abgerundete Kacheln mit Qt-eigenen Farbverläufen, feinen Lichtkanten und Glanzeffekten
 - **Glas-Deckkraft** mit einem Schieberegler anpassen (30–85 %)
 - **Eigene Hintergrundbilder** auswählen und zwischen Ausfüllen, Einpassen, Strecken, Zentriert, Originalgröße und Kacheln wechseln
-- **Bessere Fenster-Skalierung:** zentrierter Inhaltsbereich, weniger horizontales Überlaufen bei schmalen Fenstern
-- **Stabilitätsoptimierungen:** direkter Schattenauftrag ohne teure Widget-Grafikeffekte; Slider-Änderungen lösen keine komplette Stylesheet-Neuberechnung aus
+- **Responsive Fenster-Skalierung:** alle drei Kacheln wachsen und schrumpfen mit der Fenstergröße – ohne feste maximale Breite
+- **Stabilität:** keine Python-Zeichenschleife beim Fensterziehen; Hintergrundbilder werden verzögert neu skaliert
 - Unterschiedliche **Hintergrund- und Textfarben** wählen oder eine eigene Farbe einstellen
 - Farben werden gespeichert und beim nächsten Start wiederhergestellt
 - **Automatische und manuelle Updateprüfung** über GitHub Releases
-- **Update herunterladen:** die neue Version wird direkt von GitHub geladen und per SHA-256 geprüft
+- **Update installieren & neu starten:** SHA-256-geprüfter Download, Sicherung der Vorgängerversion und automatischer Neustart
 - **Linux-Installation mit Menüeintrag** (z. B. CachyOS/KDE Plasma), ohne `sudo`
 
 ## 📥 Download
@@ -57,7 +57,8 @@ Die Installation verwendet **kein `sudo`** und legt die Dateien hier ab:
 
 | Datei | Speicherort |
 | --- | --- |
-| AppImage | `~/.local/opt/passwort-generator/PasswortGenerator.AppImage` |
+| Aktuelle AppImage-Version | `~/.local/opt/passwort-generator/PasswortGenerator.AppImage` |
+| Vorherige AppImage-Version | `~/.local/opt/passwort-generator/PasswortGenerator-previous.AppImage` |
 | Menüeintrag | `~/.local/share/applications/de.timbooh.passwortgenerator.desktop` |
 | Symbol | `~/.local/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg` |
 
@@ -76,23 +77,25 @@ chmod +x PasswortGenerator-x86_64.AppImage
 
 Voraussetzung: **64-Bit-Linux (x86_64)**. Unter manchen Distributionen wird eine kompatible **FUSE-2-Laufzeit** benötigt.
 
-## 🔄 Wie funktioniert „Update herunterladen“?
+## 🔄 Wie funktionieren Updates und der automatische Neustart?
 
-Der PasswortGenerator prüft beim Start die neueste veröffentlichte Version unter **`TimBooH/Passwort-Generator`**. Die Prüfung ist auch manuell über **„Auf Updates prüfen“** möglich.
+Der PasswortGenerator prüft die neueste Version über die Releases von **TimBooH/Passwort-Generator**. Die Prüfung findet beim Start oder manuell über **„Auf Updates prüfen“** statt.
 
-Wenn eine neue Version verfügbar ist:
+Wenn eine neuere Version verfügbar ist:
 
-1. Die App zeigt die neue Versionsnummer an.
-2. Ein Klick auf **„Update herunterladen“** startet den Download direkt vom aktuellen GitHub-Release. Der Fortschritt wird angezeigt.
-3. Die heruntergeladene Datei wird anhand der von GitHub gelieferten **SHA-256-Prüfsumme** und Dateigröße geprüft.
-4. **Bei einer Installation mit `install.sh`:** Die installierte AppImage-Datei wird sicher ersetzt. **App schließen und neu über das Menü starten**, um die neue Version zu verwenden.
-5. **Bei einem allein gestarteten AppImage:** Die neue Version wird in deinen Downloadordner gespeichert. Du kannst sie direkt starten oder über `install.sh --file` installieren.
+1. Auf **„Update installieren & neu starten“** klicken. Die App lädt das neue Linux-AppImage herunter und zeigt den Fortschritt an.
+2. Die Datei wird anhand der von GitHub bereitgestellten **SHA-256-Prüfsumme** und Dateigröße überprüft. Fehlerhafte Downloads werden nicht installiert.
+3. **Bei einer Installation mit dem Installer:** Die bisherige Version wird als `PasswortGenerator-previous.AppImage` gesichert. Die neue wird atomar als `PasswortGenerator.AppImage` eingesetzt.
+4. Ein neuer Prozess startet die aktualisierte App nach einer kurzen Verzögerung. Die bisherige App schließt sich automatisch.
+5. **Bei einem einzeln gestarteten AppImage:** Die neue Version wird in den Downloadordner gespeichert und ebenfalls automatisch gestartet. Eine Sicherung unter `previous` wird nur für die Menü-Installation gepflegt.
 
-Es werden **keine Updates ungefragt installiert**. Nur die Versionsprüfung erfolgt automatisch; den eigentlichen Download startest du selbst.
+**Es bleiben im Installationsordner nur die aktuelle und die unmittelbar vorherige AppImage-Version.** Ältere, vom PasswortGenerator verwaltete AppImage-Dateien in diesem Ordner werden entfernt. Andere Programme oder Dateien im Downloadordner werden nicht gelöscht.
+
+Der Download startet ausschließlich nach deinem Klick. **Es gibt keine unbeaufsichtigten automatischen Installationen.**
 
 ## 🎨 Design ändern
 
-Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Mit **„Glas-Deckkraft“** bestimmst du die Stärke der transparenten Glasflächen. Die Kacheln werden direkt mit Qt gezeichnet und besitzen feine, realistische Spiegelreflexe, beleuchtete Kanten und abgestufte Glastiefe statt greller, weißer Rechtecke. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
+Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Mit **„Glas-Deckkraft“** bestimmst du die Stärke der transparenten Glasflächen. Die Kacheln verwenden Qt-eigene Stylesheets mit glänzenden Farbverläufen, Lichtkanten und abgerundeten Ecken. Beim Verändern der Fenstergröße passt sich jede Kachel an die verfügbare Breite und Höhe an. Der Hintergrund wird ohne eigene Python-PaintEvent-Schleife dargestellt. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
 
 **Hinweis:** Das Design erzeugt den Glas-Look innerhalb des App-Fensters. Eine echte Unschärfe des *Desktops hinter dem Fenster* hängt vom KDE/KWin-Compositor ab und wird nicht vorausgesetzt.
 
@@ -115,10 +118,23 @@ Mit **Bild entfernen** kehrst du zum animierungsfreien Farbverlauf zurück. Der 
 
 ## 🛠️ Abstürze diagnostizieren
 
-Ab Version **1.4.0** versucht die App, Python-Ausnahmen und native Fehlersignale lokal in
-`~/.local/state/passwort-generator/crash.log` zu protokollieren (bzw. unter `$XDG_STATE_HOME/passwort-generator/crash.log`).
+Ab **v1.5.0** findest du im Bereich **Updates & Versionen** den Button **„Crash-Log öffnen“**. Das lokale Protokoll liegt unter:
 
-Das Protokoll wird **nicht hochgeladen**. Falls die App unter CachyOS erneut abstürzt, starte sie zusätzlich über ein Terminal und notiere die Meldungen. Native Grafiktreiber-/Qt-Fehler lassen sich nicht immer aus dem Python-Log rekonstruieren.
+`~/.local/state/passwort-generator/crash.log`
+
+Wenn `$XDG_STATE_HOME` gesetzt ist, verwendet die App dieses Verzeichnis. Das Protokoll enthält:
+
+- **Zeitstempel**, Version, Prozess-ID und Start-/Ende-Ereignisse
+- Zuletzt ausgeführte Bedienaktionen, etwa Fenstergröße, Farbänderung und Updatevorgang
+- **Python-Fehler mit Exception-Typ, Fehlermeldung und vollständigem Stacktrace**
+- Wenn verfügbar, **native Absturzsignale** und Qt/C++-Meldungen aus `stderr`
+- Beim nächsten Start einen Hinweis, wenn der vorherige Prozess nicht normal beendet wurde
+
+Die letzte protokollierte Aktion ist ein Anhaltspunkt, aber **nicht zwangsläufig die Absturzursache**. Bei Treiber-, Speicher- und Qt-C++-Fehlern ist die genaue Ursache unter Umständen nicht rekonstruierbar. Auch ein harter Abbruch (z. B. `SIGKILL` oder Stromausfall) kann nur als unerwartetes Ende erkannt werden.
+
+Die Logs werden **nur lokal gespeichert** und enthalten keine generierten Passwörter. Kontrolliere dennoch Dateipfade oder andere technische Daten im Log, bevor du es weitergibst.
+
+Zum Testen einer stabileren Qt-Darstellung unter CachyOS/KDE kannst du die App auch einmal mit `QT_QPA_PLATFORM=xcb` über ein Terminal starten. Dafür muss XWayland verfügbar sein.
 
 ## 🧑‍💻 Aus dem Quellcode starten
 
@@ -156,9 +172,10 @@ Die App und ihr Menüeintrag werden entfernt. Die gespeicherten Farbeingaben ble
 | Benutzeroberfläche | PySide6 / Qt 6 |
 | Passworterzeugung | Python `secrets` / `SystemRandom` |
 | Farbauswahl | Qt `QColorDialog` & `QSettings` |
-| Glasdesign | Qt `QPainter`, halbtransparente Qt-Stylesheets und Schatten |
+| Glasdesign | Native Qt-Stylesheets (QSS), ohne Python-`paintEvent` beim Resize |
 | Updates | GitHub Releases API via Qt `QNetworkAccessManager` |
-| Verifizierung | SHA-256 + erwartete Dateigröße |
+| Verifizierung | SHA-256 + erwartete Dateigröße; sicherer Austausch mit previous-Backup |
+| Absturzdiagnostik | Python `faulthandler`, versionierte Fehlerlogs und Sitzungsmarker |
 | Build | PyInstaller und AppImageKit |
 | Release | GitHub Actions |
 
