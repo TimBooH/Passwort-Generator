@@ -69,6 +69,17 @@ with tempfile.TemporaryDirectory() as temp:
     except ValueError:
         assert window.background_surface.has_background_image()
 
+    # The glass tiles really resize with the window in both directions.
+    window.resize(1680, 900)
+    app.processEvents()
+    assert window.glass_cards[0].width() >= 1500, (
+        'Glass tiles must expand instead of being capped at 940 pixels'
+    )
+    assert window.glass_cards[1].width() == window.glass_cards[0].width()
+    assert window.grab().save('glossy-wide-preview.png')
+    window.resize(520, 770)
+    app.processEvents()
+    assert window.glass_cards[0].width() < 520
     window.resize(740, 810)
     app.processEvents()
     assert window.grab().save('glossy-wallpaper-preview.png')
