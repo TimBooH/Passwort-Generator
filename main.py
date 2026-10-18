@@ -417,10 +417,17 @@ class PasswordWindow(QMainWindow):
         group_layout.addStretch(0)
 
         self.generate_button = QPushButton('🔑  Passwort generieren')
-        self.generate_button.setObjectName('primaryButton')
-        self.generate_button.setMinimumHeight(45)
+        # Compact, glossy call-to-action; do not stretch to the card width.
+        # The update installer keeps the existing #primaryButton design.
+        self.generate_button.setObjectName('generatePasswordButton')
+        self.generate_button.setFixedHeight(40)
+        self.generate_button.setMaximumWidth(360)
+        self.generate_button.setMinimumWidth(235)
+        self.generate_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.generate_button.clicked.connect(self.generate)
-        group_layout.addWidget(self.generate_button)
+        group_layout.addWidget(
+            self.generate_button, 0, Qt.AlignmentFlag.AlignHCenter
+        )
 
         footer = QHBoxLayout()
         footer.setSpacing(5)
