@@ -95,6 +95,7 @@ jobs:
             throw "Bundled Windows application failed startup test: exit $($smoke.ExitCode)"
           }
 
+      # Per-machine setup uses Inno's default, non-overridable UAC elevation.
       - name: Create installer using Inno Setup
         if: steps.version.outputs.build == 'true'
         shell: pwsh

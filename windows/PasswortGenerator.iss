@@ -18,7 +18,6 @@ AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/releases/latest
 DefaultDirName={autopf}\PasswortGenerator
 DefaultGroupName=PasswortGenerator
 PrivilegesRequired=admin
-PrivilegesRequiredOverridesAllowed=none
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
