@@ -85,7 +85,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows no-scroll smoke failed' }
           python tests/smoke_language_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows bilingual language smoke failed' }
-          if ($LASTEXITCODE -ne 0) { throw 'Windows four-page scroll-free UI smoke failed' }
           python tests/smoke_window_geometry_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows window-position and size persistence smoke failed' }
 
