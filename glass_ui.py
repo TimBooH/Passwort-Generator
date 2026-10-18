@@ -7,12 +7,12 @@ bounded resolution; resize uses only source/destination geometry.
 
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt
+from PySide6.QtCore import QPointF, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import (
     QColor, QBrush, QImageReader, QLinearGradient, QPainter,
     QPainterPath, QPen, QPixmap, QRadialGradient,
 )
-from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
 
 IMAGE_MODES = (
@@ -294,89 +294,87 @@ class GlassBackground(QWidget):
 
 
 class GlossyGlassCard(QWidget):
-    """A light custom paint with no QGraphicsEffect or GPU shadow layer."""
+    """Glossy tile drawn by Qt's native style engine, not Python paintEvent.
+
+    A QSS gradient and narrow highlight rim mimic polished glass. In particular
+    no custom Python painter and no QGraphicsEffect are involved in resizing.
+    """
 
     def __init__(self, title, parent=None):
         super().__init__(parent)
+        self.setObjectName('glossyCard')
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = QColor('#101827')
         self._opacity = 54
-        self.setAutoFillBackground(False)
+        self._last_style = None
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(22, 21, 22, 23)
-        layout.setSpacing(6)
+        column = QVBoxLayout(self)
+        column.setContentsMargins(22, 19, 22, 22)
+        column.setSpacing(7)
+        self.highlight = QFrame(self)
+        self.highlight.setObjectName('glassRim')
+        self.highlight.setFixedHeight(2)
+        column.addWidget(self.highlight)
+        column.addSpacing(4)
         self.header = QLabel(title)
         self.header.setObjectName('glassCardTitle')
-        layout.addWidget(self.header)
-        layout.addSpacing(4)
+        column.addWidget(self.header)
+        column.addSpacing(4)
         self.body = QVBoxLayout()
         self.body.setSpacing(8)
-        layout.addLayout(self.body)
+        column.addLayout(self.body)
+
+        # Coalesce many slider changes into one native style refresh.
+        self._refresh_timer = QTimer(self)
+        self._refresh_timer.setSingleShot(True)
+        self._refresh_timer.setInterval(75)
+        self._refresh_timer.timeout.connect(self._refresh_style)
+        self._refresh_style()
 
     def set_glass_color(self, background, opacity):
-        color = QColor(background)
+        candidate = QColor(background)
         opacity = max(30, min(85, int(opacity)))
-        if color.isValid() and (
-            self._base_color.name() != color.name() or self._opacity != opacity
-        ):
-            self._base_color = color
-            self._opacity = opacity
-            self.update()
-
-    def paintEvent(self, event):
-        w = self.width()
-        h = self.height()
-        if w < 24 or h < 24:
+        if not candidate.isValid():
             return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = QRectF(4.5, 3.5, w - 9.0, h - 8.0)
-        outline = QPainterPath()
-        outline.addRoundedRect(rect, 16, 16)
+        if candidate.name() == self._base_color.name() and opacity == self._opacity:
+            return
+        self._base_color = candidate
+        self._opacity = opacity
+        # The slider text changes immediately, while the expensive style change
+        # occurs at most once after the user stops dragging for 75 ms.
+        self._refresh_timer.start()
+
+    def _refresh_style(self):
         dark = is_dark_background(self._base_color)
-
-        # No offscreen graphics effect: two lightweight, inset shadow passes.
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(0, 5, 18, 27 if dark else 16))
-        painter.drawRoundedRect(rect.adjusted(0, 3, 0, 3), 16, 16)
-        top = blend(self._base_color, '#43617E' if dark else '#FFFFFF', .41 if dark else .66)
-        bottom = blend(self._base_color, '#0A1020' if dark else '#BECEDA', .58 if dark else .3)
-        glass_alpha = max(105, min(235, round(104 + self._opacity * 1.4)))
-        fill = QLinearGradient(rect.topLeft(), rect.bottomRight())
-        fill.setColorAt(0.0, with_alpha(top, glass_alpha - 15))
-        fill.setColorAt(0.55, with_alpha(blend(top, bottom, 0.6), glass_alpha))
-        fill.setColorAt(1.0, with_alpha(bottom, min(248, glass_alpha + 9)))
-        painter.fillPath(outline, fill)
-
-        # Subtle specular sheen at the top edge.
-        painter.save()
-        painter.setClipPath(outline)
-        sheen = QLinearGradient(
-            rect.topLeft(), QPointF(rect.left() + rect.width() * .13, rect.top() + 110)
-        )
-        sheen.setColorAt(0, QColor(255, 255, 255, 58 if dark else 75))
-        sheen.setColorAt(1, QColor(255, 255, 255, 0))
-        painter.fillRect(rect, sheen)
-        painter.restore()
-
-        edge = QLinearGradient(rect.topLeft(), rect.bottomRight())
-        edge.setColorAt(0, QColor(240, 251, 255, 151 if dark else 180))
-        edge.setColorAt(.5, QColor(186, 219, 247, 52 if dark else 75))
-        edge.setColorAt(1, QColor(194, 226, 253, 75 if dark else 116))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.setPen(QPen(QBrush(edge), 1.1))
-        painter.drawPath(outline)
-        if rect.width() > 85:
-            rim = QLinearGradient(
-                QPointF(rect.left() + 18, rect.top()),
-                QPointF(rect.right() - 22, rect.top()),
-            )
-            rim.setColorAt(0, QColor(255, 255, 255, 0))
-            rim.setColorAt(.23, QColor(245, 254, 255, 158 if dark else 193))
-            rim.setColorAt(1, QColor(255, 255, 255, 0))
-            painter.setPen(QPen(QBrush(rim), 1.0))
-            painter.drawLine(
-                QPointF(rect.left() + 18, rect.top() + 1),
-                QPointF(rect.right() - 22, rect.top() + 1),
-            )
-        painter.end()
+        base = self._base_color
+        strength = self._opacity
+        top = blend(base, '#4B6988' if dark else '#FFFFFF', .43 if dark else .65)
+        mid = blend(base, '#223851' if dark else '#E8F2FA', .42 if dark else .58)
+        end = blend(base, '#080F20' if dark else '#C4D3DF', .6 if dark else .31)
+        alpha = min(233, max(135, 120 + strength))
+        top_rgba = rgba(top, alpha - 20)
+        mid_rgba = rgba(mid, alpha)
+        end_rgba = rgba(end, min(248, alpha + 12))
+        edge = rgba('#E3F5FF' if dark else '#7E9AB2', 92 if dark else 101)
+        light_edge = rgba('#F3FBFF', 157 if dark else 189)
+        white_spot = rgba('#FFFFFF', 168 if dark else 209)
+        css = f"""
+QWidget#glossyCard {{
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 {top_rgba}, stop:0.47 {mid_rgba}, stop:1 {end_rgba});
+    border: 1px solid {edge};
+    border-top: 1px solid {light_edge};
+    border-radius: 18px;
+}}
+QFrame#glassRim {{
+    border: none;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 rgba(255,255,255,0),
+        stop:0.24 {white_spot},
+        stop:0.70 rgba(220,245,255,75),
+        stop:1 rgba(255,255,255,0));
+}}
+"""
+        if css != self._last_style:
+            self._last_style = css
+            self.setStyleSheet(css)
