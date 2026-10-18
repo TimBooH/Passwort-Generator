@@ -4,7 +4,8 @@ import unittest
 from PySide6.QtGui import QColor, QImage, QPixmap
 from PySide6.QtWidgets import QApplication
 
-from glass_ui import blend, build_glass_stylesheet, is_dark_background, rgba, with_alpha
+from glass_ui import (GlossyGlassCard, GlassBackground, blend, build_glass_stylesheet,
+                      is_dark_background, rgba, with_alpha)
 from neon_style import circuit_texture, neon_stylesheet
 from theme_colors import (COLOR_SCHEMES, accent_for_background, accessible_text_color,
                           contrast_ratio, preset_colors, sample_wallpaper_color)
@@ -56,7 +57,8 @@ class GlassStyleTests(unittest.TestCase):
         self.assertEqual((pixmap.width(), pixmap.height()), (220, 300))
 
     def test_accent_follows_background(self):
-        self.assertEqual(len(COLOR_SCHEMES), 6)
+        self.assertEqual(len(COLOR_SCHEMES), 7)
+        self.assertEqual(preset_colors('glass'), ('#142638', '#F6FAFF'))
         self.assertEqual(preset_colors('glass_dark'), ('#171C26', '#F0F4FC'))
         self.assertEqual(preset_colors('glass_light'), ('#F0F4FA', '#142436'))
         self.assertIsNone(preset_colors('custom'))
@@ -104,6 +106,27 @@ class GlassStyleTests(unittest.TestCase):
         self.assertNotEqual(accent_for_background(sample),
                             accent_for_background('#351A23'))
         self.assertIsNone(sample_wallpaper_color(QPixmap()))
+
+    def test_pure_glass_reveals_wallpaper(self):
+        app = QApplication.instance() or QApplication([])
+        root = GlassBackground()
+        card = GlossyGlassCard('Vorschau')
+        card.set_glass_color('#142638')
+        card.set_glass_mode(True)
+        card._refresh_style()
+        self.assertTrue(card._clear_glass)
+        self.assertIn(', 48)', card.styleSheet())
+        root.set_transparent_glass(True)
+        self.assertTrue(root._clear_glass)
+        self.assertIn(', 8)', root._shade.styleSheet())
+        card.set_glass_mode(False)
+        card._refresh_style()
+        self.assertFalse(card._clear_glass)
+        self.assertNotIn(', 48)', card.styleSheet())
+        root.set_transparent_glass(False)
+        self.assertFalse(root._clear_glass)
+        card.close()
+        root.close()
 
     def test_known_accent(self):
         self.assertTrue(QColor('#75DDF9').isValid())

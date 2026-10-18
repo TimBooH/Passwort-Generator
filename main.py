@@ -100,6 +100,10 @@ class PasswordWindow(QMainWindow):
         self._release_history_loaded = False
         self._history_releases = {}
         self._auto_check = auto_check
+        self._startup_update_check_pending = bool(auto_check)
+        self._pending_update_popup = None
+        self._update_popup_dialog = None
+        self._first_run_tour = None
         self._phrase_mode = False
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
@@ -384,7 +388,7 @@ class PasswordWindow(QMainWindow):
             self.scheme_combo.addItem(scheme_name, scheme_id)
         scheme_row.addWidget(self.scheme_combo, 1)
         colors_layout.addLayout(scheme_row)
-        scheme_hint = QLabel('Glass Dark, Glass Light, Neon Blue und weitere Vorlagen.')
+        scheme_hint = QLabel('Glass (Hintergrund sichtbar), Glass Dark, Glass Light und weitere Vorlagen.')
         scheme_hint.setWordWrap(True)
         scheme_hint.setObjectName('supportText')
         colors_layout.addWidget(scheme_hint)
@@ -548,6 +552,8 @@ class PasswordWindow(QMainWindow):
         self.update_timer.timeout.connect(self.check_for_updates)
         if auto_check:
             self.update_timer.start()
+            # Show the first-run introduction before any possible update popup.
+            QTimer.singleShot(280, self.show_first_run_tour)
             QTimer.singleShot(800, self.check_for_updates)
         self.on_tab_changed(self.tabs.currentIndex())
         self.update_navigation_labels()
@@ -676,6 +682,14 @@ class PasswordWindow(QMainWindow):
             lambda: self.build_visual_guide_dialog(dialog).exec()
         )
         actions.addWidget(self.visual_guide_button, 1)
+        repeat_tour = QPushButton('Tour mit Pfeilen')
+        repeat_tour.setObjectName('repeatTourButton')
+        repeat_tour.setToolTip('Die Einführung direkt in der Oberfläche wiederholen')
+        def replay_tour():
+            dialog.accept()
+            QTimer.singleShot(120, lambda: self.show_first_run_tour(force=True))
+        repeat_tour.clicked.connect(replay_tour)
+        actions.addWidget(repeat_tour)
         close = QPushButton('Schließen')
         close.clicked.connect(dialog.accept)
         actions.addWidget(close)
@@ -689,6 +703,59 @@ class PasswordWindow(QMainWindow):
 
     def show_info(self):
         self.build_info_dialog().exec()
+
+    def show_first_run_tour(self, force=False):
+        """Start once per user, except when explicitly repeated via Info."""
+        if self._first_run_tour is not None or not self.isVisible():
+            return
+        if not force and self.settings.value(
+            'first_run_tour_completed', False, type=bool
+        ):
+            return
+        from first_run_tour import FirstRunTour
+        self._first_run_tour = FirstRunTour(self)
+
+    def flush_pending_update_popup(self):
+        version = self._pending_update_popup
+        self._pending_update_popup = None
+        if version:
+            QTimer.singleShot(150, lambda: self.show_update_popup(version))
+
+    def show_update_popup(self, version):
+        """Nonblocking popup for a new release found by the startup check."""
+        if self._first_run_tour is not None:
+            self._pending_update_popup = version
+            return
+        if self._update_popup_dialog is not None:
+            return
+        popup = QMessageBox(self)
+        popup.setObjectName('startupUpdatePopup')
+        popup.setIcon(QMessageBox.Icon.Information)
+        popup.setWindowTitle('PasswortGenerator · Update verfügbar')
+        popup.setText(f'Eine neue Version {version} ist verfügbar!')
+        popup.setInformativeText(
+            f'Du verwendest v{APP_VERSION}. Möchtest du die Aktualisierung '
+            'jetzt im Update-Bereich ansehen? Es wird nichts automatisch installiert.'
+        )
+        show_button = popup.addButton(
+            'Updates öffnen', QMessageBox.ButtonRole.AcceptRole
+        )
+        popup.addButton('Später', QMessageBox.ButtonRole.RejectRole)
+        popup.buttonClicked.connect(
+            lambda clicked: self.tabs.setCurrentIndex(2)
+            if clicked is show_button else None
+        )
+        popup.finished.connect(
+            lambda _result: setattr(self, '_update_popup_dialog', None)
+        )
+        self._update_popup_dialog = popup
+        popup.open()
+
+    def queue_update_popup(self, version):
+        if self._first_run_tour is not None:
+            self._pending_update_popup = version
+        else:
+            QTimer.singleShot(0, lambda: self.show_update_popup(version))
 
     def on_tab_changed(self, index):
         # The generator fits the supported minimum height without scrolling.
@@ -805,6 +872,9 @@ class PasswordWindow(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        if self._first_run_tour is not None:
+            self._first_run_tour.setGeometry(self.rect())
+            self._first_run_tour.update()
         if hasattr(self, 'nav_buttons'):
             self.update_navigation_labels()
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
@@ -830,15 +900,18 @@ class PasswordWindow(QMainWindow):
         actual_background = image_color or base_background
         fg = accessible_text_color(actual_background)
         accent = accent_for_background(actual_background)
+        glass_mode = self.scheme_combo.currentData() == 'glass'
         self.background_surface.set_base_color(base_background)
+        self.background_surface.set_transparent_glass(glass_mode)
         for card in self.glass_cards + self.secondary_cards:
             card.set_glass_color(actual_background, accent)
+            card.set_glass_mode(glass_mode)
         source = 'Bild' if image_color else 'Hintergrund'
         self.accent_preview.setText(f'●  Automatisch ({source}): {accent}')
         self.accent_preview.setToolTip(
             'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
         )
-        palette_key = (base_background, actual_background, fg, accent)
+        palette_key = (base_background, actual_background, fg, accent, glass_mode)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
             self.setStyleSheet(
@@ -979,6 +1052,8 @@ class PasswordWindow(QMainWindow):
         reply = self.check_reply
         self.check_reply = None
         self.check_button.setEnabled(True)
+        startup_check = self._startup_update_check_pending
+        self._startup_update_check_pending = False
         if reply is None:
             return
         try:
@@ -1017,6 +1092,8 @@ class PasswordWindow(QMainWindow):
             self.set_update_indicator(latest_version)
             self.update_status.setText(f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
             self.download_button.show()
+            if startup_check:
+                self.queue_update_popup(latest_version)
         except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
             self.latest_asset = None
             self.update_status.setText(f'Updateprüfung fehlgeschlagen: {error}')

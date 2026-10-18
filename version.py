@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.10.0 adds a once-per-startup update popup, pure see-through Glass
+cards, and a persisted first-run arrow-guided tour (replayable from Info).
 Version 0.09.0 uses milestone-independent mock releases for GUI regression tests.
 Version 0.09.0 adds test syntax prechecks and requires a one-time manual
 Windows installer run when migrating from per-user AppData to Program Files.
@@ -25,7 +27,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.09.0"
+APP_VERSION = "0.10.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

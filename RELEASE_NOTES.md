@@ -1,11 +1,12 @@
-# PasswortGenerator v0.09.0 – Passphrase & grafische Erklärung
+# PasswortGenerator v0.10.0 – Glass und erste Schritte
 
-**Entwicklungsschritt 9 von 100** auf dem Weg zu v1.0.0.
+**Entwicklungsschritt 10 von 100** auf dem Weg zur Vollversion 1.0.0.
 
-- **Info:** Der Button „Grafische Erklärung“ mit drei echten App-Ansichten ist zurück. Die lange Textanleitung bleibt entfernt.
-- **Passphrase:** Optionale kryptografisch zufällige **zweistellige Zahl (10–99)** zum Anhängen.
-- **Passphrase:** **Trennzeichen-Dropdown** mit Bindestrich, Leerzeichen, Unterstrich und Punkt.
-- **Windows:** 64-Bit-Installer verwendet ab sofort **`C:\Program Files\PasswortGenerator`** statt AppData.
-- **Windows:** Administratorbestätigung über UAC bei Installation und bestätigtem In-App-Update; die aktualisierte App startet ohne erhöhte Rechte.
+- Beim **Start** wird nach Updates gesucht. Bei einer neuen Version erscheint ein **Popup** mit „Updates öffnen“ und „Später“.
+- Neue Vorlage **„Glass (durchsichtig)“**: Glaskacheln lassen das **Hintergrundbild innerhalb der App** viel deutlicher erkennen.
+- Beim **ersten Start** zeigt eine interaktive Einführung mit **Pfeilen** auf die wichtigsten Bedienelemente.
+- Die Tour bietet „Zurück“, „Weiter“ und „Überspringen“, erscheint danach nicht erneut und ist unter **Info → Tour mit Pfeilen** wiederholbar.
+- Ein während der Tour gefundenes Update wird **erst danach** per Popup gemeldet.
+- **Windows und Linux** erhalten dieselben Neuerungen. Die automatische Updateprüfung alle 2 Stunden bleibt bestehen.
 
-**Umstieg:** Frühere Windows-Versionen aus AppData werden nicht automatisch deinstalliert. Die alte Installation kann anschließend manuell entfernt werden. Linux bleibt unverändert.
+Passworterzeugung, Farbschemas, Versionen und Updates bleiben lokal bzw. nur nach Bestätigung steuerbar.

@@ -43,7 +43,7 @@ window = PasswordWindow(auto_check=False)
 window.show()
 window.tabs.setCurrentIndex(1)
 app.processEvents()
-assert window.scheme_combo.count() == 6
+assert window.scheme_combo.count() == 7
 assert window.scheme_combo.findData('glass_dark') >= 0
 assert window.scheme_combo.findData('glass_light') >= 0
 assert window.scheme_combo.findData('custom') >= 0
@@ -67,7 +67,14 @@ def apply_scheme(scheme):
     return expected_accent
 
 
+glass_accent = apply_scheme('glass')
+assert window.background_surface._clear_glass
+assert all(card._clear_glass for card in window.glass_cards + window.secondary_cards)
+window.glass_cards[0]._refresh_style()
+assert ', 48)' in window.glass_cards[0].styleSheet()
 dark_accent = apply_scheme('glass_dark')
+assert not window.background_surface._clear_glass
+assert all(not card._clear_glass for card in window.glass_cards + window.secondary_cards)
 light_accent = apply_scheme('glass_light')
 assert dark_accent != light_accent
 violet_accent = apply_scheme('violet_glass')
