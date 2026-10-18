@@ -1,25 +1,31 @@
-# PasswortGenerator v0.04.0 – Dunkelblaues Neon-Design
+# PasswortGenerator v0.05.0 – Farbschemas, Changelog & Anleitung
 
-**Entwicklungsschritt 4 von 100** auf dem Weg zur Vollversion v1.0.0.
+**Entwicklungsschritt 5 von 100** auf dem Weg zur ersten Vollversion v1.0.0.
 
-## Neuer Look
+## Design und Farben
 
-- Futuristisches dunkelblaues Design mit einmal erzeugtem Schaltkreis-Hintergrund
-- Leuchtend blaue Rahmen, glänzende Glas-Kacheln, Schloss-Logo und Titel „Stark. Sicher. Einzigartig.“
-- Umschalter **Passwort / Passphrase**, großer Generieren-Button sowie Kopieren und Erneuern direkt am Ergebnis
-- Synchronisierter Längenregler und Zahlenfeld, Stärkeanzeige, Checkboxen in zwei Spalten
-- **Anzeigen/Verbergen**, **Verlauf** und **Info** am unteren Rand
-- Passwort-, Einstellungen- und Updates-Reiter bleiben oben links erreichbar
+- Neue gespeicherte Farbschemas: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass**, **Forest Glass** und **Eigene Farben**
+- Die Akzentfarbe wird automatisch aus der Hintergrundfarbe berechnet.
+- Schaltflächen, Checkboxen, Regler, Rahmen, Glas-Kacheln und Schaltkreis-Hintergrund erhalten passende Akzentfarben.
+- Beim manuellen Anpassen einer Farbe wird automatisch auf „Eigene Farben“ umgestellt.
+- Die Glas-Deckkraft bleibt fest eingestellt; kein zusätzlicher Deckkraft-Regler.
 
-## Neue Funktionen
+## Updates und Versionshistorie
 
-- Kryptografisch zufällige Passphrasen mit 4–10 Wörtern aus jeweils 1.024 zusammengesetzten Möglichkeiten
-- Entropiebasierte Stärkeanzeige (grobe Schätzung, keine Sicherheitsgarantie)
-- Sitzungsspeicher für maximal 20 Einträge; kopieren oder löschen, beim Schließen verworfen
-- Zusätzliche Tests für Bedienung, Passphrase, Grafiken und Fenster-Skalierung
+- Im Update-Reiter wird der **Changelog** des ausgewählten GitHub-Releases angezeigt.
+- Eine Versionsliste zeigt bis zu **100 frühere und aktuelle Veröffentlichungen** mit Datum.
+- Einträge lassen sich zum Lesen der Änderungen auswählen oder direkt auf GitHub öffnen.
+- Die Liste ist informativ: Es wird **kein Downgrade automatisch installiert**.
+- Die bisherigen SHA-256-geprüften Updates und der automatische Neustart bleiben unverändert.
 
-## Weiterhin verfügbar
+## Info und Anleitung
 
-- Eigene Hintergrund- und Textfarben, Hintergrundbilder und responsive Kacheln
-- SHA-256-geprüfte Updates mit automatischem Neustart und previous-Backup
-- Lokale Crash-Logs mit Zeitstempeln
+- Ganz oben im Info-Fenster steht **Made by Jon Bovi**.
+- Neue integrierte Anleitung zu Passwort, Passphrase, Stärke, Kopieren, Anzeigen, Verlauf, Farbschemas, Updates und Datenschutz.
+
+## Tests
+
+- Farbberechnung und Schemapresets, Darstellung und Speicherung
+- Versions-API-Antworten einschließlich ungültiger Daten
+- Navigation, Changelog, alte Releases und Info-Anleitung
+- Bisherige Passwort-, Update- und GUI-Stabilitätstests

@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QColor, QBrush, QImageReader, QPalette, QPixmap,
 )
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from theme_colors import accent_for_background
 
 
 IMAGE_MODES = (
@@ -268,7 +269,7 @@ class GlassBackground(QWidget):
         self._circuit.setObjectName('circuitWallpaper')
         self._circuit.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
         self._circuit.setScaledContents(True)
-        self._circuit.setPixmap(circuit_texture())
+        self._circuit.setPixmap(circuit_texture(accent=accent_for_background(self._base_color)))
         self._circuit.lower()
         self._apply_color_style()
 
@@ -299,6 +300,11 @@ class GlassBackground(QWidget):
         if color.isValid() and color.name() != self._base_color:
             self._base_color = color.name()
             self._apply_color_style()
+            # Recreate decoration on palette changes, never on resize.
+            from neon_style import circuit_texture
+            self._circuit.setPixmap(
+                circuit_texture(accent=accent_for_background(self._base_color))
+            )
 
     def set_background_image(self, path):
         loaded = read_background_image(path)
@@ -393,6 +399,7 @@ class GlossyGlassCard(QWidget):
         self.setObjectName('glossyCard')
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = QColor('#071322')
+        self._accent = QColor(accent_for_background('#071322'))
         self._last_style = None
 
         column = QVBoxLayout(self)
@@ -418,11 +425,15 @@ class GlossyGlassCard(QWidget):
         self._refresh_timer.timeout.connect(self._refresh_style)
         self._refresh_style()
 
-    def set_glass_color(self, background):
+    def set_glass_color(self, background, accent=None):
         candidate = QColor(background)
-        if not candidate.isValid() or candidate.name() == self._base_color.name():
+        color = QColor(accent if accent is not None else accent_for_background(background))
+        if not candidate.isValid() or not color.isValid():
+            return
+        if candidate.name() == self._base_color.name() and color.name() == self._accent.name():
             return
         self._base_color = candidate
+        self._accent = color
         self._refresh_timer.start()
 
     def _refresh_style(self):
@@ -435,9 +446,9 @@ class GlossyGlassCard(QWidget):
         top_rgba = rgba(top, alpha - 17)
         mid_rgba = rgba(mid, alpha)
         end_rgba = rgba(end, min(250, alpha + 8))
-        edge = rgba('#008DFF' if dark else '#7E9AB2', 190 if dark else 101)
-        light_edge = rgba('#1AC5FF' if dark else '#F3FBFF', 192 if dark else 189)
-        white_spot = rgba('#5CD6FF', 145 if dark else 209)
+        edge = rgba(self._accent, 190 if dark else 145)
+        light_edge = rgba(self._accent.lighter(135), 192 if dark else 169)
+        white_spot = rgba(self._accent.lighter(153), 145 if dark else 115)
         css = f"""
 QWidget#glossyCard {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,

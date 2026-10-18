@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication
 
 from glass_ui import blend, build_glass_stylesheet, is_dark_background, rgba, with_alpha
 from neon_style import circuit_texture, neon_stylesheet
+from theme_colors import COLOR_SCHEMES, accent_for_background, preset_colors
 
 
 class GlassStyleTests(unittest.TestCase):
@@ -47,6 +48,25 @@ class GlassStyleTests(unittest.TestCase):
         pixmap = circuit_texture(220, 300)
         self.assertFalse(pixmap.isNull())
         self.assertEqual((pixmap.width(), pixmap.height()), (220, 300))
+
+    def test_accent_follows_background(self):
+        self.assertEqual(len(COLOR_SCHEMES), 6)
+        self.assertEqual(preset_colors('glass_dark'), ('#171C26', '#F0F4FC'))
+        self.assertEqual(preset_colors('glass_light'), ('#F0F4FA', '#142436'))
+        self.assertIsNone(preset_colors('custom'))
+        dark = accent_for_background('#171C26')
+        light = accent_for_background('#F0F4FA')
+        red = accent_for_background('#351A23')
+        green = accent_for_background('#15362E')
+        self.assertTrue(QColor(dark).isValid())
+        self.assertTrue(QColor(light).isValid())
+        self.assertEqual(dark, accent_for_background('#20242C'))
+        self.assertNotEqual(dark, light)
+        self.assertNotEqual(red, green)
+        self.assertNotEqual(red, dark)
+        self.assertIn(dark.lower(), neon_stylesheet('#171C26', '#F0F4FC').lower())
+        with self.assertRaises(ValueError):
+            accent_for_background('not-a-color')
 
     def test_known_accent(self):
         self.assertTrue(QColor('#75DDF9').isValid())

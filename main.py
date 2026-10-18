@@ -12,13 +12,16 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
     QFileDialog, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-    QMainWindow, QMessageBox, QProgressBar, QPushButton, QScrollArea, QSizePolicy,
-    QSlider, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
+    QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
+    QScrollArea, QSizePolicy, QSlider, QSpinBox, QTabWidget, QTextBrowser,
+    QVBoxLayout, QWidget,
 )
 
 from diagnostics import CrashReporter, default_state_directory
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from neon_style import neon_stylesheet
+from theme_colors import COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background, preset_colors
+from release_history import normalized_releases
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from password_core import make_password, make_passphrase, estimate_strength, parse_version
 from version import APP_VERSION, is_newer_release, version_status
@@ -26,6 +29,7 @@ from version import APP_VERSION, is_newer_release, version_status
 REPO = 'TimBooH/Passwort-Generator'
 REPO_URL = f'https://github.com/{REPO}'
 LATEST_RELEASE_API = f'https://api.github.com/repos/{REPO}/releases/latest'
+RELEASE_HISTORY_API = f'https://api.github.com/repos/{REPO}/releases?per_page=100'
 RELEASE_DOWNLOAD_PREFIX = f'https://github.com/{REPO}/releases/download/'
 RELEASES_URL = f'{REPO_URL}/releases'
 APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
@@ -72,6 +76,11 @@ class PasswordWindow(QMainWindow):
         self.download_installed = False
         self.latest_version = None
         self.latest_asset = None
+        self.history_reply = None
+        self._release_history_loaded = False
+        self._history_releases = {}
+        self._selected_release_url = ''
+        self._auto_check = auto_check
         self._phrase_mode = False
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
@@ -289,6 +298,18 @@ class PasswordWindow(QMainWindow):
         self.glass_cards.append(colors)
         colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         colors_layout = colors.body
+        scheme_row = QHBoxLayout()
+        scheme_row.addWidget(QLabel('Farbschema:'))
+        self.scheme_combo = QComboBox()
+        self.scheme_combo.setObjectName('colorSchemeCombo')
+        for scheme_id, scheme_name, _background, _foreground in COLOR_SCHEMES:
+            self.scheme_combo.addItem(scheme_name, scheme_id)
+        scheme_row.addWidget(self.scheme_combo, 1)
+        colors_layout.addLayout(scheme_row)
+        scheme_hint = QLabel('Glass Dark, Glass Light, Neon Blue und weitere Vorlagen.')
+        scheme_hint.setWordWrap(True)
+        scheme_hint.setObjectName('supportText')
+        colors_layout.addWidget(scheme_hint)
         bg_row = QHBoxLayout()
         bg_row.addWidget(QLabel('Hintergrund:'))
         self.bg_combo = QComboBox()
@@ -309,6 +330,13 @@ class PasswordWindow(QMainWindow):
         fg_custom.clicked.connect(lambda: self.pick_color(self.fg_combo))
         colors_layout.addLayout(fg_row)
         colors_layout.addWidget(fg_custom, 0, Qt.AlignmentFlag.AlignRight)
+        accent_label = QLabel('Akzentfarbe – passt sich automatisch dem Hintergrund an:')
+        accent_label.setWordWrap(True)
+        colors_layout.addWidget(accent_label)
+        self.accent_preview = QLabel('Automatisch')
+        self.accent_preview.setObjectName('accentPreview')
+        self.accent_preview.setMinimumHeight(25)
+        colors_layout.addWidget(self.accent_preview)
         # The chosen image stays on disk; only its path and display mode are stored.
         picture_title = QLabel('Eigenes Hintergrundbild')
         picture_title.setObjectName('supportText')
@@ -333,7 +361,7 @@ class PasswordWindow(QMainWindow):
         mode_row.addWidget(self.image_mode_combo, 1)
         colors_layout.addLayout(mode_row)
 
-        colors_note = QLabel('Farben und Bilddarstellung werden automatisch gespeichert.')
+        colors_note = QLabel('Farbschema, Akzentfarbe und Bilddarstellung passen sich an und werden automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         settings_page_layout.addWidget(colors, 1)
@@ -374,6 +402,48 @@ class PasswordWindow(QMainWindow):
                              'Die bisherige Version bleibt als previous AppImage erhalten.')
         update_note.setWordWrap(True)
         updates_layout.addWidget(update_note)
+
+        changelog_header = QLabel('CHANGELOG – WAS IST NEU?')
+        changelog_header.setObjectName('glassCardTitle')
+        updates_layout.addWidget(changelog_header)
+        self.changelog_title = QLabel('Änderungen der veröffentlichten Version')
+        self.changelog_title.setObjectName('supportText')
+        self.changelog_title.setWordWrap(True)
+        updates_layout.addWidget(self.changelog_title)
+        self.changelog_view = QTextBrowser()
+        self.changelog_view.setObjectName('changelogView')
+        self.changelog_view.setOpenExternalLinks(False)
+        self.changelog_view.setOpenLinks(False)
+        self.changelog_view.setMinimumHeight(135)
+        self.changelog_view.setMaximumHeight(220)
+        self.changelog_view.setMarkdown(
+            '### Changelog\n\nÖffne den Reiter **Updates**, um die Änderungen von GitHub zu laden.'
+        )
+        updates_layout.addWidget(self.changelog_view)
+
+        history_header = QLabel('BISHERIGE VERSIONEN')
+        history_header.setObjectName('glassCardTitle')
+        updates_layout.addWidget(history_header)
+        self.release_list = QListWidget()
+        self.release_list.setObjectName('releaseList')
+        self.release_list.setMinimumHeight(125)
+        self.release_list.setMaximumHeight(190)
+        self.release_list.currentItemChanged.connect(self.select_release_history)
+        updates_layout.addWidget(self.release_list)
+        self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
+        self.release_history_status.setObjectName('supportText')
+        self.release_history_status.setWordWrap(True)
+        updates_layout.addWidget(self.release_history_status)
+        history_actions = QHBoxLayout()
+        self.reload_history_button = QPushButton('Versionshistorie laden')
+        self.reload_history_button.clicked.connect(self.load_release_history)
+        history_actions.addWidget(self.reload_history_button, 1)
+        self.open_release_button = QPushButton('Release auf GitHub öffnen')
+        self.open_release_button.setEnabled(False)
+        self.open_release_button.clicked.connect(self.open_selected_release)
+        history_actions.addWidget(self.open_release_button, 1)
+        updates_layout.addLayout(history_actions)
+
         diagnostic_button = QPushButton('Crash-Log öffnen')
         diagnostic_button.clicked.connect(self.open_crash_log)
         updates_layout.addWidget(diagnostic_button)
@@ -391,8 +461,9 @@ class PasswordWindow(QMainWindow):
         self.status.setWordWrap(True)
         content_layout.addWidget(self.status)
 
-        self.bg_combo.currentIndexChanged.connect(self.apply_colors)
-        self.fg_combo.currentIndexChanged.connect(self.apply_colors)
+        self.scheme_combo.currentIndexChanged.connect(self.apply_color_scheme)
+        self.bg_combo.currentIndexChanged.connect(self.on_manual_color_change)
+        self.fg_combo.currentIndexChanged.connect(self.on_manual_color_change)
         self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.restore_colors()
         self.restore_background_image()
@@ -481,17 +552,74 @@ class PasswordWindow(QMainWindow):
         layout.addLayout(actions)
         dialog.exec()
 
-    def show_info(self):
-        QMessageBox.information(
-            self, 'Über Passwort-Generator',
-            f'Passwort-Generator v{APP_VERSION}\n{version_status()}\n\n'
-            'Lokal und kryptografisch zufällig generierte Passwörter und Passphrasen.\n'
-            'Der Verlauf bleibt nur während dieser Sitzung im Arbeitsspeicher.\n'
-            'Generierte Passwörter werden nicht an einen Server übertragen.\n\n'
-            'Updates und Crash-Log befinden sich im Reiter „Updates“.',
+    def build_info_dialog(self):
+        """Build a readable manual, with visible author credit at the very top."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle('Info & Anleitung')
+        dialog.resize(610, 630)
+        layout = QVBoxLayout(dialog)
+        credit = QLabel('Made by Jon Bovi')
+        credit.setObjectName('infoCredit')
+        credit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        credit.setStyleSheet(
+            f'color: {accent_for_background(self.bg_combo.currentData() or "#071322")}; '
+            'font-size: 22px; font-weight: 850; padding: 10px;'
         )
+        layout.addWidget(credit)
+        subheading = QLabel(f'Passwort-Generator v{APP_VERSION}  ·  {version_status()}')
+        subheading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        subheading.setObjectName('supportText')
+        layout.addWidget(subheading)
+
+        guide = QTextBrowser(dialog)
+        guide.setObjectName('changelogView')
+        guide.setReadOnly(True)
+        guide.setOpenExternalLinks(False)
+        guide.setMarkdown(
+            '# Anleitung\n\n'
+            '### 1. Sicheres Passwort erstellen\n'
+            'Öffne **Passwort**, wähle die gewünschte Länge mit dem Regler oder dem '
+            'Zahlenfeld (8–128 Zeichen) und aktiviere die gewünschten Zeichengruppen. '
+            'Klicke auf **Passwort generieren**.\n\n'
+            '### 2. Passphrase erstellen\n'
+            'Wechsle oben auf **Passphrase**. Wähle 4–10 Wörter und klicke auf '
+            '**Passphrase generieren**. Die Wörter werden lokal zufällig gewählt '
+            'und mit Bindestrichen verbunden.\n\n'
+            '### 3. Passwort verwenden\n'
+            '**Kopieren** übernimmt das Ergebnis in die Zwischenablage. '
+            '**Anzeigen / Verbergen** steuert, ob es im Eingabefeld lesbar ist. '
+            'Das Symbol **↻** erstellt ein neues Ergebnis.\n\n'
+            '### 4. Stärke und Verlauf\n'
+            'Die Stärkeanzeige ist eine grobe mathematische Schätzung, keine '
+            'Sicherheitsgarantie. Unter **Verlauf** findest du maximal 20 Ergebnisse '
+            'dieser Sitzung. Beim Beenden wird dieser Verlauf verworfen.\n\n'
+            '### 5. Farben und Hintergrund\n'
+            'Öffne **Einstellungen**. Wähle ein Farbschema wie **Glass Dark**, '
+            '**Glass Light** oder **Neon Blue**. Die Akzentfarbe passt sich '
+            'automatisch an die Hintergrundfarbe an. Du kannst auch eigene Farben '
+            'und Hintergrundbilder verwenden.\n\n'
+            '### 6. Updates und ältere Versionen\n'
+            'Unter **Updates** siehst du den Changelog und frühere Releases. '
+            'Über **Auf Updates prüfen** und anschließend '
+            '**Update installieren & neu starten** installierst du eine neue '
+            'Version. Dort kannst du auch das lokale Crash-Log öffnen.\n\n'
+            '### Datenschutz\n'
+            'Passwörter werden auf deinem Gerät erzeugt und nicht hochgeladen. '
+            'Beachte, dass andere Anwendungen gegebenenfalls auf den Inhalt '
+            'der Systemzwischenablage zugreifen können.'
+        )
+        layout.addWidget(guide, 1)
+        close = QPushButton('Schließen')
+        close.clicked.connect(dialog.accept)
+        layout.addWidget(close)
+        return dialog
+
+    def show_info(self):
+        self.build_info_dialog().exec()
 
     def on_tab_changed(self, index):
+        if index == 2 and self._auto_check and not self._release_history_loaded:
+            self.load_release_history()
         if self.reporter is not None:
             self.reporter.note('NAVIGATE', f'tab={self.tabs.tabText(index)}', force=True)
 
@@ -510,12 +638,53 @@ class PasswordWindow(QMainWindow):
     def restore_colors(self):
         self._restoring = True
         try:
-            self.select_color(self.bg_combo, self.settings.value('background_color', '#101827'), '#101827')
-            self.select_color(self.fg_combo, self.settings.value('text_color', '#FFFFFF'), '#FFFFFF')
+            stored_background = self.settings.value('background_color', '#071322', type=str)
+            stored_text = self.settings.value('text_color', '#FFFFFF', type=str)
+            saved_scheme = self.settings.value('color_scheme', '', type=str)
+            if saved_scheme not in SCHEME_MAP:
+                default_pair = preset_colors(DEFAULT_SCHEME)
+                saved_scheme = (DEFAULT_SCHEME if
+                                (stored_background.upper(), stored_text.upper()) ==
+                                (default_pair[0].upper(), default_pair[1].upper())
+                                else 'custom')
+            scheme_index = self.scheme_combo.findData(saved_scheme)
+            self.scheme_combo.setCurrentIndex(max(0, scheme_index))
+            preset = preset_colors(saved_scheme)
+            background, foreground = preset or (stored_background, stored_text)
+            self.select_color(self.bg_combo, background, '#071322')
+            self.select_color(self.fg_combo, foreground, '#FFFFFF')
         finally:
             self._restoring = False
-        # Remove the legacy preference: glass now has one fixed finish.
         self.settings.remove('glass_opacity')
+        self.settings.setValue('color_scheme', self.scheme_combo.currentData())
+        self.apply_colors()
+
+    def apply_color_scheme(self, *_):
+        if self._restoring:
+            return
+        scheme = self.scheme_combo.currentData() or DEFAULT_SCHEME
+        preset = preset_colors(scheme)
+        if preset:
+            self._restoring = True
+            try:
+                self.select_color(self.bg_combo, preset[0], '#071322')
+                self.select_color(self.fg_combo, preset[1], '#FFFFFF')
+            finally:
+                self._restoring = False
+        self.settings.setValue('color_scheme', scheme)
+        self.apply_colors()
+
+    def on_manual_color_change(self, *_):
+        if self._restoring:
+            return
+        custom_index = self.scheme_combo.findData('custom')
+        if custom_index >= 0 and self.scheme_combo.currentIndex() != custom_index:
+            self._restoring = True
+            try:
+                self.scheme_combo.setCurrentIndex(custom_index)
+            finally:
+                self._restoring = False
+        self.settings.setValue('color_scheme', 'custom')
         self.apply_colors()
 
     def pick_color(self, combo):
@@ -538,12 +707,15 @@ class PasswordWindow(QMainWindow):
     def apply_colors(self, *_):
         if self._restoring:
             return
-        bg = self.bg_combo.currentData() or '#101827'
+        bg = self.bg_combo.currentData() or '#071322'
         fg = self.fg_combo.currentData() or '#FFFFFF'
+        accent = accent_for_background(bg)
         self.background_surface.set_base_color(bg)
         for card in self.glass_cards:
-            card.set_glass_color(bg)
-        palette_key = (bg, fg)
+            card.set_glass_color(bg, accent)
+        self.accent_preview.setText(f'●  Automatisch: {accent}')
+        self.accent_preview.setToolTip('Wird aus der gewählten Hintergrundfarbe berechnet.')
+        palette_key = (bg, fg, accent)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
             # Reapply widget styles only when the color palette changes.
@@ -673,6 +845,11 @@ class PasswordWindow(QMainWindow):
                 raise ValueError(reply.errorString())
             response = json.loads(bytes(reply.readAll()).decode('utf-8'))
             latest_version = response.get('tag_name', '')
+            if not self._release_history_loaded and self.release_list.count() == 0:
+                note = response.get('body', '')
+                if isinstance(note, str) and note.strip():
+                    self.changelog_title.setText(f'Änderungen in {latest_version}')
+                    self.changelog_view.setMarkdown(note[:16_000])
             current_number = parse_version(APP_VERSION)
             newest_number = parse_version(latest_version)
             if newest_number is None or current_number is None:
@@ -697,6 +874,80 @@ class PasswordWindow(QMainWindow):
             self.update_status.setText(f'Updateprüfung fehlgeschlagen: {error}')
         finally:
             reply.deleteLater()
+
+    def load_release_history(self):
+        """Fetch at most 100 public releases asynchronously from GitHub."""
+        if self.history_reply is not None:
+            return
+        self.reload_history_button.setEnabled(False)
+        self.release_history_status.setText('Lade Versionshistorie von GitHub …')
+        self.history_reply = self.network.get(self.make_request(RELEASE_HISTORY_API))
+        self.history_reply.finished.connect(self.release_history_finished)
+
+    def release_history_finished(self):
+        reply = self.history_reply
+        self.history_reply = None
+        self.reload_history_button.setEnabled(True)
+        if reply is None:
+            return
+        try:
+            if reply.error() != QNetworkReply.NetworkError.NoError:
+                raise ValueError(reply.errorString())
+            raw = bytes(reply.readAll())
+            if len(raw) > 2_000_000:
+                raise ValueError('Die Antwort von GitHub ist zu groß.')
+            payload = json.loads(raw.decode('utf-8'))
+            releases = normalized_releases(payload, REPO_URL)
+            self._history_releases = {item['tag']: item for item in releases}
+            self.release_list.clear()
+            for item in releases:
+                date = item['date']
+                suffix = f' · {date}' if date else ''
+                label = QListWidgetItem(item['tag'] + suffix)
+                label.setData(Qt.ItemDataRole.UserRole, item['tag'])
+                self.release_list.addItem(label)
+            self._release_history_loaded = True
+            self.release_history_status.setText(
+                f'{len(releases)} veröffentlichte Version(en) geladen. '
+                'Für weitere ältere Releases: GitHub öffnen.'
+            )
+            if releases:
+                self.release_list.setCurrentRow(0)
+            else:
+                self.changelog_view.setPlainText('Keine veröffentlichten Versionen gefunden.')
+                self.open_release_button.setEnabled(False)
+        except (ValueError, TypeError, UnicodeDecodeError, KeyError) as error:
+            self.release_history_status.setText(
+                f'Versionshistorie nicht verfügbar: {error}'
+            )
+            if not self._release_history_loaded:
+                self.changelog_view.setPlainText(
+                    'Die Versionshistorie konnte nicht geladen werden. '
+                    'Bitte die Internetverbindung prüfen und erneut versuchen.'
+                )
+        finally:
+            reply.deleteLater()
+
+    def select_release_history(self, current, _previous=None):
+        if current is None:
+            self.open_release_button.setEnabled(False)
+            return
+        tag = current.data(Qt.ItemDataRole.UserRole)
+        entry = self._history_releases.get(tag)
+        if entry is None:
+            self.open_release_button.setEnabled(False)
+            return
+        self.changelog_title.setText(f'Änderungen in {entry["tag"]}')
+        self.changelog_view.setMarkdown(
+            entry['body'] or 'Für diese Version sind keine Release-Notizen vorhanden.'
+        )
+        self._selected_release_url = entry['url']
+        self.open_release_button.setEnabled(True)
+
+    def open_selected_release(self):
+        if (self._selected_release_url.startswith(REPO_URL + '/releases/tag/')
+                and len(self._selected_release_url) < 500):
+            QDesktopServices.openUrl(QUrl(self._selected_release_url))
 
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:

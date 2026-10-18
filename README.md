@@ -22,10 +22,11 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | **Bedienung** | Längenregler, Passwort anzeigen/verbergen, kopieren und erneut erzeugen |
 | **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
 | **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
-| **Design** | Dunkelblauer Neon-Look mit Schaltkreis-Hintergrund, glänzende Glas-Kacheln und eigene Farben |
+| **Design** | Farbschemas (Glass Dark, Glass Light, Neon Blue, Violet Glass, Forest Glass), automatische Akzentfarben und eigene Farben |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
-| **Updates** | GitHub-Releaseprüfung, SHA-256-Verifizierung, Installation und automatischer Neustart |
+| **Updates** | GitHub-Releaseprüfung mit Changelog und bis zu 100 früheren Releases, SHA-256-Verifizierung und Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
+| **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
 
 Der PasswortGenerator wurde nach dem futuristischen dunkelblauen Designentwurf umgestaltet: Schloss-Symbol, blaue Neon-Umrandungen, Passwort/Passphrase-Umschalter, Stärkeanzeige, Längenregler und eine große Generieren-Taste. Die Reiter **Passwort**, **Einstellungen** und **Updates** bleiben oben links erreichbar. Das Einstellungen-Symbol im Kopf führt ebenfalls zu Design & Farben.
 
@@ -38,7 +39,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **1 von 100** | `0.01.0` | Beginn der neuen Entwicklungsreihe |
 | **2 von 100** | `0.02.0` | Glas-Deckkraft-Regler entfernt |
 | **3 von 100** | `0.03.0` | Drei Reiter |
-| **4 von 100** | **`0.04.0`** | **Aktueller Stand: Neon-Design und Passwort/Passphrase** |
+| **4 von 100** | `0.04.0` | Neon-Design und Passwort/Passphrase |
+| **5 von 100** | **`0.05.0`** | **Aktueller Stand: Farbschemas, Changelog und Anleitung** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -108,6 +110,12 @@ Die Datei für die vorherige Version wird erst angelegt, wenn eine vorhandene In
 
 PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator). Im eigenen Reiter **„Updates“** kannst du die Prüfung über **„Auf Updates prüfen“** jederzeit wiederholen.
 
+### Changelog und frühere Versionen
+
+Der Update-Reiter enthält einen **Changelog** mit den Änderungen der ausgewählten Version und eine **Versionshistorie**. Beim ersten Öffnen des Reiters lädt die App über die GitHub-API bis zu **100 veröffentlichte Releases**. Klicke auf eine Version, um ihre offiziellen Release-Notizen anzuzeigen. Über **„Versionshistorie laden“** kannst du die Liste aktualisieren; **„Release auf GitHub öffnen“** führt zur jeweiligen Release-Seite. Auch ältere Versionen aus dem früheren 1.x-Nummerierungssystem sind in der Liste sichtbar, sofern sie in den letzten 100 Releases enthalten sind.
+
+**Wichtig:** Die Liste dient der Information; ein Anklicken installiert **keine** ältere Version. Ohne Internetverbindung bleibt die Passworterzeugung nutzbar, die Online-Versionshistorie ist dann nicht abrufbar.
+
 1. Wenn eine neue Version verfügbar ist, wähle **„Update installieren & neu starten“**.
 2. Das AppImage wird heruntergeladen und anhand der veröffentlichten **Dateigröße und SHA-256-Prüfsumme** überprüft.
 3. Bei einer Menü-Installation wird die bisherige Version als `PasswortGenerator-previous.AppImage` gesichert und das aktuelle AppImage ersetzt.
@@ -125,13 +133,13 @@ Die Navigation befindet sich **oben links** und bietet drei Bereiche:
 
 | Reiter | Inhalt |
 | --- | --- |
-| **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen, Verlauf und Info |
+| **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen, Verlauf und Info inklusive Anleitung |
 | **Einstellungen** | Design & Farben, eigene Hintergrundbilder und Bilddarstellung |
-| **Updates** | Versionsinformationen, Updateprüfung, Installation und Crash-Log |
+| **Updates** | Changelog, frühere Versionen, Updateprüfung, Installation und Crash-Log |
 
 Wechsle einfach zwischen den Reitern. Die eingestellten Farben und Hintergrundbilder gelten für alle drei Bereiche.
 
-Im Reiter **„Einstellungen“** unter **„Design & Farben“** kannst du Hintergrund- und Textfarbe auswählen. Die Glas-Kacheln verwenden eine feste, abgestimmte Transparenz ohne Deckkraft-Regler. Die Farbauswahl wird lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
+Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt passende Hintergrund- und Textfarben; die **Akzentfarbe wird automatisch aus dem Hintergrund abgeleitet** und färbt Buttons, Umrandungen, Regler und Schaltkreise passend ein. Bei manuell ausgewählten Hintergrund- oder Textfarben wechselt die Auswahl automatisch zu **„Eigene Farben“**. Das ausgewählte Schema wird lokal gespeichert. Die Glas-Kacheln verwenden eine feste Transparenz ohne Deckkraft-Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 
 Mit **„Bild auswählen …“** kannst du ein eigenes Hintergrundbild laden und dessen Darstellung festlegen:
 
