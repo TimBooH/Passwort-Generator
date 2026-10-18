@@ -435,9 +435,10 @@ class GlossyGlassCard(QWidget):
         base = self._base_color
         # Reduced opacity keeps neon circuits and custom wallpapers visible.
         # Glass adopts the actual accent instead of tinting every preset blue.
-        top = blend(base, self._accent, .26 if dark else .16)
-        mid = blend(base, self._accent, .14 if dark else .10)
-        end = blend(base, '#000000' if dark else '#FFFFFF', .25 if dark else .10)
+        # Soft glossy highlight without expensive blur or paint effects.
+        top = blend(base, self._accent, .29 if dark else .17)
+        mid = blend(base, self._accent, .16 if dark else .11)
+        end = blend(base, '#000000' if dark else '#FFFFFF', .24 if dark else .10)
         alpha = 158 if dark else 147
         if self._clear_glass:
             alpha = 48  # Clearly reveals the app wallpaper through the glass.
@@ -454,6 +455,9 @@ QWidget#glossyCard {{
     border: 1px solid {edge};
     border-top: 1px solid {light_edge};
     border-radius: 16px;
+}}
+QWidget#glossyCard:hover {{
+    border: 1px solid {light_edge};
 }}
 QFrame#glassRim {{
     border: none;
