@@ -15,6 +15,7 @@ app = QApplication([])
 app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
 window.show()
+app.processEvents()  # Let Qt apply the fixed-size Glass button styling.
 
 assert window.centralWidget() is window.background_surface
 assert not window.findChildren(QScrollArea)
