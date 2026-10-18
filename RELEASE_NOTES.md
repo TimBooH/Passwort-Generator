@@ -1,33 +1,22 @@
-# PasswortGenerator v1.5.0 – Stabilität, responsive Glas-Kacheln und sichere Updates
+# PasswortGenerator v1.5.1 – Schnellere GitHub-Releases
 
-Dieses Release konzentriert sich auf die gemeldeten Abstürze beim Fensterziehen und bei Designänderungen sowie auf die neue AppImage-Verwaltung.
+Dieses Wartungsrelease verbessert den Build- und Veröffentlichungsprozess. An der Bedienung und Passwortgenerierung ändert sich nichts.
 
-## Verbesserte Stabilität
-- Kein eigenes Python-`paintEvent` mehr beim Skalieren des Fensters oder des Hintergrundbilds: Qt rendert Glasflächen und Bilder nativ
-- Hintergrundbilder werden beim Größenwechsel verzögert und einmalig neu skaliert
-- Glas-Kacheln wachsen und schrumpfen mit der Fenstergröße; die alte maximale Inhaltsbreite von 940 Pixeln entfällt
-- Bessere Layout-Aufteilung, kompaktere Auswahlfelder und flexiblere Update-Buttons
-- Umfangreiche Fenster-, Bildmodus-, Farbwechsel- und Installations-Tests in GitHub Actions
+## Optimierungen
+- Releases nur noch bei neuer Versionsnummer statt bei jedem einzelnen Commit
+- Ein gemeinsamer GitHub-Actions-Job für Tests, Linux-AppImage und Veröffentlichung
+- Direkte Veröffentlichung, ohne Zwischen-Upload und -Download des AppImages zwischen zwei Jobs
+- Schlankeres Qt-Laufzeitpaket **PySide6-Essentials** statt dem großen PySide6-Metapaket (ohne ungenutzte WebEngine- und PDF-Module)
+- GitHub pip-Cache für schnellere wiederholte Installationen
+- Bestehende Releases werden vor der Installation von Abhängigkeiten erkannt und übersprungen
+- Parallele Builds auf demselben Branch werden zusammengefasst, ältere Läufe abgebrochen
+- Keine unnötigen vollständigen apt-Updates oder PyInstaller-Clean-Builds bei jedem Release
+- Bestehende Sicherheits- und GUI-Tests bleiben Bestandteil des Releases
 
-## Neue Updateverwaltung
-- **Automatischer Neustart** der neuen App direkt nach erfolgreichem, geprüftem Update
-- **Aktuelle Version:** `~/.local/opt/passwort-generator/PasswortGenerator.AppImage`
-- **Vorherige Version:** `~/.local/opt/passwort-generator/PasswortGenerator-previous.AppImage`
-- Nur diese beiden AppImage-Versionen werden im Installationsordner behalten; ältere eigene Versionen werden entfernt
-- Austausch nach Größen- und SHA-256-Prüfung, mit sicherem Zwischenfile und Erhaltung der lauffähigen aktuellen Version bei Installationsfehlern
-- Auch `install.sh` und `uninstall.sh` berücksichtigen die previous-Datei
-- Bei unabhängig gestarteten AppImages startet der heruntergeladene Nachfolger automatisch, ohne fremde Dateien im Downloadordner zu löschen
+## Weiterhin enthalten
+- Automatischer App-Neustart nach SHA-256-geprüftem Update
+- Sicherung als `PasswortGenerator-previous.AppImage`
+- Responsive Glas-Kacheln, auswählbare Hintergrundbilder und lokale Crash-Logs
 
-## Verbesserte Crash-Logs
-- **Crash-Log öffnen** direkt in der App
-- Zeitstempel, App-Version, PID, Qt-Plattform, letzte Bedienaktion und Sitzungsende
-- Python-Exceptions mit Fehlermeldung und Stacktrace; verfügbare native Signale und Qt-Fehlerausgaben
-- Automatische Erkennung eines unerwartet beendeten letzten Starts
-- Logdatei: `~/.local/state/passwort-generator/crash.log`
-
-**Wichtiger Hinweis:** Bei nativen Grafiktreiber- und Qt/C++-Abstürzen ist die tatsächliche Ursache nicht immer vollständig aus einem Log ermittelbar. Die Tests reduzieren bekannte Absturzrisiken, ersetzen aber keine Untersuchung eines möglicherweise weiterhin auftretenden Fehlers auf dem konkreten System.
-
-## Installation / Update
-Beim bestehenden PasswortGenerator **Auf Updates prüfen → Update installieren & neu starten** auswählen. Nach erfolgreichem Download startet v1.5.0 selbstständig neu. Alternativ `install.sh` aus den Release-Assets ausführen.
-
-Alle generierten Passwörter verbleiben lokal auf dem Gerät.
+## Veröffentlichung
+Neue Versionen werden als einzelner Commit mit aktualisierter `version.py` und `RELEASE_NOTES.md` erstellt. Automatische Builds starten nur bei Änderungen an der Versionsdatei, oder manuell über GitHub Actions.

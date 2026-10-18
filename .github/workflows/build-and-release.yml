@@ -1,70 +1,92 @@
 name: Build & Release PasswortGenerator (Linux)
 
+# Releases entstehen nur bei einer Versionsänderung, nicht bei jedem Push.
 on:
   push:
     branches: [main]
+    paths:
+      - version.py
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+# Verhindert parallele, doppelte Builds desselben Release-Zweigs.
+concurrency:
+  group: passwortgenerator-release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  appimage:
+  release:
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: "1"
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+      GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
+
+      - name: Check version before installing dependencies
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(python3 -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::APP_VERSION must be in MAJOR.MINOR.PATCH format"
+            exit 1
+          fi
+          TAG="v${VERSION}"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "Release $TAG exists — no build or upload needed."
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+            echo "Building release $TAG."
+          fi
+
       - uses: actions/setup-python@v6
+        if: steps.version.outputs.build == 'true'
         with:
-          python-version: '3.11'
-      - name: Install Linux dependencies
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install minimal Qt and test once
+        if: steps.version.outputs.build == 'true'
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libfuse2 file libegl1 libopengl0
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements.txt pyinstaller
-      - name: Validate Python files and test password logic
-        env:
-          QT_QPA_PLATFORM: offscreen
-        run: |
-          python -m py_compile main.py glass_ui.py password_core.py version.py updater.py diagnostics.py
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check --prefer-binary \
+            -r requirements.txt pyinstaller==6.22.3
           python -m unittest discover -s tests -v
-      - name: Stress-test GUI, resize events, images and appearance changes
-        env:
-          QT_QPA_PLATFORM: offscreen
-          PYTHONFAULTHANDLER: "1"
-        run: |
           PYTHONPATH=. python tests/smoke_glossy_ui.py
-      - name: Integration-test update & automatic restart
-        env:
-          QT_QPA_PLATFORM: offscreen
-          PYTHONFAULTHANDLER: "1"
-        run: |
           PYTHONPATH=. python tests/smoke_update_gui.py
-      - name: Save design preview
-        uses: actions/upload-artifact@v4
-        with:
-          name: PasswortGenerator-Glass-Preview
-          path: |
-            glossy-preview.png
-            glossy-wallpaper-preview.png
-            glossy-wide-preview.png
-          if-no-files-found: error
+
       - name: Build AppImage
-        env:
-          APPIMAGE_EXTRACT_AND_RUN: '1'
+        if: steps.version.outputs.build == 'true'
+        shell: bash
         run: |
-          set -euxo pipefail
-          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator main.py
-          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/scalable/apps
+          set -euo pipefail
+          pyinstaller --noconfirm --windowed --name PasswortGenerator main.py
+
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
+            AppDir/usr/share/icons/hicolor/scalable/apps
           cp -r dist/PasswortGenerator AppDir/usr/bin/
           cp assets/de.timbooh.passwortgenerator.svg AppDir/de.timbooh.passwortgenerator.svg
-          cp assets/de.timbooh.passwortgenerator.svg AppDir/usr/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg
+          cp assets/de.timbooh.passwortgenerator.svg \
+            AppDir/usr/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg
+
           cat > AppDir/AppRun <<'SH'
           #!/bin/sh
           HERE="$(dirname "$(readlink -f "$0")")"
           exec "$HERE/usr/bin/PasswortGenerator/PasswortGenerator" "$@"
           SH
           chmod +x AppDir/AppRun
+
           cat > AppDir/de.timbooh.passwortgenerator.desktop <<'DESKTOP'
           [Desktop Entry]
           Type=Application
@@ -74,59 +96,27 @@ jobs:
           Categories=Utility;Security;
           Terminal=false
           DESKTOP
-          cp AppDir/de.timbooh.passwortgenerator.desktop AppDir/usr/share/applications/de.timbooh.passwortgenerator.desktop
-          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool.AppImage
-          test -s appimagetool.AppImage
+          cp AppDir/de.timbooh.passwortgenerator.desktop \
+            AppDir/usr/share/applications/de.timbooh.passwortgenerator.desktop
+
+          curl --fail --location --silent --show-error --retry 3 \
+            -o appimagetool.AppImage \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool.AppImage
           ARCH=x86_64 ./appimagetool.AppImage AppDir PasswortGenerator-x86_64.AppImage
           test -s PasswortGenerator-x86_64.AppImage
-          file PasswortGenerator-x86_64.AppImage
-      - name: Prepare release files
-        run: |
-          set -euo pipefail
-          mkdir -p release-assets
-          cp PasswortGenerator-x86_64.AppImage install.sh uninstall.sh release-assets/
-          chmod +x release-assets/install.sh release-assets/uninstall.sh
-          (cd release-assets && sha256sum PasswortGenerator-x86_64.AppImage > SHA256SUMS)
-          cat release-assets/SHA256SUMS
-      - uses: actions/upload-artifact@v4
-        with:
-          name: PasswortGenerator-Linux
-          path: release-assets/
-          if-no-files-found: error
+          sha256sum PasswortGenerator-x86_64.AppImage > SHA256SUMS
 
-  release:
-    needs: appimage
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
-        with:
-          name: PasswortGenerator-Linux
-          path: release-assets
-      - name: Publish AppImage and installer if new version
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Publish verified release directly
+        if: steps.version.outputs.build == 'true'
+        shell: bash
         run: |
           set -euo pipefail
-          VERSION="$(python -c 'from version import APP_VERSION; print(APP_VERSION)')"
-          TAG="v${VERSION}"
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "$TAG has already been released."
-            exit 0
-          fi
-          test -s release-assets/PasswortGenerator-x86_64.AppImage
-          test -s release-assets/SHA256SUMS
-          gh release create "$TAG" \
-            release-assets/PasswortGenerator-x86_64.AppImage \
-            release-assets/install.sh \
-            release-assets/uninstall.sh \
-            release-assets/SHA256SUMS \
+          gh release create "${{ steps.version.outputs.tag }}" \
+            PasswortGenerator-x86_64.AppImage \
+            install.sh uninstall.sh SHA256SUMS \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PasswortGenerator $TAG" \
+            --title "PasswortGenerator ${{ steps.version.outputs.tag }}" \
             --notes-file RELEASE_NOTES.md \
             --latest

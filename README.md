@@ -169,7 +169,7 @@ Die App und ihr Menüeintrag werden entfernt. Die gespeicherten Farbeingaben ble
 
 | Bereich | Technologie |
 | --- | --- |
-| Benutzeroberfläche | PySide6 / Qt 6 |
+| Benutzeroberfläche | PySide6-Essentials / Qt 6 |
 | Passworterzeugung | Python `secrets` / `SystemRandom` |
 | Farbauswahl | Qt `QColorDialog` & `QSettings` |
 | Glasdesign | Native Qt-Stylesheets (QSS), ohne Python-`paintEvent` beim Resize |
@@ -179,9 +179,15 @@ Die App und ihr Menüeintrag werden entfernt. Die gespeicherten Farbeingaben ble
 | Build | PyInstaller und AppImageKit |
 | Release | GitHub Actions |
 
-Jeder Push auf `main` startet Tests und den Linux-AppImage-Build. **Wenn die Version in `version.py` neu ist**, wird nach erfolgreichem Build automatisch ein Release mit AppImage, Installer, Deinstaller und Prüfsumme erstellt.
+**Optimierter Release-Prozess (ab v1.5.1):** Ein Release-Build wird ausschließlich ausgelöst, wenn `version.py` auf `main` geändert wird, oder manuell über **Run workflow**. Änderungen an README, Tests oder Programmdateien ohne neue Versionsnummer starten keinen vollständigen AppImage-Build.
 
-Für neue Versionen: `APP_VERSION` in `version.py` erhöhen, Änderungen testen, committen und nach `main` pushen.
+Alle Änderungen einer neuen Version werden zusammen mit der geänderten `APP_VERSION` **in einem Commit** nach `main` gepusht. GitHub startet dann **genau einen** Build. Dieser verwendet einen einzigen Runner für den Versionscheck, die Tests, das AppImage und die Veröffentlichung – ohne separaten Release-Job, ohne unnötige Artifact-Uploads/-Downloads.
+
+Beschleunigungen: **PySide6-Essentials** statt des großen PySide6-Metapakets, festgelegte Build-Abhängigkeiten, GitHub-`pip`-Cache, keine vollständige Systempaket-Aktualisierung und keine überflüssigen Zwischenschritte. Existiert das GitHub-Release für diese Versionsnummer bereits, wird der Build **vor der Installation von Abhängigkeiten** übersprungen. Gleichzeitig gestartete Builds auf demselben Branch werden zusammengefasst bzw. ältere Läufe abgebrochen.
+
+**Neues Release erstellen:** Funktionsänderungen und Tests sammeln, `APP_VERSION` erhöhen, `RELEASE_NOTES.md` aktualisieren und **einen gemeinsamen Commit** pushen. Die Release-Assets `PasswortGenerator-x86_64.AppImage`, `install.sh`, `uninstall.sh` und `SHA256SUMS` werden nach bestandenen Tests direkt hochgeladen.
+
+**Hinweis:** Bei reinen Quellcodeänderungen ohne Versionsänderung erfolgt kein automatischer Testlauf mehr. Für eine Veröffentlichung die Versionsnummer daher immer im selben Commit erhöhen. Der Workflow kann bei Bedarf manuell gestartet werden.
 
 ## 🔒 Sicherheit und Privatsphäre
 
