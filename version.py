@@ -1,5 +1,8 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.18.0 unifies the language choice across every page, translates
+cached Changelog content, supports bilingual notes, and provides faithful
+English summaries of historical German-only releases.
 Version 0.17.0 adds a persistent German/English language switch for the entire
 Qt interface and onboarding, plus a matching English GitHub README.
 Version 0.16.0 simplifies README documentation while preserving app behavior.
@@ -52,7 +55,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.17.0"
+APP_VERSION = "0.18.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
