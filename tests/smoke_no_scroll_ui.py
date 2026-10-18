@@ -22,6 +22,12 @@ assert not hasattr(window, 'scroll_area')
 assert window.tabs.count() == 4
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert window.check_button.width() == 175
+assert window.generate_button.objectName() == 'generatePasswordButton'
+assert window.generate_button.height() == 40
+assert window.generate_button.maximumWidth() == 360
+assert 'QPushButton#generatePasswordButton' in window.styleSheet()
+assert 'QPushButton#primaryButton' in window.styleSheet()  # Update CTA unchanged.
+
 assert window.appearance_card.body.spacing() == 3
 assert window.appearance_card.layout().contentsMargins().top() == 6
 assert window.language_card.objectName() == 'glossyCard'
@@ -63,6 +69,15 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
             assert bottom <= window.height() + 2, (
                 f'Vertical clipping: {w}x{h} page={page} {control.objectName()} bottom={bottom}'
             )
+        if page == 0:
+            button = window.generate_button
+            assert button.height() == 40, f'Generate button too tall: {button.height()}'
+            assert 235 <= button.width() <= 360, f'Wrong Generate width: {button.width()}'
+            card = window.glass_cards[0]
+            from PySide6.QtCore import QPoint
+            center_button = button.mapTo(window, QPoint(button.width() // 2, 0)).x()
+            center_card = card.mapTo(window, QPoint(card.width() // 2, 0)).x()
+            assert abs(center_button - center_card) <= 3, 'Generate button not centered'
         if page == 2:
             assert not window.changelog_view.verticalScrollBar().isVisible()
             assert window.release_combo.isVisible()
