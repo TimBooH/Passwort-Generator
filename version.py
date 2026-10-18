@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.10.0 restores the pure Glass palette and transparency engine
+in both Linux and Windows release builds.
 Version 0.10.0 adds a once-per-startup update popup, pure see-through Glass
 cards, and a persisted first-run arrow-guided tour (replayable from Info).
 Version 0.09.0 uses milestone-independent mock releases for GUI regression tests.
