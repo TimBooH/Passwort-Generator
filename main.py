@@ -377,8 +377,11 @@ class PasswordWindow(QMainWindow):
         self.appearance_card = colors
         self.glass_cards.append(colors)
         colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        # Tight, top-aligned controls instead of vertically stretched gaps.
+        colors.layout().setContentsMargins(13, 6, 13, 7)
+        colors.layout().setSpacing(2)
         colors_layout = colors.body
-        colors_layout.setSpacing(5)
+        colors_layout.setSpacing(3)
         scheme_row = QHBoxLayout()
         scheme_row.addWidget(QLabel('Farbschema:'))
         self.scheme_combo = QComboBox()
@@ -420,7 +423,7 @@ class PasswordWindow(QMainWindow):
         # The chosen image stays on disk; only its path and display mode are stored.
         # Vertical actions avoid cramped/overlapping buttons in narrow windows.
         picture_actions = QVBoxLayout()
-        picture_actions.setSpacing(3)
+        picture_actions.setSpacing(2)
         self.choose_background_button = QPushButton('Bild auswählen …')
         self.choose_background_button.clicked.connect(self.choose_background_image)
         picture_actions.addWidget(self.choose_background_button)
@@ -439,7 +442,7 @@ class PasswordWindow(QMainWindow):
             self.image_mode_combo.addItem(label, mode)
         mode_row.addWidget(self.image_mode_combo, 1)
         image_layout.addLayout(mode_row)
-
+        colors_layout.addStretch(1)
 
         settings_page_layout.addWidget(colors, 1)
 
@@ -461,10 +464,10 @@ class PasswordWindow(QMainWindow):
         updates_layout.addWidget(self.update_status)
         update_actions = QHBoxLayout()
         update_actions.setSpacing(6)
-        self.check_button = QPushButton('↻ Prüfen')
+        self.check_button = QPushButton('↻ Auf Update prüfen')
         self.check_button.setObjectName('checkUpdateButton')
         self.check_button.setToolTip('Jetzt auf Updates prüfen')
-        self.check_button.setFixedWidth(112)
+        self.check_button.setFixedWidth(175)
         self.check_button.setMinimumHeight(23)
         self.check_button.clicked.connect(self.check_for_updates)
         update_actions.addWidget(self.check_button, 0, Qt.AlignmentFlag.AlignLeft)
@@ -491,10 +494,10 @@ class PasswordWindow(QMainWindow):
         self.secondary_cards.append(changelog_card)
         changelog_card.setSizePolicy(QSizePolicy.Policy.Expanding,
                                      QSizePolicy.Policy.Expanding)
-        changelog_card.layout().setContentsMargins(13, 8, 13, 9)
-        changelog_card.layout().setSpacing(2)
+        changelog_card.layout().setContentsMargins(13, 5, 13, 6)
+        changelog_card.layout().setSpacing(1)
         changelog_layout = changelog_card.body
-        changelog_layout.setSpacing(5)
+        changelog_layout.setSpacing(3)
         versions_heading = QLabel('BISHERIGE VERSIONEN')
         versions_heading.setObjectName('supportText')
         versions_heading.setStyleSheet('font-weight: 700;')
@@ -529,6 +532,7 @@ class PasswordWindow(QMainWindow):
             'Die Änderungen werden beim Öffnen dieser Seite automatisch geladen.'
         )
         changelog_layout.addWidget(self.changelog_view)
+        changelog_layout.addStretch(1)
         updates_page_layout.addWidget(changelog_card, 1)
 
         # Info is the fourth built-in page, never a separate modal window.
