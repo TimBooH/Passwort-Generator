@@ -1,5 +1,6 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.07.0 verifies adaptive accent contrast across violet and muted themes.
 Version 0.07.0 returns navigation to the top-right, lowers glass opacity,
 and uses readable auto-contrasting accents, including wallpaper previews.
 Version 0.06.0 streamlined sidebar navigation, responsive cards, and release history.

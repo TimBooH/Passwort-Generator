@@ -64,9 +64,15 @@ def accent_for_background(background):
     base = _as_color(background)
     hue = base.hsvHue() if base.hsvSaturationF() >= .13 else 198
     hue = max(0, hue)
+    # Blue/violet/red can be dark despite a full HSV brightness value.
+    # Desaturate towards a pastel shade until the color truly stands out.
     vivid = QColor.fromHsv(hue, 217, 250)
-    # Find the *lightest* dark-toned accent that meets 4.5:1; this
-    # prevents washed-out or invisible accents on medium-bright surfaces.
+    for saturation in (217, 185, 150, 115, 80, 50, 0):
+        option = QColor.fromHsv(hue, saturation, 250)
+        vivid = option
+        if contrast_ratio(option, base) >= 4.5:
+            break
+    # On light/medium surfaces choose a deeper version of the same hue.
     deep = QColor.fromHsv(hue, 211, 115)
     for value in (115, 100, 85, 70, 55, 40, 25):
         option = QColor.fromHsv(hue, 211, value)
