@@ -20,7 +20,7 @@ tabs = window.tabs
 assert isinstance(tabs, QStackedWidget)
 assert tabs.currentIndex() == 0
 assert tabs.count() == 4
-assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Changelog', 'Info')
+assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Update', 'Info')
 assert len(window.nav_buttons) == 3
 assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names[:3])
 assert all(button.isVisible() for button in window.nav_buttons)
@@ -33,7 +33,7 @@ assert not hasattr(window, 'settings_shortcut')
 assert window.nav_container.y() < tabs.y()
 assert window.nav_buttons[0].x() > 0, 'Navigation buttons should align to the right'
 assert window.nav_buttons[0].isChecked()
-assert len(window.secondary_cards) == 4
+assert len(window.secondary_cards) == 2
 assert window.glass_cards[0].parentWidget() is window.password_page
 assert window.nav_buttons[1].isVisible()
 assert window.password_mode_button.isChecked()
@@ -49,10 +49,17 @@ assert not hasattr(window, 'fg_combo')
 assert not window.settings.contains('text_color')
 assert window.glass_cards[1].parentWidget() is window.settings_page
 assert window.glass_cards[2].parentWidget() is window.updates_page
-assert window.secondary_cards[0].parentWidget() is window.settings_page
-assert window.secondary_cards[1].parentWidget() is window.updates_page
-assert window.secondary_cards[2].parentWidget() is window.updates_page
-assert window.secondary_cards[3].parentWidget() is window.info_page
+assert window.appearance_card is window.glass_cards[1]
+assert window.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
+assert window.appearance_card.isAncestorOf(window.scheme_combo)
+assert window.appearance_card.isAncestorOf(window.choose_background_button)
+assert window.appearance_card.isAncestorOf(window.image_mode_combo)
+assert window.changelog_card is window.secondary_cards[0]
+assert window.changelog_card.parentWidget() is window.updates_page
+assert window.changelog_card.header.text() == 'CHANGELOG'
+assert window.changelog_card.isAncestorOf(window.release_combo)
+assert window.changelog_card.isAncestorOf(window.changelog_view)
+assert window.secondary_cards[1].parentWidget() is window.info_page
 assert window.info_help_card.parentWidget() is window.info_page
 assert window.info_card is not window.info_help_card
 
