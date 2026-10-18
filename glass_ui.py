@@ -9,8 +9,7 @@ from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, QTimer, Qt
 from PySide6.QtGui import (
-    QColor, QBrush, QImageReader, QLinearGradient, QPainter,
-    QPainterPath, QPen, QPixmap, QRadialGradient,
+    QColor, QBrush, QImageReader, QPalette, QPixmap,
 )
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
@@ -218,30 +217,72 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 
 
 class GlassBackground(QWidget):
-    """Paint a gradient and a bounded-size image behind the whole interface."""
+    """Stable, native Qt background: no Python paintEvent during window resize.
+
+    The image is rendered by an ordinary QLabel, and color gradients by QSS.
+    Scaling happens after a short resize debounce instead of every resize event.
+    """
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setObjectName('appRoot')
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = '#101827'
         self._image = QPixmap()
         self._mode = 'cover'
-        self.setAutoFillBackground(False)
+
+        self._backdrop = QLabel(self)
+        self._backdrop.setObjectName('wallpaperPixmap')
+        self._backdrop.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._backdrop.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._backdrop.hide()
+        self._shade = QFrame(self)
+        self._shade.setObjectName('wallpaperShade')
+        self._shade.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._shade.hide()
+        self._apply_color_style()
+
+        self._resize_timer = QTimer(self)
+        self._resize_timer.setSingleShot(True)
+        self._resize_timer.setInterval(85)
+        self._resize_timer.timeout.connect(self._render_image)
+
+    def _apply_color_style(self):
+        base = QColor(self._base_color)
+        dark = is_dark_background(base)
+        first = blend(base, '#263A59', .15) if dark else base.lighter(107)
+        last = blend(base, '#070C17', .25) if dark else base.darker(108)
+        self.setStyleSheet(
+            'QWidget#appRoot { '
+            'background: qlineargradient(x1:0, y1:0, x2:1, y2:1, '
+            f'stop:0 {first.name()}, stop:0.58 {base.name()}, '
+            f'stop:1 {last.name()}); }}'
+        )
+        self._shade.setStyleSheet(
+            'QFrame#wallpaperShade { '
+            f'background: {rgba("#050912" if dark else "#FAFCFF", 79 if dark else 39)}; '
+            'border: none; }'
+        )
 
     def set_base_color(self, value):
         color = QColor(value)
         if color.isValid() and color.name() != self._base_color:
             self._base_color = color.name()
-            self.update()
+            self._apply_color_style()
 
     def set_background_image(self, path):
-        # Decode before replacing the old pixmap so invalid input is harmless.
         loaded = read_background_image(path)
         self._image = loaded
-        self.update()
+        self._backdrop.show()
+        self._shade.show()
+        self._render_image()
 
     def clear_background_image(self):
         self._image = QPixmap()
-        self.update()
+        self._resize_timer.stop()
+        self._backdrop.clear()
+        self._backdrop.hide()
+        self._shade.hide()
 
     def has_background_image(self):
         return not self._image.isNull()
@@ -249,48 +290,56 @@ class GlassBackground(QWidget):
     def set_image_mode(self, mode):
         if mode in MODE_IDS and self._mode != mode:
             self._mode = mode
-            self.update()
+            if self.has_background_image():
+                self._render_image()
 
-    def paintEvent(self, event):
-        if self.width() <= 0 or self.height() <= 0:
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._backdrop.setGeometry(self.rect())
+        self._shade.setGeometry(self.rect())
+        self._backdrop.lower()
+        if self.has_background_image():
+            self._resize_timer.start()
+
+    def _render_image(self):
+        if self._image.isNull() or self.width() <= 0 or self.height() <= 0:
             return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform)
-        bounds = QRectF(self.rect())
-        base = QColor(self._base_color)
-        dark = is_dark_background(base)
-        gradient = QLinearGradient(bounds.topLeft(), bounds.bottomRight())
-        gradient.setColorAt(0.0, blend(base, '#263A59', 0.15) if dark else base.lighter(107))
-        gradient.setColorAt(0.58, base)
-        gradient.setColorAt(1.0, blend(base, '#070C17', .25) if dark else base.darker(108))
-        painter.fillRect(bounds, gradient)
-
-        if not self._image.isNull():
-            if self._mode == 'tile':
-                painter.fillRect(bounds, QBrush(self._image))
-            else:
-                geometry = image_rectangles(
-                    self._mode, self.width(), self.height(),
-                    self._image.width(), self._image.height(),
-                )
-                if geometry is not None:
-                    target, source = geometry
-                    painter.drawPixmap(target, self._image, source)
-            painter.fillRect(bounds, QColor(5, 9, 18, 79) if dark else QColor(250, 252, 255, 39))
+        size = self.size()
+        self._backdrop.setGeometry(self.rect())
+        if self._mode == 'tile':
+            # QPalette fills the QLabel using a native texture brush.
+            pal = self._backdrop.palette()
+            pal.setBrush(QPalette.ColorRole.Window, QBrush(self._image))
+            self._backdrop.setPalette(pal)
+            self._backdrop.setAutoFillBackground(True)
+            self._backdrop.clear()
         else:
-            painter.setPen(Qt.PenStyle.NoPen)
-            # Limit radial operations to fixed radii, even in a huge window.
-            for x, y, radius, glow in (
-                (0.06, 0.0, 600, QColor(59, 151, 231, 52 if dark else 27)),
-                (1.0, 0.5, 700, QColor(106, 103, 222, 39 if dark else 21)),
-            ):
-                center = QPointF(self.width() * x, self.height() * y)
-                rg = QRadialGradient(center, radius)
-                rg.setColorAt(0.0, glow)
-                rg.setColorAt(1.0, with_alpha(glow, 0))
-                painter.setBrush(rg)
-                painter.drawEllipse(center, radius, radius)
-        painter.end()
+            self._backdrop.setAutoFillBackground(False)
+            self._backdrop.setAlignment(
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+                if self._mode == 'original' else Qt.AlignmentFlag.AlignCenter
+            )
+            if self._mode == 'contain':
+                image = self._image.scaled(
+                    size, Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            elif self._mode == 'cover':
+                image = self._image.scaled(
+                    size, Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            elif self._mode == 'stretch':
+                image = self._image.scaled(
+                    size, Qt.AspectRatioMode.IgnoreAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            else:
+                image = self._image
+            self._backdrop.setPixmap(image)
+        self._backdrop.show()
+        self._shade.show()
+        self._backdrop.lower()
 
 
 class GlossyGlassCard(QWidget):
