@@ -13,7 +13,7 @@ from PySide6.QtGui import (
     QColor, QBrush, QImageReader, QPalette, QPixmap,
 )
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
-from theme_colors import accent_for_background
+from theme_colors import accent_for_background, sample_wallpaper_color
 
 
 IMAGE_MODES = (
@@ -226,6 +226,7 @@ class GlassBackground(QWidget):
         self.setObjectName('appRoot')
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._base_color = '#071322'
+        self.wallpaper_color = None
         self._image = QPixmap()
         self._mode = 'cover'
 
@@ -283,6 +284,7 @@ class GlassBackground(QWidget):
     def set_background_image(self, path):
         loaded = read_background_image(path)
         self._image = loaded
+        self.wallpaper_color = sample_wallpaper_color(loaded)
         self._circuit.hide()
         self._backdrop.show()
         self._shade.show()
@@ -290,6 +292,7 @@ class GlassBackground(QWidget):
 
     def clear_background_image(self):
         self._image = QPixmap()
+        self.wallpaper_color = None
         self._resize_timer.stop()
         self._backdrop.clear()
         self._backdrop.hide()
@@ -413,10 +416,12 @@ class GlossyGlassCard(QWidget):
     def _refresh_style(self):
         dark = is_dark_background(self._base_color)
         base = self._base_color
-        top = blend(base, '#084B8B' if dark else '#FFFFFF', .22 if dark else .65)
-        mid = blend(base, '#042B57' if dark else '#E8F2FA', .24 if dark else .58)
-        end = blend(base, '#001122' if dark else '#C4D3DF', .24 if dark else .31)
-        alpha = 231 if dark else 174
+        # Reduced opacity keeps neon circuits and custom wallpapers visible.
+        # Glass adopts the actual accent instead of tinting every preset blue.
+        top = blend(base, self._accent, .26 if dark else .16)
+        mid = blend(base, self._accent, .14 if dark else .10)
+        end = blend(base, '#000000' if dark else '#FFFFFF', .25 if dark else .10)
+        alpha = 158 if dark else 147
         top_rgba = rgba(top, alpha - 17)
         mid_rgba = rgba(mid, alpha)
         end_rgba = rgba(end, min(250, alpha + 8))

@@ -1,6 +1,8 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
-Version 0.06.0 streamlines sidebar navigation, responsive cards, and release history.
+Version 0.07.0 returns navigation to the top-right, lowers glass opacity,
+and uses readable auto-contrasting accents, including wallpaper previews.
+Version 0.06.0 streamlined sidebar navigation, responsive cards, and release history.
 The GUI smoke test checks concise release notes rather than obsolete headings.
 Version 0.05.0 added configurable glass schemes and release-history browsing.
 Neon artwork stays cached across palette changes to avoid native Qt crashes.
@@ -10,7 +12,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.06.0"
+APP_VERSION = "0.07.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

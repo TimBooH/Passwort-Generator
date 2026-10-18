@@ -1,12 +1,12 @@
-# PasswortGenerator v0.06.0 – Klareres Layout und kürzere Änderungen
+# PasswortGenerator v0.07.0 – Navigation, Glas & Farben
 
-**Schritt 6 von 100** auf dem Weg zur Vollversion 1.0.0.
+**Schritt 7 von 100** bis zur Vollversion 1.0.0.
 
-- Navigation jetzt **links**: Passwort, Einstellungen und Updates.
-- Unnötigen Einstellungen-Button rechts oben entfernt.
-- **Vier übersichtliche Kacheln** für Farben, Hintergrundbild, Updates und Versionshistorie.
-- **Neueste Version oben**, ältere darunter – nach Veröffentlichungsdatum.
-- Changelog auf **maximal fünf kurze Änderungen** reduziert.
-- Buttons „Versionshistorie laden“ und „Release auf GitHub öffnen“ entfernt.
+- Navigation **Passwort · Einstellungen · Updates · Info** nach oben rechts verschoben.
+- Den unteren Info-Button und den Crash-Log-Button entfernt; automatische Crash-Protokollierung bleibt aktiv.
+- Manuelle Textfarbauswahl entfernt – Schriftfarbe wird automatisch kontrastreich gewählt.
+- Glaskacheln deutlich **transparenter**; Farbton folgt dem ausgewählten Hintergrund.
+- Akzentfarbe mit Helligkeits-/Kontrastprüfung; reagiert auch auf eigene Hintergrundbilder.
+- **Echter App-Screenshot** wird während des Linux-Builds für die README aufgenommen.
 
-Die App lädt die Versionsliste automatisch. **„Auf Updates prüfen“** aktualisiert sie erneut. Passworterzeugung, Themes, automatische Updates und Crash-Logs bleiben erhalten.
+Passwort-, Passphrase-, Update- und Versionshistorie bleiben unverändert nutzbar.

@@ -11,7 +11,9 @@ from PySide6.QtNetwork import QNetworkReply
 from PySide6.QtWidgets import QApplication, QLabel, QTextBrowser
 
 from main import PasswordWindow, REPO_URL
-from theme_colors import accent_for_background, preset_colors
+from theme_colors import (
+    accent_for_background, accessible_text_color, contrast_ratio, preset_colors
+)
 
 
 class FakeReleaseReply:
@@ -50,9 +52,11 @@ initial_circuit_key = window.background_surface._circuit.pixmap().cacheKey()
 def apply_scheme(scheme):
     window.scheme_combo.setCurrentIndex(window.scheme_combo.findData(scheme))
     app.processEvents()
-    bg, fg = preset_colors(scheme)
+    bg, _unused_text = preset_colors(scheme)
     assert window.bg_combo.currentData() == bg
-    assert window.fg_combo.currentData() == fg
+    assert not hasattr(window, 'fg_combo')
+    assert not window.settings.contains('text_color')
+    assert contrast_ratio(accessible_text_color(bg), bg) >= 4.5
     assert window.settings.value('color_scheme') == scheme
     expected_accent = accent_for_background(bg)
     assert expected_accent in window.accent_preview.text()
@@ -70,6 +74,9 @@ violet_accent = apply_scheme('violet_glass')
 forest_accent = apply_scheme('forest_glass')
 assert violet_accent != forest_accent
 assert window.background_surface._circuit.pixmap() is not None
+assert window.info_nav_button.isVisible()
+assert not hasattr(window, 'info_button')
+assert not hasattr(window, 'open_crash_log')
 
 # Changing a single color means it is no longer a named preset.
 red_idx = window.bg_combo.findData('#351A23')

@@ -1,12 +1,13 @@
 """Headless tests for polished glass color and styling helpers."""
 
 import unittest
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QImage, QPixmap
 from PySide6.QtWidgets import QApplication
 
 from glass_ui import blend, build_glass_stylesheet, is_dark_background, rgba, with_alpha
 from neon_style import circuit_texture, neon_stylesheet
-from theme_colors import COLOR_SCHEMES, accent_for_background, preset_colors
+from theme_colors import (COLOR_SCHEMES, accent_for_background, accessible_text_color,
+                          contrast_ratio, preset_colors, sample_wallpaper_color)
 
 
 class GlassStyleTests(unittest.TestCase):
@@ -41,7 +42,9 @@ class GlassStyleTests(unittest.TestCase):
         style = neon_stylesheet('#071322', '#FFFFFF')
         self.assertIn('QPushButton#modeButton:checked', style)
         self.assertIn('QPushButton#navButton:checked', style)
-        self.assertIn('QFrame#navSidebar', style)
+        self.assertIn('QFrame#topNav', style)
+        self.assertIn('QPushButton#infoNavButton', style)
+        self.assertNotIn('QFrame#navSidebar', style)
         self.assertNotIn('QPushButton#headerSettings', style)
         self.assertIn('QSlider::handle:horizontal', style)
         self.assertIn('QProgressBar#strengthBar', style)
@@ -71,8 +74,42 @@ class GlassStyleTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             accent_for_background('not-a-color')
 
+    def test_accessible_accents_and_automatic_text(self):
+        for background in (
+            '#071322', '#20242C', '#351A23', '#15362E', '#2B1D3A',
+            '#FFFFFF', '#F0F4FA', '#F5EDDB', '#8C806F', '#2196F3',
+            '#E35B6D', '#185F74', '#D2C3E8',
+        ):
+            accent = accent_for_background(background)
+            self.assertGreaterEqual(
+                contrast_ratio(accent, background), 3.0,
+                f'Insufficient accent contrast: {background} -> {accent}',
+            )
+            self.assertGreaterEqual(
+                contrast_ratio(accessible_text_color(background), background),
+                4.5, f'Unreadable text color on {background}',
+            )
+        self.assertNotEqual(accent_for_background('#351A23'),
+                            accent_for_background('#15362E'))
+
+    def test_wallpaper_sample_adapts_accent(self):
+        app = QApplication.instance() or QApplication([])
+        self.assertIsNotNone(app)
+        image = QImage(50, 50, QImage.Format.Format_RGB32)
+        image.fill(QColor('#276F45'))
+        sample = sample_wallpaper_color(QPixmap.fromImage(image))
+        self.assertEqual(sample, '#276F45')
+        self.assertNotEqual(accent_for_background(sample),
+                            accent_for_background('#351A23'))
+        self.assertIsNone(sample_wallpaper_color(QPixmap()))
+
     def test_known_accent(self):
         self.assertTrue(QColor('#75DDF9').isValid())
+        # Alpha 158/147 is distinctly less opaque than the previous 231/174.
+        import inspect
+        from glass_ui import GlossyGlassCard
+        source = inspect.getsource(GlossyGlassCard._refresh_style)
+        self.assertIn('alpha = 158 if dark else 147', source)
 
 
 if __name__ == '__main__':

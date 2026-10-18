@@ -10,6 +10,12 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 
 **[Neueste Version herunterladen](https://github.com/TimBooH/Passwort-Generator/releases/latest)** · [Installationsanleitung](#installation) · [Updates](#updates) · [Fehlerdiagnose](#fehlerdiagnose)
 
+## Vorschau
+
+![Echter Screenshot des PasswortGenerators mit Navigation oben rechts und halbtransparenten Glaskacheln](assets/screenshots/passwort-generator.png)
+
+*Screenshot der echten PySide6-Anwendung, automatisch im Linux-Release-Build erstellt.*
+
 ---
 
 ## Funktionen
@@ -22,13 +28,13 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | **Bedienung** | Längenregler, Passwort anzeigen/verbergen, kopieren und erneut erzeugen |
 | **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
 | **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
-| **Design** | Farbschemas (Glass Dark, Glass Light, Neon Blue, Violet Glass, Forest Glass), automatische Akzentfarben und eigene Farben |
+| **Design** | Glass-Dark-/Light- und weitere Themes, transparenteres Glas, kontrastreiche Akzent- und Textfarben, optional eigene Hintergrundbilder |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
 | **Updates** | GitHub-Releaseprüfung, kurze Änderungsübersicht, neueste der bis zu 100 Releases oben und sicherer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
 | **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
 
-Der PasswortGenerator wurde nach dem futuristischen dunkelblauen Designentwurf umgestaltet: Schloss-Symbol, blaue Neon-Umrandungen, Passwort/Passphrase-Umschalter, Stärkeanzeige, Längenregler und eine große Generieren-Taste. Die drei Schaltflächen **Passwort**, **Einstellungen** und **Updates** befinden sich jetzt gut sichtbar **links in einer Seitenleiste**. Der zusätzliche Einstellungen-Button rechts oben entfällt.
+Die Oberfläche hat eine futuristische Glasoptik mit Schloss-Symbol, Akzentrahmen, Passwort/Passphrase-Umschalter, Stärkeanzeige und großem Generieren-Button. **Passwort, Einstellungen, Updates und Info** befinden sich gemeinsam **oben rechts**. Es gibt keine linke Seitenleiste und keinen zusätzlichen Info-Button am unteren Fensterrand.
 
 ## Versionsplan: 100 Schritte bis Version 1.0
 
@@ -41,7 +47,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **3 von 100** | `0.03.0` | Drei Reiter |
 | **4 von 100** | `0.04.0` | Neon-Design und Passwort/Passphrase |
 | **5 von 100** | `0.05.0` | Farbschemas, Changelog und Anleitung |
-| **6 von 100** | **`0.06.0`** | **Aktueller Stand: linke Navigation und kompakte Versionshistorie** |
+| **6 von 100** | `0.06.0` | Linke Navigation und kompakte Versionshistorie |
+| **7 von 100** | **`0.07.0`** | **Aktueller Stand: Navigation oben rechts, transparenteres Glas, adaptive Farben und Screenshot** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -130,17 +137,18 @@ Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klic
 
 ## Oberfläche und Hintergrundbilder
 
-Die Navigation befindet sich **links als vertikale Seitenleiste** und bietet drei Bereiche:
+Die Navigation befindet sich **oben rechts**. Drei Schaltflächen wechseln den Bereich; die vierte öffnet **Info**:
 
 | Reiter | Inhalt |
 | --- | --- |
-| **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen, Verlauf und Info inklusive Anleitung |
+| **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen und Verlauf |
 | **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
 | **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
+| **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
 
-Wechsle über die drei linken Schaltflächen zwischen den Seiten. In **Einstellungen** liegen nun zwei getrennte, skalierbare Kacheln für „Design & Farben“ und „Hintergrundbild“. In **Updates** sind Updateprüfung und Versionshistorie ebenfalls getrennt. Auf schmalen Fenstern stehen die Zeichenoptionen untereinander, damit die Bedienung übersichtlich bleibt. Die Farben und Hintergrundbilder gelten weiterhin für alle Seiten.
+Wechsle über die **Schaltflächen oben rechts** zwischen den Seiten. Über **Info** erreichst du die Anleitung. In **Einstellungen** liegen getrennte Kacheln für Farbschemas und Hintergrundbild, in **Updates** für Aktualisierung und Versionsverlauf. Bei kleinen Fenstern passen sich die Zeichenoptionen automatisch an.
 
-Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt passende Hintergrund- und Textfarben; die **Akzentfarbe wird automatisch aus dem Hintergrund abgeleitet** und färbt Buttons, Umrandungen und Regler passend ein. Der dekorative Schaltkreis-Hintergrund bleibt bei Farbwechseln stabil erhalten, statt neu gezeichnet zu werden. Bei manuell ausgewählten Hintergrund- oder Textfarben wechselt die Auswahl automatisch zu **„Eigene Farben“**. Das ausgewählte Schema wird lokal gespeichert. Die Glas-Kacheln verwenden eine feste Transparenz ohne Deckkraft-Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
+Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt eine **automatisch gut lesbare Textfarbe**, die nicht mehr manuell eingestellt werden muss. Die **Akzentfarbe übernimmt den Farbton des gewählten Hintergrunds** und wird auf einen gut sichtbaren Kontrast abgestimmt. Bei eigenen Hintergrundbildern fließt ein repräsentativer Bildfarbton in die Akzentwahl ein. Das aktualisiert Rahmen, Buttons und Regler; das dekorative Schaltkreismuster bleibt aus Stabilitätsgründen unverändert. Bei manueller Hintergrundfarbwahl schaltet die App auf **„Eigene Farben“**. Die transparenten Glas-Kacheln haben eine feste, reduzierte Deckkraft ohne zusätzlichen Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 
 Mit **„Bild auswählen …“** kannst du ein eigenes Hintergrundbild laden und dessen Darstellung festlegen:
 
@@ -159,7 +167,7 @@ Mit **„Bild entfernen“** wechselst du zum farbigen Hintergrund zurück. Das 
 
 ## Fehlerdiagnose
 
-Über **„Crash-Log öffnen“** im Reiter **„Updates“** erreichst du das lokale Fehlerprotokoll:
+Der Crash-Log-Button ist auf Wunsch aus der Oberfläche entfernt. Die Fehlerdiagnose läuft weiterhin automatisch; das lokale Protokoll findest du unter:
 
 ```text
 ~/.local/state/passwort-generator/crash.log

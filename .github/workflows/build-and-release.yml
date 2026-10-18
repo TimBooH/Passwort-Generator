@@ -77,6 +77,22 @@ jobs:
           PYTHONPATH=. python tests/smoke_theme_history_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
 
+      - name: Capture and publish real README screenshot
+        if: steps.version.outputs.build == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=. python tests/capture_readme_screenshot.py
+          mkdir -p assets/screenshots
+          install -m 0644 readme-screenshot.png assets/screenshots/passwort-generator.png
+          git add assets/screenshots/passwort-generator.png
+          if ! git diff --cached --quiet; then
+            git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                commit -m "docs: refresh actual Qt screenshot for v$(python3 -c 'from version import APP_VERSION; print(APP_VERSION)')"
+            git push origin HEAD:main
+          fi
+
       - name: Build AppImage
         if: steps.version.outputs.build == 'true'
         shell: bash
@@ -127,7 +143,7 @@ jobs:
             PasswortGenerator-x86_64.AppImage \
             install.sh uninstall.sh SHA256SUMS \
             --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
+            --target "$(git rev-parse HEAD)" \
             --title "PasswortGenerator ${{ steps.version.outputs.tag }}" \
             --notes-file RELEASE_NOTES.md \
             --latest

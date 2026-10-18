@@ -9,7 +9,7 @@ from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 
 from glass_ui import is_dark_background, rgba
-from theme_colors import accent_for_background
+from theme_colors import accent_for_background, accessible_text_color
 
 
 def circuit_texture(width=1100, height=1450, accent='#178CFF'):
@@ -54,13 +54,14 @@ def circuit_texture(width=1100, height=1450, accent='#178CFF'):
     return texture
 
 
-def neon_stylesheet(background, foreground):
-    """Accent layer; keeps Qt widget painting native and resize-safe."""
+def neon_stylesheet(background, foreground, accent=None):
+    """Auto-accent styling, matching the background or a sampled wallpaper."""
     dark = is_dark_background(background)
     fg = QColor(foreground).name() if QColor(foreground).isValid() else ('#EDF6FF' if dark else '#142436')
     base = QColor(background)
-    accent = accent_for_background(background)
+    accent = accent or accent_for_background(background)
     color = QColor(accent)
+    accent_text = accessible_text_color(accent)
     bright = color.lighter(125).name() if dark else color.darker(110).name()
     border = color.darker(160).name() if dark else color.lighter(145).name()
     muted = '#A3B2CC' if dark else '#536479'
@@ -96,43 +97,43 @@ QStackedWidget#mainPages {{
     background: transparent;
     border: none;
 }}
-QFrame#navSidebar {{
-    background: {panel};
-    border: 1px solid {border};
-    border-radius: 16px;
-}}
-QLabel#navTitle {{
-    color: {muted};
-    font-size: 10px;
-    font-weight: 800;
-    padding: 5px 9px;
-}}
-QLabel#navFooter {{
-    color: {muted};
-    font-size: 11px;
-    padding: 9px;
+QFrame#topNav {{
+    background: transparent;
+    border: none;
 }}
 QPushButton#navButton {{
     color: {fg};
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: 11px;
-    min-height: 36px;
-    padding: 8px 10px;
+    background: {panel};
+    border: 1px solid {border};
+    border-radius: 10px;
+    min-height: 29px;
+    padding: 7px 10px;
     font-size: 12px;
     font-weight: 700;
-    text-align: left;
 }}
 QPushButton#navButton:hover:!checked {{
     color: {bright};
     background: {panel_hover};
-    border-color: {border};
+    border-color: {bright};
 }}
 QPushButton#navButton:checked {{
+    color: {accent_text};
+    background: {accent};
+    border: 1px solid {bright};
+}}
+QPushButton#infoNavButton {{
     color: {fg};
-    background: {tab_selected};
-    border: 1px solid {accent};
-    border-left: 3px solid {bright};
+    background: {panel};
+    border: 1px solid {border};
+    border-radius: 10px;
+    min-height: 29px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}}
+QPushButton#infoNavButton:hover {{
+    color: {bright};
+    border-color: {bright};
 }}
 QPushButton {{
     color: {fg};
@@ -152,13 +153,13 @@ QPushButton#modeButton {{
 QPushButton#modeButton:checked {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
         stop:0 {tab_selected}, stop:1 {accent});
-    border: 2px solid {bright}; color: #FFFFFF;
+    border: 2px solid {bright}; color: {accent_text};
 }}
 QPushButton#squareAction {{
     font-size: 19px; color: {bright}; padding: 5px; min-width: 42px;
 }}
 QPushButton#primaryButton {{
-    color: #FFFFFF;
+    color: {accent_text};
     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
         stop:0 {primary_top}, stop:0.25 {accent},
         stop:0.65 {color.darker(130).name()}, stop:1 {primary_bottom});
@@ -255,7 +256,7 @@ QListWidget#releaseList::item {{
     border-radius: 6px;
 }}
 QListWidget#releaseList::item:selected {{
-    color: #FFFFFF;
+    color: {accent_text};
     background: {accent};
 }}
 QLabel#globalStatus {{

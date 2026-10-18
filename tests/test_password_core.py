@@ -17,7 +17,7 @@ class PasswordGeneratorTests(unittest.TestCase):
         self.assertIsNone(parse_version('latest'))
 
     def test_100_step_release_plan(self):
-        self.assertEqual(APP_VERSION, '0.06.0')
+        self.assertEqual(APP_VERSION, '0.07.0')
         self.assertEqual(TOTAL_RELEASE_STEPS, 100)
         for step in range(1, 100):
             self.assertEqual(release_step(f'v0.{step:02d}.0'), step)

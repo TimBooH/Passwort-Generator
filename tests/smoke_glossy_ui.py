@@ -25,7 +25,10 @@ assert len(window.glass_cards) == 3
 assert isinstance(window.tabs, QStackedWidget)
 assert len(window.nav_buttons) == 3
 assert len(window.secondary_cards) == 2
-assert window.nav_sidebar.x() < window.tabs.x()
+assert window.nav_container.y() < window.tabs.y()
+assert window.info_nav_button.isVisible()
+assert not hasattr(window, 'nav_sidebar')
+assert not hasattr(window, 'fg_combo')
 assert window.tab_names == ('Passwort', 'Einstellungen', 'Updates')
 assert window.tabs.currentIndex() == 0
 assert window.glass_cards[0].isVisible()
@@ -70,7 +73,6 @@ with tempfile.TemporaryDirectory() as temp:
     # Change many settings while the window is wide, like actual UI usage.
     for iteration in range(25):
         window.bg_combo.setCurrentIndex(iteration % window.bg_combo.count())
-        window.fg_combo.setCurrentIndex(iteration % window.fg_combo.count())
         window.length.setValue(8 + (iteration * 5) % 121)
         window.generate()
         app.processEvents()
@@ -116,4 +118,4 @@ with tempfile.TemporaryDirectory() as temp:
 
 window.close()
 app.processEvents()
-print('Neon GUI stress passed: left sidebar, 5 cards, length slider, 60 resizes, 25 color changes.')
+print('Neon GUI stress passed: top-right navigation, lighter glass, 60 resizes, 25 color changes.')

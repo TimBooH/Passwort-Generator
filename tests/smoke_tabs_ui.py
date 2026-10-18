@@ -1,4 +1,4 @@
-"""Offscreen regression: left navigation, responsive cards and persistent state."""
+"""Offscreen regression: top-right navigation, Info and responsive cards."""
 
 import os
 
@@ -24,9 +24,13 @@ assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Updates')
 assert len(window.nav_buttons) == 3
 assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names)
 assert all(button.isVisible() for button in window.nav_buttons)
-assert window.nav_sidebar.x() < tabs.x(), 'Navigation must be on the left side'
-assert window.nav_buttons[0].isChecked()
+assert window.info_nav_button.isVisible()
+assert window.info_nav_button.accessibleName() == 'Info'
+assert not hasattr(window, 'nav_sidebar')
 assert not hasattr(window, 'settings_shortcut')
+assert window.nav_container.y() < tabs.y()
+assert window.nav_buttons[0].x() > 0, 'Navigation buttons should align to the right'
+assert window.nav_buttons[0].isChecked()
 assert len(window.secondary_cards) == 2
 assert window.glass_cards[0].parentWidget() is window.password_page
 assert window.nav_buttons[1].isVisible()
@@ -36,7 +40,11 @@ assert window.output.placeholderText() == 'Generiertes Passwort'
 assert window.strength_bar.value() == 0
 assert window.length_slider.value() == 20
 assert window.history_button.isVisible()
-assert window.info_button.isVisible()
+assert window.info_nav_button.isVisible()
+assert not hasattr(window, 'info_button')
+assert not hasattr(window, 'open_crash_log')
+assert not hasattr(window, 'fg_combo')
+assert not window.settings.contains('text_color')
 assert window.glass_cards[1].parentWidget() is window.settings_page
 assert window.glass_cards[2].parentWidget() is window.updates_page
 assert window.secondary_cards[0].parentWidget() is window.settings_page
@@ -62,7 +70,6 @@ app.processEvents()
 assert tabs.currentIndex() == 1
 assert window.nav_buttons[1].isChecked()
 assert window.bg_combo.isVisible()
-assert window.fg_combo.isVisible()
 assert window.choose_background_button.isVisible()
 window.bg_combo.setCurrentIndex(1)
 app.processEvents()
@@ -105,21 +112,24 @@ assert window.options_widget.isVisible()
 assert window.length.maximum() == 128
 assert not window.output.text()
 
-# Every page follows the window width while the menu remains on the left.
+# Pages follow window width; navigation stays right-aligned near the header.
 for width in (460, 720, 1600, 530, 990, 470):
     window.resize(width, 790)
     for index, card in enumerate(window.glass_cards):
         tabs.setCurrentIndex(index)
         app.processEvents()
         assert card.isVisible()
-        assert card.width() >= width - 245, (
+        assert card.width() >= width - 120, (
             f'{window.tab_names[index]} card too narrow at {width}: {card.width()}'
         )
-        assert window.nav_sidebar.x() < tabs.x()
+        assert window.nav_container.y() < tabs.y()
         assert window.nav_buttons[index].isChecked()
-        assert window.nav_sidebar.width() == (126 if width < 700 else 158)
+        if width < 650:
+            assert window.nav_buttons[1].text().endswith('Design')
+        else:
+            assert window.nav_buttons[1].text().endswith('Einstellungen')
 tabs.setCurrentIndex(0)
 app.processEvents()
 window.close()
 app.processEvents()
-print('Left sidebar: 3 nav buttons, 5 responsive cards, persistent password and settings.')
+print('Top-right navigation: 3 pages + Info, 5 responsive cards, no crash or text color controls.')

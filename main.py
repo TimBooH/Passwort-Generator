@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
-from PySide6.QtGui import QColor, QDesktopServices, QFont
+from PySide6.QtGui import QColor, QFont
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
@@ -17,10 +17,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from diagnostics import CrashReporter, default_state_directory
+from diagnostics import CrashReporter
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from neon_style import neon_stylesheet
-from theme_colors import COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background, preset_colors
+from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background,
+                          accessible_text_color, preset_colors)
 from release_history import normalized_releases, compact_changelog
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from password_core import make_password, make_passphrase, estimate_strength, parse_version
@@ -41,13 +42,6 @@ BACKGROUND_COLORS = [
     ('Hellgrau', '#F1F4F8'), ('Weiß', '#FFFFFF'), ('Sand', '#F5EDDB'),
     ('Eisblau', '#E5F3FA'),
 ]
-TEXT_COLORS = [
-    ('Weiß', '#FFFFFF'), ('Hellgrau', '#DAE1EA'), ('Schwarz', '#121820'),
-    ('Dunkelblau', '#17355D'), ('Cyan', '#63DDF5'), ('Mint', '#8EF0C2'),
-    ('Gelb', '#FFE58A'), ('Rosa', '#FFB9D6'), ('Orange', '#FFBC80'),
-]
-
-
 def contrast_color(hex_color):
     color = QColor(hex_color)
     luminance = 0.2126 * color.redF() + 0.7152 * color.greenF() + 0.0722 * color.blueF()
@@ -113,12 +107,12 @@ class PasswordWindow(QMainWindow):
         self._applied_palette = None
         self._restoring = False
 
-        # Compact brand header; all navigation actions move into the left sidebar.
+        # Header: compact branding, with four navigation actions at top right.
         header = QHBoxLayout()
-        header.setSpacing(13)
+        header.setSpacing(12)
         lock = QLabel('🔒')
         lock.setObjectName('brandLock')
-        lock.setFixedSize(73, 73)
+        lock.setFixedSize(67, 67)
         lock.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header.addWidget(lock)
         heading = QVBoxLayout()
@@ -132,51 +126,47 @@ class PasswordWindow(QMainWindow):
         heading.addWidget(subtitle)
         header.addLayout(heading, 1)
         content_layout.addLayout(header)
-        content_layout.addSpacing(5)
 
-        # Plain horizontal text buttons in a fixed left sidebar, not
-        # rotated vertical QTabBar labels. The QStackedWidget keeps pages
-        # alive so passwords, colors, and update state survive navigation.
-        workspace = QHBoxLayout()
-        workspace.setSpacing(14)
-        self.nav_sidebar = QFrame(content)
-        self.nav_sidebar.setObjectName('navSidebar')
-        self.nav_sidebar.setFixedWidth(158)
-        nav_layout = QVBoxLayout(self.nav_sidebar)
-        nav_layout.setContentsMargins(9, 15, 9, 12)
-        nav_layout.setSpacing(9)
-        nav_title = QLabel('MENÜ')
-        nav_title.setObjectName('navTitle')
-        nav_layout.addWidget(nav_title)
+        # A separate right-aligned row remains readable at narrow widths.
+        self.nav_container = QFrame(content)
+        self.nav_container.setObjectName('topNav')
+        nav_layout = QHBoxLayout(self.nav_container)
+        nav_layout.setContentsMargins(0, 0, 0, 0)
+        nav_layout.setSpacing(6)
+        nav_layout.addStretch(1)
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
         self.nav_buttons = []
         self.tab_names = ('Passwort', 'Einstellungen', 'Updates')
-        for index, (label, icon) in enumerate((
+        for index, (label, symbol) in enumerate((
             ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Updates', '↻'),
         )):
-            button = QPushButton(f'{icon}  {label}')
+            button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
             button.setCheckable(True)
-            button.setMinimumHeight(43)
+            button.setMinimumHeight(37)
             button.setToolTip(label)
             button.setAccessibleName(label)
             self.nav_group.addButton(button)
             nav_layout.addWidget(button)
-            button.clicked.connect(lambda checked=False, i=index: self.tabs.setCurrentIndex(i))
+            button.clicked.connect(
+                lambda checked=False, i=index: self.tabs.setCurrentIndex(i)
+            )
             self.nav_buttons.append(button)
         self.nav_buttons[0].setChecked(True)
-        nav_layout.addStretch(1)
-        nav_footer = QLabel(f'v{APP_VERSION}')
-        nav_footer.setObjectName('navFooter')
-        nav_layout.addWidget(nav_footer)
-        workspace.addWidget(self.nav_sidebar, 0)
+        self.info_nav_button = QPushButton('ⓘ  Info')
+        self.info_nav_button.setObjectName('infoNavButton')
+        self.info_nav_button.setToolTip('Über das Programm und Anleitung')
+        self.info_nav_button.setAccessibleName('Info')
+        self.info_nav_button.setMinimumHeight(37)
+        self.info_nav_button.clicked.connect(self.show_info)
+        nav_layout.addWidget(self.info_nav_button)
+        content_layout.addWidget(self.nav_container)
 
         self.tabs = QStackedWidget(content)
         self.tabs.setObjectName('mainPages')
         self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        workspace.addWidget(self.tabs, 1)
-        content_layout.addLayout(workspace, 1)
+        content_layout.addWidget(self.tabs, 1)
 
         self.password_page = QWidget()
         self.password_page.setObjectName('passwordPage')
@@ -313,10 +303,6 @@ class PasswordWindow(QMainWindow):
         self.history_button.setObjectName('bottomAction')
         self.history_button.clicked.connect(self.show_history)
         footer.addWidget(self.history_button, 1)
-        self.info_button = QPushButton('ⓘ  Info')
-        self.info_button.setObjectName('bottomAction')
-        self.info_button.clicked.connect(self.show_info)
-        footer.addWidget(self.info_button, 1)
         group_layout.addLayout(footer)
         layout.addWidget(group, 1)
 
@@ -353,16 +339,6 @@ class PasswordWindow(QMainWindow):
         bg_custom.clicked.connect(lambda: self.pick_color(self.bg_combo))
         colors_layout.addLayout(bg_row)
         colors_layout.addWidget(bg_custom, 0, Qt.AlignmentFlag.AlignRight)
-        fg_row = QHBoxLayout()
-        fg_row.addWidget(QLabel('Text:'))
-        self.fg_combo = QComboBox()
-        for label, color in TEXT_COLORS:
-            self.fg_combo.addItem(label, color)
-        fg_row.addWidget(self.fg_combo, 1)
-        fg_custom = QPushButton('Eigene Farbe …')
-        fg_custom.clicked.connect(lambda: self.pick_color(self.fg_combo))
-        colors_layout.addLayout(fg_row)
-        colors_layout.addWidget(fg_custom, 0, Qt.AlignmentFlag.AlignRight)
         accent_label = QLabel('Akzentfarbe – passt sich automatisch dem Hintergrund an:')
         accent_label.setWordWrap(True)
         colors_layout.addWidget(accent_label)
@@ -370,7 +346,7 @@ class PasswordWindow(QMainWindow):
         self.accent_preview.setObjectName('accentPreview')
         self.accent_preview.setMinimumHeight(25)
         colors_layout.addWidget(self.accent_preview)
-        colors_note = QLabel('Farbschema und Akzentfarbe werden automatisch gespeichert.')
+        colors_note = QLabel('Die Textfarbe wird automatisch lesbar gewählt; Akzent und Schema folgen dem Hintergrund.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
         settings_page_layout.addWidget(colors, 0)
@@ -446,9 +422,6 @@ class PasswordWindow(QMainWindow):
         update_note.setWordWrap(True)
         updates_layout.addWidget(update_note)
 
-        diagnostic_button = QPushButton('Crash-Log öffnen')
-        diagnostic_button.clicked.connect(self.open_crash_log)
-        updates_layout.addWidget(diagnostic_button)
         updates_page_layout.addWidget(updates, 0)
         # Concise changes and newest-to-oldest chronological history are
         # grouped separately; selecting a version only changes the text.
@@ -504,7 +477,6 @@ class PasswordWindow(QMainWindow):
 
         self.scheme_combo.currentIndexChanged.connect(self.apply_color_scheme)
         self.bg_combo.currentIndexChanged.connect(self.on_manual_color_change)
-        self.fg_combo.currentIndexChanged.connect(self.on_manual_color_change)
         self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.restore_colors()
         self.restore_background_image()
@@ -643,7 +615,7 @@ class PasswordWindow(QMainWindow):
             'Unter **Updates** siehst du den Changelog und frühere Releases. '
             'Über **Auf Updates prüfen** und anschließend '
             '**Update installieren & neu starten** installierst du eine neue '
-            'Version. Dort kannst du auch das lokale Crash-Log öffnen.\n\n'
+            'Version. Fehler werden weiterhin automatisch lokal protokolliert.\n\n'
             '### Datenschutz\n'
             'Passwörter werden auf deinem Gerät erzeugt und nicht hochgeladen. '
             'Beachte, dass andere Anwendungen gegebenenfalls auf den Inhalt '
@@ -682,23 +654,24 @@ class PasswordWindow(QMainWindow):
     def restore_colors(self):
         self._restoring = True
         try:
-            stored_background = self.settings.value('background_color', '#071322', type=str)
-            stored_text = self.settings.value('text_color', '#FFFFFF', type=str)
+            stored_background = self.settings.value(
+                'background_color', '#071322', type=str
+            )
             saved_scheme = self.settings.value('color_scheme', '', type=str)
             if saved_scheme not in SCHEME_MAP:
-                default_pair = preset_colors(DEFAULT_SCHEME)
+                default_background = preset_colors(DEFAULT_SCHEME)[0]
                 saved_scheme = (DEFAULT_SCHEME if
-                                (stored_background.upper(), stored_text.upper()) ==
-                                (default_pair[0].upper(), default_pair[1].upper())
+                                stored_background.upper() == default_background.upper()
                                 else 'custom')
-            scheme_index = self.scheme_combo.findData(saved_scheme)
-            self.scheme_combo.setCurrentIndex(max(0, scheme_index))
+            index = self.scheme_combo.findData(saved_scheme)
+            self.scheme_combo.setCurrentIndex(max(0, index))
             preset = preset_colors(saved_scheme)
-            background, foreground = preset or (stored_background, stored_text)
+            background = preset[0] if preset else stored_background
             self.select_color(self.bg_combo, background, '#071322')
-            self.select_color(self.fg_combo, foreground, '#FFFFFF')
         finally:
             self._restoring = False
+        # Text is selected automatically for contrast; old manual preference is obsolete.
+        self.settings.remove('text_color')
         self.settings.remove('glass_opacity')
         self.settings.setValue('color_scheme', self.scheme_combo.currentData())
         self.apply_colors()
@@ -712,7 +685,6 @@ class PasswordWindow(QMainWindow):
             self._restoring = True
             try:
                 self.select_color(self.bg_combo, preset[0], '#071322')
-                self.select_color(self.fg_combo, preset[1], '#FFFFFF')
             finally:
                 self._restoring = False
         self.settings.setValue('color_scheme', scheme)
@@ -736,23 +708,12 @@ class PasswordWindow(QMainWindow):
         if selected.isValid():
             self.select_color(combo, selected.name(), '#101827')
 
-    def open_crash_log(self):
-        path = self.reporter.path if self.reporter is not None else default_state_directory() / 'crash.log'
-        if not path.exists():
-            QMessageBox.information(self, 'Crash-Log', 'Noch kein Fehlerprotokoll vorhanden.')
-            return
-        QDesktopServices.openUrl(QUrl.fromLocalFile(str(path)))
-
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if hasattr(self, 'nav_sidebar'):
-            # Keep navigation readable but allow more content width in narrow windows.
-            width = 126 if self.width() < 700 else 158
-            if self.nav_sidebar.width() != width:
-                self.nav_sidebar.setFixedWidth(width)
-            # Short labels fit in narrow windows; full names remain in tooltips.
-            labels = (('⌑  Passwort', '⚙  Farben', '↻  Updates')
-                      if width == 126 else
+        if hasattr(self, 'nav_buttons'):
+            compact = self.width() < 650
+            labels = (('⌑  Passwort', '⚙  Design', '↻  Update')
+                      if compact else
                       ('⌑  Passwort', '⚙  Einstellungen', '↻  Updates'))
             for button, label in zip(self.nav_buttons, labels):
                 if button.text() != label:
@@ -775,23 +736,33 @@ class PasswordWindow(QMainWindow):
     def apply_colors(self, *_):
         if self._restoring:
             return
-        bg = self.bg_combo.currentData() or '#071322'
-        fg = self.fg_combo.currentData() or '#FFFFFF'
-        accent = accent_for_background(bg)
-        self.background_surface.set_base_color(bg)
+        base_background = self.bg_combo.currentData() or '#071322'
+        image_color = self.background_surface.wallpaper_color
+        actual_background = image_color or base_background
+        fg = accessible_text_color(actual_background)
+        accent = accent_for_background(actual_background)
+        self.background_surface.set_base_color(base_background)
         for card in self.glass_cards + self.secondary_cards:
-            card.set_glass_color(bg, accent)
-        self.accent_preview.setText(f'●  Automatisch: {accent}')
-        self.accent_preview.setToolTip('Wird aus der gewählten Hintergrundfarbe berechnet.')
-        palette_key = (bg, fg, accent)
+            card.set_glass_color(actual_background, accent)
+        source = 'Bild' if image_color else 'Hintergrund'
+        self.accent_preview.setText(f'●  Automatisch ({source}): {accent}')
+        self.accent_preview.setToolTip(
+            'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
+        )
+        palette_key = (base_background, actual_background, fg, accent)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
-            # Reapply widget styles only when the color palette changes.
-            self.setStyleSheet(build_glass_stylesheet(bg, fg) + '\n' + neon_stylesheet(bg, fg))
-            self.settings.setValue('background_color', bg)
-            self.settings.setValue('text_color', fg)
+            self.setStyleSheet(
+                build_glass_stylesheet(actual_background, fg)
+                + '\n' + neon_stylesheet(actual_background, fg, accent)
+            )
+            self.settings.setValue('background_color', base_background)
             if self.reporter is not None:
-                self.reporter.note('PALETTE_CHANGED', f'background={bg}, text={fg}', force=True)
+                self.reporter.note(
+                    'PALETTE_CHANGED',
+                    f'background={base_background}, image={"yes" if image_color else "no"}',
+                    force=True,
+                )
 
     def restore_background_image(self):
         mode = self.settings.value('background_image_mode', 'cover', type=str)
@@ -806,6 +777,7 @@ class PasswordWindow(QMainWindow):
                 self.background_file_label.setText('Gespeichertes Bild nicht gefunden oder ungültig.')
                 self.background_surface.clear_background_image()
         self.clear_background_button.setEnabled(self.background_surface.has_background_image())
+        self.apply_colors()
 
     def choose_background_image(self):
         selected, _ = QFileDialog.getOpenFileName(
@@ -822,6 +794,7 @@ class PasswordWindow(QMainWindow):
         self.background_file_label.setText(Path(selected).name)
         self.clear_background_button.setEnabled(True)
         self.settings.setValue('background_image_path', selected)
+        self.apply_colors()
         self.status.setText('Hintergrundbild geladen.')
         if self.reporter is not None:
             self.reporter.note('BACKGROUND_LOADED', f'format={Path(selected).suffix.lower()}', force=True)
@@ -831,6 +804,7 @@ class PasswordWindow(QMainWindow):
         self.background_file_label.setText('Kein Hintergrundbild ausgewählt')
         self.clear_background_button.setEnabled(False)
         self.settings.remove('background_image_path')
+        self.apply_colors()
         if self.reporter is not None:
             self.reporter.note('BACKGROUND_REMOVED', force=True)
 
