@@ -21,6 +21,7 @@ jobs:
     timeout-minutes: 30
     env:
       QT_QPA_PLATFORM: offscreen
+      PYTHONPATH: .
       PYTHONFAULTHANDLER: "1"
       GH_TOKEN: ${{ github.token }}
     steps:
