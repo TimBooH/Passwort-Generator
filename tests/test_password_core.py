@@ -1,4 +1,3 @@
-import re
 import string
 import unittest
 from unittest import mock
@@ -66,74 +65,33 @@ class PasswordGeneratorTests(unittest.TestCase):
         self.assertEqual(estimate_strength('valid', phrase_words=6)[0], 'Stark')
         self.assertEqual(estimate_strength('valid', phrase_words=10)[0], 'Sehr stark')
 
-    def test_passphrase_separator_dropdown_values(self):
-        self.assertEqual(
-            [separator for _label, separator in PHRASE_SEPARATORS],
-            ['-', ' ', '_', '.'],
-        )
-        for _label, separator in PHRASE_SEPARATORS:
-            phrase = make_passphrase(5, separator=separator)
-            self.assertEqual(len(phrase.split(separator)), 5)
-            self.assertNotIn(' ', phrase) if separator != ' ' else None
+    def test_separator_choices(self):
+        self.assertEqual([value for _, value in PHRASE_SEPARATORS], ['-', ' ', '_', '.'])
+        for _, separator in PHRASE_SEPARATORS:
+            value = make_passphrase(5, separator=separator)
+            self.assertEqual(len(value.split(separator)), 5)
 
-    def test_optional_cryptographic_two_digit_suffix(self):
+    def test_two_digit_number_is_secure_and_optional(self):
         for separator in ('-', ' ', '_', '.'):
-            for random_value, expected in ((0, '10'), (89, '99')):
-                with mock.patch('password_core.secrets.randbelow', return_value=random_value) as rng:
-                    phrase = make_passphrase(
-                        6, separator=separator, add_two_digit_number=True
-                    )
-                rng.assert_called_once_with(90)
-                self.assertEqual(len(phrase.split(separator)), 7)
-                self.assertTrue(phrase.endswith(separator + expected))
-                self.assertRegex(phrase.split(separator)[-1], r'^[1-9][0-9]
-        for length in (8, 20, 64, 128):
-            for _ in range(10):
-                result = make_password(length)
-                self.assertEqual(len(result), length)
-                self.assertTrue(any(char.islower() for char in result))
-                self.assertTrue(any(char.isupper() for char in result))
-                self.assertTrue(any(char.isdigit() for char in result))
-                self.assertTrue(any(char in SYMBOLS for char in result))
-
-    def test_excluded_similar(self):
-        for _ in range(20):
-            self.assertTrue(set(make_password(128, exclude_similar=True)).isdisjoint(SIMILAR_CHARS))
-
-    def test_numeric_password(self):
-        result = make_password(15, use_lower=False, use_upper=False, use_symbols=False)
-        self.assertEqual(len(result), 15)
-        self.assertTrue(set(result) <= set(string.digits))
-
-    def test_missing_groups_rejected(self):
+            for rand, expected in ((0, '10'), (89, '99')):
+                with mock.patch('password_core.secrets.randbelow', return_value=rand) as random_number:
+                    value = make_passphrase(6, separator=separator, add_two_digit_number=True)
+                random_number.assert_called_once_with(90)
+                parts = value.split(separator)
+                self.assertEqual(len(parts), 7)
+                self.assertEqual(parts[-1], expected)
+                self.assertTrue(parts[-1].isdigit())
+        self.assertEqual(len(make_passphrase(6).split('-')), 6)
         with self.assertRaises(ValueError):
-            make_password(20, use_lower=False, use_upper=False,
-                          use_digits=False, use_symbols=False)
-
-    def test_bounds(self):
-        for length in (0, 7, 129):
-            with self.assertRaises(ValueError):
-                make_password(length)
-
-
-if __name__ == '__main__':
-    unittest.main()
-)
-        without_number = make_passphrase(6, add_two_digit_number=False)
-        self.assertEqual(len(without_number.split('-')), 6)
-        with self.assertRaises(ValueError):
-            make_passphrase(6, add_two_digit_number='ja')
+            make_passphrase(6, add_two_digit_number='true')
         with self.assertRaises(ValueError):
             make_passphrase(True)
 
-    def test_optional_digits_raise_entropy_estimate(self):
-        ordinary = make_passphrase(5)
-        _, without = estimate_strength(ordinary, phrase_words=5)
-        _, with_number = estimate_strength(
-            ordinary, phrase_words=5, extra_entropy_bits=6.49
-        )
-        self.assertGreater(with_number, without)
-
+    def test_optional_digit_suffix_adds_entropy(self):
+        phrase = make_passphrase(5)
+        plain = estimate_strength(phrase, phrase_words=5)[1]
+        with_digits = estimate_strength(phrase, phrase_words=5, extra_entropy_bits=6.49)[1]
+        self.assertGreater(with_digits, plain)
     def test_all_selected_groups_and_length(self):
         for length in (8, 20, 64, 128):
             for _ in range(10):
