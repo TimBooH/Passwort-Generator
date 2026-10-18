@@ -45,6 +45,7 @@ assert window.scheme_combo.count() == 6
 assert window.scheme_combo.findData('glass_dark') >= 0
 assert window.scheme_combo.findData('glass_light') >= 0
 assert window.scheme_combo.findData('custom') >= 0
+initial_circuit_key = window.background_surface._circuit.pixmap().cacheKey()
 
 def apply_scheme(scheme):
     window.scheme_combo.setCurrentIndex(window.scheme_combo.findData(scheme))
@@ -56,6 +57,9 @@ def apply_scheme(scheme):
     expected_accent = accent_for_background(bg)
     assert expected_accent in window.accent_preview.text()
     assert window.glass_cards[0]._accent.name().upper() == expected_accent
+    assert window.background_surface._circuit.pixmap().cacheKey() == initial_circuit_key, (
+        'Recreating QPainter circuit texture during color changes can crash Qt'
+    )
     return expected_accent
 
 

@@ -300,11 +300,9 @@ class GlassBackground(QWidget):
         if color.isValid() and color.name() != self._base_color:
             self._base_color = color.name()
             self._apply_color_style()
-            # Recreate decoration on palette changes, never on resize.
-            from neon_style import circuit_texture
-            self._circuit.setPixmap(
-                circuit_texture(accent=accent_for_background(self._base_color))
-            )
+            # Circuit pixmap is cached. Repeated QPainter re-creation while
+            # Qt repolishes the entire theme can trigger a native refcount
+            # failure. Dynamic accents belong to native QSS controls/cards.
 
     def set_background_image(self, path):
         loaded = read_background_image(path)

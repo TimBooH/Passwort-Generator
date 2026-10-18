@@ -6,7 +6,8 @@
 
 - Neue gespeicherte Farbschemas: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass**, **Forest Glass** und **Eigene Farben**
 - Die Akzentfarbe wird automatisch aus der Hintergrundfarbe berechnet.
-- Schaltflächen, Checkboxen, Regler, Rahmen, Glas-Kacheln und Schaltkreis-Hintergrund erhalten passende Akzentfarben.
+- Schaltflächen, Checkboxen, Regler, Rahmen und Glas-Kacheln erhalten passende Akzentfarben.
+- Der dekorative Schaltkreis-Hintergrund bleibt einmalig gerendert, um Abstürze bei schnellem Farbwechsel zu verhindern.
 - Beim manuellen Anpassen einer Farbe wird automatisch auf „Eigene Farben“ umgestellt.
 - Die Glas-Deckkraft bleibt fest eingestellt; kein zusätzlicher Deckkraft-Regler.
 
