@@ -229,8 +229,8 @@ class PasswordWindow(QMainWindow):
         self.glass_cards.append(group)
         group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         group_layout = group.body
-        group_layout.setSpacing(6)
-        group.layout().setContentsMargins(16, 11, 16, 12)
+        group_layout.setSpacing(4)
+        group.layout().setContentsMargins(16, 8, 16, 8)
         group.layout().setSpacing(3)
 
         mode_row = QHBoxLayout()
@@ -442,10 +442,9 @@ class PasswordWindow(QMainWindow):
             self.scheme_combo.addItem(scheme_name, scheme_id)
         scheme_row.addWidget(self.scheme_combo, 1)
         colors_layout.addLayout(scheme_row)
-        scheme_hint = QLabel('Glass (Hintergrund sichtbar), Glass Dark, Glass Light und weitere Vorlagen.')
-        scheme_hint.setWordWrap(True)
-        scheme_hint.setObjectName('supportText')
-        colors_layout.addWidget(scheme_hint)
+        self.scheme_combo.setToolTip(
+            'Glass (Hintergrund sichtbar), Glass Dark, Glass Light und weitere Vorlagen.'
+        )
         bg_row = QHBoxLayout()
         bg_row.addWidget(QLabel('Hintergrund:'))
         self.bg_combo = QComboBox()
@@ -463,9 +462,8 @@ class PasswordWindow(QMainWindow):
         self.accent_preview.setObjectName('accentPreview')
         self.accent_preview.setMinimumHeight(25)
         colors_layout.addWidget(self.accent_preview)
-        colors_note = QLabel('Die Textfarbe wird automatisch lesbar gewählt; Akzent und Schema folgen dem Hintergrund.')
-        colors_note.setWordWrap(True)
-        colors_layout.addWidget(colors_note)
+        # Text and accent colors already explain themselves in the preview.
+        # Avoid an extra wrapped line so Security fits without page scrolling.
         # Colors and wallpaper now share a single appearance tile.
         image_heading = QLabel('HINTERGRUNDBILD')
         image_heading.setObjectName('supportText')
@@ -526,10 +524,9 @@ class PasswordWindow(QMainWindow):
         self.clipboard_timeout_combo.setEnabled(self.clear_clipboard_checkbox.isChecked())
         clipboard_row.addWidget(self.clipboard_timeout_combo)
         security_card.body.addLayout(clipboard_row)
-        security_hint = QLabel('Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.')
-        security_hint.setObjectName('supportText')
-        security_hint.setWordWrap(True)
-        security_card.body.addWidget(security_hint)
+        self.clear_clipboard_checkbox.setToolTip(
+            'Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.'
+        )
         settings_page_layout.addWidget(security_card, 0)
 
         self.clipboard_timer = QTimer(self)
