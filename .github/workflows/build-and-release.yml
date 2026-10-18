@@ -34,6 +34,12 @@ jobs:
           PYTHONFAULTHANDLER: "1"
         run: |
           PYTHONPATH=. python tests/smoke_glossy_ui.py
+      - name: Integration-test update & automatic restart
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYTHONFAULTHANDLER: "1"
+        run: |
+          PYTHONPATH=. python tests/smoke_update_gui.py
       - name: Save design preview
         uses: actions/upload-artifact@v4
         with:
@@ -41,6 +47,7 @@ jobs:
           path: |
             glossy-preview.png
             glossy-wallpaper-preview.png
+            glossy-wide-preview.png
           if-no-files-found: error
       - name: Build AppImage
         env:
