@@ -7,6 +7,7 @@ APPIMAGE_NAME='PasswortGenerator-x86_64.AppImage'
 BASE_URL="https://github.com/${REPO}/releases/latest/download"
 INSTALL_DIR="${HOME}/.local/opt/passwort-generator"
 APPIMAGE_TARGET="${INSTALL_DIR}/PasswortGenerator.AppImage"
+PREVIOUS_TARGET="${INSTALL_DIR}/PasswortGenerator-previous.AppImage"
 DATA_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}"
 DESKTOP_DIR="${DATA_HOME}/applications"
 ICON_DIR="${DATA_HOME}/icons/hicolor/scalable/apps"
@@ -64,10 +65,29 @@ if [[ "$(head -c 4 "$SOURCE" | od -An -tx1 | tr -d ' \n')" != '7f454c46' ]]; the
   exit 1
 fi
 
-TEMP_APPIMAGE="${INSTALL_DIR}/.PasswortGenerator.AppImage.new.$$"
-trap 'rm -f "$TEMP_APPIMAGE"; rm -rf "$TEMP_DIR"' EXIT
+# Das vollständige neue Image wird bereitgestellt, bevor die alte Version
+# angefasst wird. Der alte Inode bleibt mit hardlink als previous erhalten;
+# falls das Dateisystem keine Hardlinks unterstützt, wird er kopiert.
+TEMP_APPIMAGE="${INSTALL_DIR}/.PasswortGenerator.AppImage.new.$"
+BACKUP_TEMP="${INSTALL_DIR}/.PasswortGenerator.previous.new.$"
+trap 'rm -f "$TEMP_APPIMAGE" "$BACKUP_TEMP"; rm -rf "$TEMP_DIR"' EXIT
 install -m 0755 "$SOURCE" "$TEMP_APPIMAGE"
+if [[ -L "$APPIMAGE_TARGET" || -L "$PREVIOUS_TARGET" ]]; then
+  printf 'Sicherheitsfehler: AppImage-Ziele dürfen keine Symlinks sein.\n' >&2
+  exit 1
+fi
+if [[ -f "$APPIMAGE_TARGET" ]]; then
+  if ! ln "$APPIMAGE_TARGET" "$BACKUP_TEMP" 2>/dev/null; then
+    cp -p "$APPIMAGE_TARGET" "$BACKUP_TEMP"
+  fi
+  mv -f "$BACKUP_TEMP" "$PREVIOUS_TARGET"
+fi
 mv -f "$TEMP_APPIMAGE" "$APPIMAGE_TARGET"
+
+# Nur eigene veraltete Versionsdateien entfernen – nicht fremde AppImages.
+find "$INSTALL_DIR" -maxdepth 1 -type f -name 'PasswortGenerator*.AppImage' \
+  ! -name 'PasswortGenerator.AppImage' \
+  ! -name 'PasswortGenerator-previous.AppImage' -delete
 
 cat > "$ICON_FILE" <<'SVG'
 <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
@@ -106,4 +126,7 @@ fi
 printf '\nPasswortGenerator installiert!\n'
 printf 'Startmenü: PasswortGenerator\n'
 printf 'AppImage: %s\n' "$APPIMAGE_TARGET"
+if [[ -f "$PREVIOUS_TARGET" ]]; then
+  printf 'Vorherige Version: %s\n' "$PREVIOUS_TARGET"
+fi
 printf 'Deinstallation: ./uninstall.sh\n'
