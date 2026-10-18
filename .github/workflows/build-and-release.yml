@@ -79,6 +79,7 @@ jobs:
           PYTHONPATH=. python tests/smoke_update_navigation_ui.py
           PYTHONPATH=. python tests/smoke_first_run_tour_ui.py
           PYTHONPATH=. python tests/smoke_no_scroll_ui.py
+          PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
 
       - name: Capture and publish real README screenshot

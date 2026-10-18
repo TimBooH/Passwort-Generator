@@ -1,4 +1,4 @@
-"""No-scroll layout: all four pages and paged release history must remain usable.
+"""No-scroll layout: four pages and release dropdown must remain usable.
 
 Qt offscreen smoke test, executed on Linux and Windows before packaging.
 """
@@ -25,8 +25,8 @@ controls = (
     (window.generate_button, window.history_button, window.length_slider),
     (window.scheme_combo, window.bg_combo, window.choose_background_button,
      window.clear_background_button, window.image_mode_combo),
-    (window.check_button, window.changelog_view, window.release_list,
-     window.releases_previous, window.releases_next, window.release_page_label),
+    (window.check_button, window.changelog_view, window.release_combo,
+     window.release_history_status),
     (window.info_credit, window.info_version, window.visual_guide_button,
      window.repeat_tour_button),
 )
@@ -52,38 +52,38 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
                 f'Vertical clipping: {w}x{h} page={page} {control.objectName()} bottom={bottom}'
             )
         if page == 2:
-            assert not window.release_list.verticalScrollBar().isVisible()
             assert not window.changelog_view.verticalScrollBar().isVisible()
+            assert window.release_combo.isVisible()
+            assert window.check_button.width() <= 125
+            assert window.check_button.mapTo(window, QPoint(0, 0)).x() < window.width() // 2
 
-# Fifty versions cannot fit inside a list without scrolling: navigate pages.
+# All fifty release entries are in the dropdown; no page buttons or
+# external scrollbars are needed. Selection changes the separate changelog.
 entries = [{
     'tag': f'v0.{i:02d}.0',
     'date': '2026-10-18',
-    'body': f'Änderung Nummer {i}',
+    'body': f'- Änderung Nummer {i}',
 } for i in range(50, 0, -1)]
-window._release_entries = entries
 window._history_releases = {entry['tag']: entry for entry in entries}
 window.tabs.setCurrentIndex(2)
-window.show_release_page(0)
+window.release_combo.blockSignals(True)
+window.release_combo.clear()
+for entry in entries:
+    window.release_combo.addItem(entry['tag'], entry['tag'])
+window.release_combo.setEnabled(True)
+window.release_combo.blockSignals(False)
 app.processEvents()
-assert window.release_list.count() == 3
-assert window.release_list.item(0).data(Qt.ItemDataRole.UserRole) == 'v0.50.0'
-assert window.releases_next.isEnabled()
-assert not window.releases_previous.isEnabled()
-assert window.release_page_label.text() == 'Seite 1/17'
-window.releases_next.click()
+assert window.release_combo.count() == 50
+assert window.release_combo.itemData(0) == 'v0.50.0'
+assert window.release_combo.itemData(49) == 'v0.01.0'
+window.release_combo.setCurrentIndex(49)
 app.processEvents()
-assert window.release_page_label.text() == 'Seite 2/17'
-assert window.release_list.item(0).data(Qt.ItemDataRole.UserRole) == 'v0.47.0'
-window.show_release_page(16)
+assert window.changelog_title.text().endswith('v0.01.0')
+assert 'Änderung Nummer 1' in window.changelog_view.toPlainText()
+window.release_combo.setCurrentIndex(10)
 app.processEvents()
-assert window.release_list.count() == 2
-assert window.release_list.item(1).data(Qt.ItemDataRole.UserRole) == 'v0.01.0'
-assert not window.releases_next.isEnabled()
-assert window.releases_previous.isEnabled()
-assert not window.release_list.verticalScrollBar().isVisible()
-window.releases_previous.click()
-assert window.release_page_label.text() == 'Seite 16/17'
+assert window.changelog_title.text().endswith('v0.40.0')
+assert 'Änderung Nummer 40' in window.changelog_view.toPlainText()
 
 # The illustrated help is contained within Info, with no scrollable preview.
 window.show_info()
@@ -103,4 +103,4 @@ for size in ((530, 700), (850, 760)):
 
 window.close()
 app.processEvents()
-print('All four pages accessible without scrolling; release paging + inline graphics OK')
+print('Four pages without scrolling, dropdown releases, compact check button, inline graphics OK')

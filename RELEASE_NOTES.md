@@ -1,11 +1,12 @@
-# PasswortGenerator v0.11.0 – Alle Seiten ohne Scrollen
+# PasswortGenerator v0.12.0 – Übersichtlichere Kacheln
 
-**Schritt 11 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 12 von 100** bis zur Vollversion 1.0.0.
 
-- Die Pfeil-Tour markiert jetzt die **richtigen Bedienelemente**. Bei Passphrase zeigt sie direkt auf Zufallszahl und Trennzeichen.
-- **Info ist ein vierter Reiter im Hauptfenster** und öffnet kein separates Dialogfenster.
-- Die **grafische Erklärung bleibt** – ihre Bilder erscheinen direkt in Info, ohne Scrollen.
-- **Kein Scrollen** mehr auf Passwort, Einstellungen und Updates. Historische Releases lassen sich über **„Neuer“ / „Älter“** seitenweise auswählen.
-- Änderungen für **Windows und Linux**; Update-Popup, Glass und automatische Updateprüfung bleiben.
+- **Updates:** „Bisherige Versionen“ jetzt als **Dropdown**, neueste Veröffentlichung zuerst.
+- **Updates:** Die Kachel **„Änderungen & Versionen“** erscheint separat **unter** der Versionsauswahl; der Changelog folgt der Auswahl.
+- **Updates:** Kleiner Button **„↻ Prüfen“**, links ausgerichtet.
+- **Info:** „Made by Jon Bovi“ und **„Anleitung & Hilfe“** haben jeweils eine eigene Glaskachel. Die grafische Erklärung bleibt erhalten.
+- **Fenster:** **Position und Größe beim Schließen speichern** und beim nächsten Öffnen wiederherstellen – auch maximierte Fenster.
+- Alle Änderungen für **Windows und Linux**; keine Seiten-Scrollleisten und keine gespeicherten Passwörter.
 
-Die Installation von Updates erfolgt weiterhin nur nach Bestätigung.
+Automatische Updateprüfung beim Start und alle zwei Stunden, Update-Popup sowie die Windows- und Linux-Installer bleiben erhalten.

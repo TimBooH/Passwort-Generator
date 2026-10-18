@@ -82,6 +82,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows first-run arrow tour and update popup smoke failed' }
           python tests/smoke_no_scroll_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows four-page scroll-free UI smoke failed' }
+          python tests/smoke_window_geometry_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows window-position and size persistence smoke failed' }
 
       # Verify the bundled application has four tabs: Passwort, Design, Updates, Info.
       - name: Build Windows exe and run packaged smoke test

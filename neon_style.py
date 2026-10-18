@@ -182,6 +182,18 @@ QPushButton#primaryButton:hover {{
         stop:0 {primary_top}, stop:1 {accent});
     border-color: {bright};
 }}
+QPushButton#checkUpdateButton {{
+    min-height: 20px;
+    max-height: 25px;
+    padding: 2px 7px;
+    border-radius: 8px;
+    font-size: 11px;
+}}
+QComboBox#releaseVersionCombo {{
+    font-size: 12px;
+    min-height: 26px;
+    padding: 5px 10px;
+}}
 QPushButton#bottomAction {{
     border: 1px solid {border}; background: {field};
     min-height: 23px; font-size: 11px;

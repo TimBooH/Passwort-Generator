@@ -99,6 +99,10 @@ window.show_info()
 app.processEvents()
 assert window.tabs.currentIndex() == 3
 assert window.info_credit.text() == 'Made by Jon Bovi'
+assert window.info_card is not window.info_help_card
+assert window.info_card.isVisible()
+assert window.info_help_card.isVisible()
+assert window.visual_guide_button.parentWidget() is not None
 assert 'v' in window.info_version.text()
 assert not hasattr(window, 'build_info_dialog')
 graphic_button = window.visual_guide_button
@@ -142,16 +146,17 @@ window.history_reply = reply
 window.release_history_finished()
 app.processEvents()
 assert reply.deleted
-assert window.release_list.count() == 3
+assert window.release_combo.count() == 3
+assert window.release_combo.isEnabled()
 assert window._release_history_loaded
-assert window.release_list.currentRow() == 0
-assert window.release_list.item(0).data(Qt.ItemDataRole.UserRole) == 'v0.05.0'
-assert window.release_list.item(2).data(Qt.ItemDataRole.UserRole) == 'v1.5.1'
+assert window.release_combo.currentIndex() == 0
+assert window.release_combo.itemData(0) == 'v0.05.0'
+assert window.release_combo.itemData(2) == 'v1.5.1'
 assert 'Automatische Akzentfarbe' in window.changelog_view.toPlainText()
 assert not hasattr(window, 'open_release_button')
 assert not hasattr(window, 'reload_history_button')
-assert 'neueste oben' in window.release_history_status.text()
-window.release_list.setCurrentRow(2)
+assert 'neueste zuerst' in window.release_history_status.text()
+window.release_combo.setCurrentIndex(2)
 app.processEvents()
 assert window.changelog_title.text().endswith('v1.5.1')
 assert 'Schnellerer Build' in window.changelog_view.toPlainText()
@@ -164,7 +169,7 @@ bad_reply = FakeReleaseReply({'message': 'rate limit'})
 window.history_reply = bad_reply
 window.release_history_finished()
 assert 'nicht verfügbar' in window.release_history_status.text()
-assert window.release_list.count() == 3
+assert window.release_combo.count() == 3
 assert bad_reply.deleted
 
 window.close()

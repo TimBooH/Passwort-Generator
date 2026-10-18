@@ -1,5 +1,8 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.12.0 provides release history in a newest-first dropdown,
+a separate changelog glass tile, distinct creator/help cards, compact
+left-aligned update checks, and persistent size/position via QSettings.
 Version 0.11.0 preloads all graphical explanation previews so hidden tabs
 are immediately illustrated on Windows and Linux.
 Version 0.11.0 keeps three navigation action labels with a separate fourth
@@ -38,7 +41,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.11.0"
+APP_VERSION = "0.12.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

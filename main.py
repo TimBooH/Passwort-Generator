@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
+from PySide6.QtCore import QByteArray, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
 from PySide6.QtGui import QColor, QFont, QIcon
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
@@ -465,14 +465,19 @@ class PasswordWindow(QMainWindow):
         updates_layout.addWidget(self.update_status)
         update_actions = QHBoxLayout()
         update_actions.setSpacing(6)
-        self.check_button = QPushButton('Auf Updates prüfen')
+        self.check_button = QPushButton('↻ Prüfen')
+        self.check_button.setObjectName('checkUpdateButton')
+        self.check_button.setToolTip('Jetzt auf Updates prüfen')
+        self.check_button.setFixedWidth(112)
+        self.check_button.setMinimumHeight(23)
         self.check_button.clicked.connect(self.check_for_updates)
-        update_actions.addWidget(self.check_button)
+        update_actions.addWidget(self.check_button, 0, Qt.AlignmentFlag.AlignLeft)
         self.download_button = QPushButton('Update installieren & neu starten')
         self.download_button.setObjectName('primaryButton')
         self.download_button.clicked.connect(self.download_update)
         self.download_button.hide()
-        update_actions.addWidget(self.download_button)
+        update_actions.addWidget(self.download_button, 0, Qt.AlignmentFlag.AlignLeft)
+        update_actions.addStretch(1)
         updates_layout.addLayout(update_actions)
         self.progress_bar = QProgressBar()
         self.progress_bar.setRange(0, 100)
@@ -484,73 +489,53 @@ class PasswordWindow(QMainWindow):
         )
 
         updates_page_layout.addWidget(updates, 0)
-        # Concise changes and newest-to-oldest chronological history are
-        # grouped separately; selecting a version only changes the text.
-        history_card = GlossyGlassCard('ÄNDERUNGEN & VERSIONEN')
-        self.secondary_cards.append(history_card)
-        history_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        history_layout = history_card.body
-        history_layout.setSpacing(4)
-        history_card.layout().setContentsMargins(13, 8, 13, 9)
-        history_card.layout().setSpacing(2)
+        # Versions are chosen in a dropdown: newest first, no outer scrolling.
+        versions_card = GlossyGlassCard('BISHERIGE VERSIONEN')
+        self.secondary_cards.append(versions_card)
+        versions_card.setObjectName('versionsCard')
+        versions_card.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                    QSizePolicy.Policy.Preferred)
+        versions_card.layout().setContentsMargins(13, 7, 13, 8)
+        versions_card.body.setSpacing(5)
+        self.release_combo = QComboBox()
+        self.release_combo.setObjectName('releaseVersionCombo')
+        self.release_combo.setAccessibleName('Bisherige Versionen auswählen')
+        self.release_combo.addItem('Versionen werden geladen …', None)
+        self.release_combo.setEnabled(False)
+        self.release_combo.currentIndexChanged.connect(self.select_release_history)
+        versions_card.body.addWidget(self.release_combo)
+        self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
+        self.release_history_status.setObjectName('supportText')
+        self.release_history_status.setWordWrap(True)
+        versions_card.body.addWidget(self.release_history_status)
+        updates_page_layout.addWidget(versions_card, 0)
+
+        # A second, separate glass tile below the version dropdown.
+        changelog_card = GlossyGlassCard('ÄNDERUNGEN & VERSIONEN')
+        changelog_card.setObjectName('changelogCard')
+        self.secondary_cards.append(changelog_card)
+        changelog_card.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                     QSizePolicy.Policy.Expanding)
+        changelog_card.layout().setContentsMargins(13, 8, 13, 9)
+        changelog_card.layout().setSpacing(2)
+        changelog_layout = changelog_card.body
+        changelog_layout.setSpacing(5)
         self.changelog_title = QLabel('Änderungen der veröffentlichten Version')
         self.changelog_title.setObjectName('supportText')
         self.changelog_title.setWordWrap(True)
-        history_layout.addWidget(self.changelog_title)
+        changelog_layout.addWidget(self.changelog_title)
         self.changelog_view = QTextBrowser()
         self.changelog_view.setObjectName('changelogView')
         self.changelog_view.setOpenExternalLinks(False)
         self.changelog_view.setOpenLinks(False)
-        self.changelog_view.setFixedHeight(99)
+        self.changelog_view.setFixedHeight(124)
         self.changelog_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.changelog_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.changelog_view.setPlainText(
             'Die Änderungen werden beim Öffnen dieser Seite automatisch geladen.'
         )
-        history_layout.addWidget(self.changelog_view)
-
-        history_header = QLabel('BISHERIGE VERSIONEN')
-        history_header.setObjectName('glassCardTitle')
-        history_layout.addWidget(history_header)
-        self.release_list = QListWidget()
-        self.release_list.setObjectName('releaseList')
-        self.release_list.setFixedHeight(118)
-        self.release_list.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.release_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._release_entries = []
-        self._history_page = 0
-        self._releases_per_page = 3
-        self.release_list.currentItemChanged.connect(self.select_release_history)
-        history_layout.addWidget(self.release_list)
-        page_nav = QHBoxLayout()
-        page_nav.setSpacing(5)
-        self.releases_previous = QPushButton('← Neuer')
-        self.releases_previous.setObjectName('releasesPrevious')
-        self.releases_previous.setEnabled(False)
-        self.releases_previous.clicked.connect(
-            lambda: self.show_release_page(self._history_page - 1)
-        )
-        self.releases_next = QPushButton('Älter →')
-        self.releases_next.setObjectName('releasesNext')
-        self.releases_next.setEnabled(False)
-        self.releases_next.clicked.connect(
-            lambda: self.show_release_page(self._history_page + 1)
-        )
-        self.release_page_label = QLabel('Seite 1/1')
-        self.release_page_label.setObjectName('supportText')
-        page_nav.addWidget(self.releases_previous)
-        page_nav.addWidget(self.release_page_label, 1,
-                           Qt.AlignmentFlag.AlignCenter)
-        page_nav.addWidget(self.releases_next)
-        history_layout.addLayout(page_nav)
-        self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
-        self.release_history_status.setObjectName('supportText')
-        self.release_history_status.setWordWrap(True)
-        history_layout.addWidget(self.release_history_status)
-
-
-
-        updates_page_layout.addWidget(history_card, 1)
+        changelog_layout.addWidget(self.changelog_view)
+        updates_page_layout.addWidget(changelog_card, 1)
 
         # Info is the fourth built-in page, never a separate modal window.
         self.info_page = QWidget()
@@ -558,13 +543,15 @@ class PasswordWindow(QMainWindow):
         info_layout = QVBoxLayout(self.info_page)
         info_layout.setContentsMargins(3, 4, 3, 3)
         info_layout.setSpacing(4)
-        self.info_card = GlossyGlassCard('INFO')
+        # Creator credit gets its own tile above the help tile.
+        self.info_card = GlossyGlassCard('ÜBER DAS PROGRAMM')
+        self.info_card.setObjectName('infoCreatorCard')
         self.info_card.setSizePolicy(QSizePolicy.Policy.Expanding,
-                                     QSizePolicy.Policy.Expanding)
-        self.info_card.layout().setContentsMargins(16, 12, 16, 13)
-        info_layout.addWidget(self.info_card, 1)
+                                     QSizePolicy.Policy.Preferred)
+        self.info_card.layout().setContentsMargins(16, 9, 16, 11)
+        info_layout.addWidget(self.info_card, 0)
         info_body = self.info_card.body
-        info_body.setSpacing(8)
+        info_body.setSpacing(6)
         self.info_credit = QLabel('Made by Jon Bovi')
         self.info_credit.setObjectName('infoCredit')
         self.info_credit.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -584,6 +571,17 @@ class PasswordWindow(QMainWindow):
         self.info_description.setWordWrap(True)
         self.info_description.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_body.addWidget(self.info_description)
+
+        # A separate Hilfe tile contains the replay tour and illustrated help.
+        self.info_help_card = GlossyGlassCard('ANLEITUNG & HILFE')
+        self.info_help_card.setObjectName('infoHelpCard')
+        self.info_help_card.setSizePolicy(QSizePolicy.Policy.Expanding,
+                                          QSizePolicy.Policy.Expanding)
+        self.info_help_card.layout().setContentsMargins(16, 9, 16, 11)
+        self.secondary_cards.append(self.info_help_card)
+        info_layout.addWidget(self.info_help_card, 1)
+        help_body = self.info_help_card.body
+        help_body.setSpacing(5)
         info_actions = QHBoxLayout()
         info_actions.setSpacing(5)
         self.visual_guide_button = QPushButton('▣ Grafische Erklärung')
@@ -596,7 +594,7 @@ class PasswordWindow(QMainWindow):
             lambda: self.show_first_run_tour(force=True)
         )
         info_actions.addWidget(self.repeat_tour_button, 1)
-        info_body.addLayout(info_actions)
+        help_body.addLayout(info_actions)
         self.info_detail_stack = QStackedWidget()
         self.info_detail_stack.setObjectName('infoDetailStack')
         intro_panel = QWidget()
@@ -612,7 +610,7 @@ class PasswordWindow(QMainWindow):
         intro_layout.addStretch(1)
         self.info_detail_stack.addWidget(intro_panel)
         self._info_visual_loaded = False
-        info_body.addWidget(self.info_detail_stack, 1)
+        help_body.addWidget(self.info_detail_stack, 1)
 
         self.tabs.addWidget(self.password_page)
         self.tabs.addWidget(self.settings_page)
@@ -644,6 +642,7 @@ class PasswordWindow(QMainWindow):
             QTimer.singleShot(800, self.check_for_updates)
         self.on_tab_changed(self.tabs.currentIndex())
         self.update_navigation_labels()
+        self.restore_window_geometry()
         if self.reporter is not None:
             self.reporter.note('UI_STARTED', 'neon interface ready', force=True)
 
@@ -918,6 +917,20 @@ class PasswordWindow(QMainWindow):
         button.style().polish(button)
         button.update()
 
+    def restore_window_geometry(self):
+        """Restore last window size and position on startup, if still valid."""
+        stored = self.settings.value('window/geometry')
+        if isinstance(stored, QByteArray) and not stored.isEmpty():
+            return self.restoreGeometry(stored)
+        return False
+
+    def closeEvent(self, event):
+        """Keep only window geometry, never secrets or session history."""
+        if event.isAccepted():
+            self.settings.setValue('window/geometry', self.saveGeometry())
+            self.settings.sync()
+        super().closeEvent(event)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if self._first_run_tour is not None:
@@ -1109,7 +1122,7 @@ class PasswordWindow(QMainWindow):
                 raise ValueError(reply.errorString())
             response = json.loads(bytes(reply.readAll()).decode('utf-8'))
             latest_version = response.get('tag_name', '')
-            if not self._release_history_loaded and self.release_list.count() == 0:
+            if not self._release_history_loaded and not self._history_releases:
                 note = response.get('body', '')
                 if isinstance(note, str) and note.strip():
                     self.changelog_title.setText(f'Kurzüberblick · {latest_version}')
@@ -1167,13 +1180,27 @@ class PasswordWindow(QMainWindow):
             raw = bytes(reply.readAll())
             if len(raw) > 2_000_000:
                 raise ValueError('Die Antwort von GitHub ist zu groß.')
-            payload = json.loads(raw.decode('utf-8'))
-            releases = normalized_releases(payload, REPO_URL)
+            releases = normalized_releases(json.loads(raw.decode('utf-8')), REPO_URL)
             self._history_releases = {item['tag']: item for item in releases}
-            self._release_entries = releases
             self._release_history_loaded = True
-            self.show_release_page(0)
+            previous_selection = self.release_combo.currentData()
+            self.release_combo.blockSignals(True)
+            self.release_combo.clear()
+            for entry in releases:
+                date_suffix = f" · {entry['date']}" if entry['date'] else ''
+                self.release_combo.addItem(entry['tag'] + date_suffix, entry['tag'])
             if not releases:
+                self.release_combo.addItem('Keine veröffentlichten Versionen', None)
+            self.release_combo.setEnabled(bool(releases))
+            index = self.release_combo.findData(previous_selection)
+            self.release_combo.setCurrentIndex(max(0, index))
+            self.release_combo.blockSignals(False)
+            self.release_history_status.setText(
+                f'{len(releases)} Version(en) · neueste zuerst'
+            )
+            if releases:
+                self.select_release_history(self.release_combo.currentIndex())
+            else:
                 self.changelog_view.setPlainText('Keine veröffentlichten Versionen gefunden.')
         except (ValueError, TypeError, UnicodeDecodeError, KeyError) as error:
             self.release_history_status.setText(
@@ -1187,32 +1214,9 @@ class PasswordWindow(QMainWindow):
         finally:
             reply.deleteLater()
 
-    def show_release_page(self, page):
-        """Show three releases without scrolling; older/newer via buttons."""
-        count = len(self._release_entries)
-        size = self._releases_per_page
-        total_pages = max(1, (count + size - 1) // size)
-        page = max(0, min(int(page), total_pages - 1))
-        self._history_page = page
-        self.release_list.clear()
-        for entry in self._release_entries[page * size:(page + 1) * size]:
-            suffix = f" · {entry['date']}" if entry['date'] else ''
-            item = QListWidgetItem(entry['tag'] + suffix)
-            item.setData(Qt.ItemDataRole.UserRole, entry['tag'])
-            self.release_list.addItem(item)
-        self.releases_previous.setEnabled(page > 0)
-        self.releases_next.setEnabled(page + 1 < total_pages)
-        self.release_page_label.setText(f'Seite {page + 1}/{total_pages}')
-        self.release_history_status.setText(
-            f'{count} Version(en) · neueste oben, älteste unten'
-        )
-        if self.release_list.count():
-            self.release_list.setCurrentRow(0)
-
-    def select_release_history(self, current, _previous=None):
-        if current is None:
-            return
-        tag = current.data(Qt.ItemDataRole.UserRole)
+    def select_release_history(self, _index):
+        """Show short changes for the selected release in the tile below."""
+        tag = self.release_combo.currentData()
         entry = self._history_releases.get(tag)
         if entry is None:
             return

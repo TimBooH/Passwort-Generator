@@ -24,7 +24,7 @@ app.processEvents()
 assert len(window.glass_cards) == 3
 assert isinstance(window.tabs, QStackedWidget)
 assert len(window.nav_buttons) == 3
-assert len(window.secondary_cards) == 2
+assert len(window.secondary_cards) == 4
 assert window.nav_container.y() < window.tabs.y()
 assert window.info_nav_button.isVisible()
 assert not hasattr(window, 'nav_sidebar')

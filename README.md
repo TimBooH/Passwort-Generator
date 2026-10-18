@@ -15,10 +15,10 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
 | :--- | :--- |
 | **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
-| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.11.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.11.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.12.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.12.0/PasswortGenerator-x86_64.AppImage) |
 | Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
 
-**Aktuelle Version: v0.11.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
+**Aktuelle Version: v0.12.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
@@ -35,14 +35,14 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
 | **Passphrasen** | 4–10 zufällige zusammengesetzte Wörter; optional zweistellige Zufallszahl (10–99), Trennzeichen per Dropdown (-, Leerzeichen, _, .) |
 | **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
-| **Bedienung** | Alle vier Seiten ohne Scrollleisten, kompakte Einstellungen und Updates, Versionsliste mit Vor-/Zurückblättern |
+| **Bedienung** | Alle vier Seiten ohne Scrollleisten; Fenstergröße und Fensterposition werden beim Schließen gespeichert und beim Start wiederhergestellt |
 | **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
 | **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
 | **Design** | Neues Schema **Glass** mit stark durchsichtigen Glaskacheln, zusätzlich Glass Dark/Light und weitere Themes; Akzentfarbe folgt dem Hintergrund |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
-| **Updates** | Beim Start Popup bei neuer Version, Prüfung alle 2 Stunden, „Updates • NEU“-Hinweis und Changelog – Installation nur nach Klick |
+| **Updates** | Versionshistorie als Dropdown, Änderungen in eigener Glaskachel; kleiner Button „↻ Prüfen“ links, Startup-Popup und Zwei-Stunden-Prüfung |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
-| **Info** | Vierter Bereich im Hauptfenster mit „Made by Jon Bovi“, eingebetteten Bildern und wiederholbarer Pfeil-Tour |
+| **Info** | Zwei eigene Glaskacheln für „Made by Jon Bovi“ und „Anleitung & Hilfe“, mit eingebetteten Bildern und Pfeil-Tour |
 
 Die Oberfläche hat eine futuristische Glasoptik mit Schloss-Symbol, Akzentrahmen, Passwort/Passphrase-Umschalter, Stärkeanzeige und großem Generieren-Button. **Passwort, Einstellungen, Updates und Info** befinden sich als vier Bereiche gemeinsam **oben rechts**. **Info öffnet kein separates Fenster mehr.** Es gibt keine linke Seitenleiste und keinen zusätzlichen Info-Button am unteren Fensterrand.
 
@@ -62,7 +62,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **8 von 100** | `0.08.1` | Update-Hinweis, 2-Stunden-Prüfung und Info vereinfacht |
 | **9 von 100** | `0.09.0` | Grafische Erklärung, Passphrase-Optionen und Windows-Installation in Programme |
 | **10 von 100** | `0.10.0` | Start-Update-Popup, Glass-Durchsicht, erste Tour mit Pfeilen |
-| **11 von 100** | **`0.11.0`** | **Aktueller Stand: richtig platzierte Pfeile, Info im Hauptfenster, kein Scrollen** |
+| **11 von 100** | `0.11.0` | Richtig platzierte Pfeile, Info im Hauptfenster, kein Scrollen |
+| **12 von 100** | **`0.12.0`** | **Aktueller Stand: Versions-Dropdown, getrennte Kacheln, kompakter Update-Button, gespeicherte Fensterposition/-größe** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -153,7 +154,7 @@ PasswortGenerator prüft **beim Start und danach alle 2 Stunden, solange die App
 
 ### Changelog und frühere Versionen
 
-Der Update-Bereich hat zwei übersichtliche Kacheln: **Update & Version** für die Updateprüfung sowie **Änderungen & Versionen** für den Changelog und die Versionshistorie. Beim ersten Öffnen werden bis zu **100 veröffentlichte Releases** automatisch von GitHub geladen. **Die neueste Veröffentlichung steht oben, die älteste unten** – maßgeblich ist das Veröffentlichungsdatum, auch für die historischen 1.x-Versionen. Ein Klick auf eine Version zeigt **maximal fünf kurze Änderungspunkte** statt langer Release-Texte. Die Buttons „Versionshistorie laden“ und „Release auf GitHub öffnen“ entfallen. Mit **„Auf Updates prüfen“** kannst du auch die Versionsliste neu laden.
+Der Update-Bereich enthält **drei getrennte Glaskacheln**: **„Update & Version“** mit einem kleinen linksbündigen Button **„↻ Prüfen“**, darunter **„Bisherige Versionen“** mit einem **Dropdown** und direkt darunter die Kachel **„Änderungen & Versionen“**. Beim ersten Öffnen lädt das Dropdown bis zu **100 veröffentlichte Releases** von GitHub. **Die neueste Veröffentlichung steht oben, die älteste unten**, einschließlich historischer 1.x-Versionen; maßgeblich ist das Veröffentlichungsdatum. Die Auswahl im Dropdown zeigt sofort **maximal fünf kurze Änderungspunkte** in der darunterliegenden Kachel. Das Auswählen installiert keine ältere Version. Die früheren „Neuer/Älter“-Buttons entfallen.
 
 **Wichtig:** Die Liste dient der Information; ein Anklicken installiert **keine** ältere Version. Ohne Internetverbindung bleibt die Passworterzeugung nutzbar, die Online-Versionshistorie ist dann nicht abrufbar.
 
@@ -168,6 +169,10 @@ Der Update-Bereich hat zwei übersichtliche Kacheln: **Update & Version** für d
 
 Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klick**.
 
+### Fenstergröße und Position
+
+Die App speichert beim normalen Schließen **Fenstergröße und Position** in den lokalen Programmeinstellungen (QSettings). Beim nächsten Start wird beides wiederhergestellt, sofern die Fensterposition auf den verfügbaren Bildschirmen noch nutzbar ist. Auch ein maximiertes Fenster wird berücksichtigt. **Passwörter und die temporäre Passworthistorie werden nicht gespeichert.** Windows und Linux verwenden dieselbe Funktion.
+
 ## Oberfläche und Hintergrundbilder
 
 Die **kleineren, platzsparenden Buttons** befinden sich **oben rechts**. Drei wechseln den Bereich, der vierte öffnet **Info**. Bei einem neuen Update wird „NEU“ angezeigt:
@@ -176,12 +181,12 @@ Die **kleineren, platzsparenden Buttons** befinden sich **oben rechts**. Drei we
 | --- | --- |
 | **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen und Verlauf |
 | **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
-| **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
-| **Info** | Vierter Bereich im Hauptfenster mit „Made by Jon Bovi“, eingebetteten Bildern und wiederholbarer Pfeil-Tour |
+| **Updates** | Drei Kacheln: kompakte Updateprüfung links, bisherige Versionen als Dropdown, Änderungen darunter |
+| **Info** | Zwei eigene Glaskacheln für „Made by Jon Bovi“ und „Anleitung & Hilfe“, mit eingebetteten Bildern und Pfeil-Tour |
 
-Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. **Alle vier Seiten kommen ohne Seiten-Scrollleisten aus.** Die Versionshistorie zeigt jeweils drei Versionen, mit **„← Neuer“ und „Älter →“** zum Blättern. Bei **Passphrase** kannst du mit einem Kontrollkästchen eine **zufällige zweistellige Zahl (10–99) anhängen**. Das **Trennzeichen** wählst du im Dropdown (Bindestrich, Leerzeichen, Unterstrich oder Punkt); es trennt sowohl die Wörter als auch die angehängte Zahl. Die Zufallszahl wird mit `secrets` kryptografisch sicher erzeugt.
+Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. **Alle vier Seiten kommen ohne Seiten-Scrollleisten aus.** Die Versionshistorie ist jetzt ein **Dropdown**: Wähle eine Version aus, um ihre kurzen Änderungen in der Kachel darunter anzuzeigen. Bei **Passphrase** kannst du mit einem Kontrollkästchen eine **zufällige zweistellige Zahl (10–99) anhängen**. Das **Trennzeichen** wählst du im Dropdown (Bindestrich, Leerzeichen, Unterstrich oder Punkt); es trennt sowohl die Wörter als auch die angehängte Zahl. Die Zufallszahl wird mit `secrets` kryptografisch sicher erzeugt.
 
-Unter **Info** bleiben Urheber, Version und eine kurze Programmbeschreibung. Der Button **„Grafische Erklärung“** zeigt drei bebilderte Ansichten **direkt im vierten Reiter**, ohne Popup oder Scrollleisten. **„Tour mit Pfeilen“** startet die Einführung erneut. Die lange Textanleitung bleibt entfernt. Die Bilder werden nur im Arbeitsspeicher erzeugt. Das funktioniert unter **Windows und Linux**.
+Unter **Info** gibt es nun **zwei eigenständige Glaskacheln**: **„Made by Jon Bovi“** mit Versionsnummer und kurzer Programmbeschreibung sowie **„Anleitung & Hilfe“**. In der Hilfe-Kachel zeigt **„Grafische Erklärung“** drei bebilderte Ansichten direkt im Reiter (ohne Popup), und **„Tour mit Pfeilen“** startet die Einführung erneut. Die lange Textanleitung bleibt entfernt. Die Bilder werden nur im Arbeitsspeicher erzeugt. Das funktioniert unter **Windows und Linux**.
 
 Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Glass (durchsichtig)**, **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Das neue pure **Glass** reduziert die Deckkraft der Glaskacheln deutlich, damit das Bild und die Dekoration **im Hintergrund der App** sichtbar sind (kein systemweiter Desktop-Unschärfeeffekt). Die App wählt eine **automatisch gut lesbare Textfarbe**, die nicht mehr manuell eingestellt werden muss. Die **Akzentfarbe übernimmt den Farbton des gewählten Hintergrunds** und wird auf einen gut sichtbaren Kontrast abgestimmt. Bei eigenen Hintergrundbildern fließt ein repräsentativer Bildfarbton in die Akzentwahl ein. Das aktualisiert Rahmen, Buttons und Regler; das dekorative Schaltkreismuster bleibt aus Stabilitätsgründen unverändert. Bei manueller Hintergrundfarbwahl schaltet die App auf **„Eigene Farben“**. Die transparenten Glas-Kacheln haben eine feste, reduzierte Deckkraft ohne zusätzlichen Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 

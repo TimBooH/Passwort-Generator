@@ -33,7 +33,7 @@ assert not hasattr(window, 'settings_shortcut')
 assert window.nav_container.y() < tabs.y()
 assert window.nav_buttons[0].x() > 0, 'Navigation buttons should align to the right'
 assert window.nav_buttons[0].isChecked()
-assert len(window.secondary_cards) == 2
+assert len(window.secondary_cards) == 4
 assert window.glass_cards[0].parentWidget() is window.password_page
 assert window.nav_buttons[1].isVisible()
 assert window.password_mode_button.isChecked()
@@ -51,6 +51,10 @@ assert window.glass_cards[1].parentWidget() is window.settings_page
 assert window.glass_cards[2].parentWidget() is window.updates_page
 assert window.secondary_cards[0].parentWidget() is window.settings_page
 assert window.secondary_cards[1].parentWidget() is window.updates_page
+assert window.secondary_cards[2].parentWidget() is window.updates_page
+assert window.secondary_cards[3].parentWidget() is window.info_page
+assert window.info_help_card.parentWidget() is window.info_page
+assert window.info_card is not window.info_help_card
 
 # Password options remain intact when moving to settings and back.
 window.length.setValue(44)
