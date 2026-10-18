@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-Bit) | Linux (x86_64, z. B. CachyOS) |
 | --- | --- |
-| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.1/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.1/PasswortGenerator-x86_64.AppImage) |
 
 [Alle Versionen und Installationsskripte](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -25,7 +25,7 @@
 - **Passwörter:** 8–128 Zeichen, Stärkeanzeige und Profile (Standard, Sehr sicher, Einfach, eigenes Profil).
 - **Passphrasen:** 4–10 Wörter, wählbare Trennzeichen und optional eine zufällige zweistellige Zahl.
 - **Glass-Design:** optimierte Lichtkanten, Fokusmarkierungen, Farbschemas und eigene Hintergrundbilder.
-- **Sprache:** Eine zentrale Einstellung für das gesamte Programm, auch für Changelog und Update-Meldungen. Deutsch/Englisch unter **Einstellungen → Erscheinungsbild**; die Auswahl wird gespeichert.
+- **Sprache:** Eigene Glaskachel **„Sprache“** direkt unter **„Erscheinungsbild“** in den Einstellungen; Deutsch/Englisch gilt weiterhin für das ganze Programm und wird gespeichert.
 - **Update:** automatische Prüfung und Versionsvergleich mit Änderungsübersicht; vollständiger Changelog darunter.
 - **Sicherheit:** optionales Leeren kopierter Passwörter nach 30, 60 oder 120 Sekunden, nur solange die Zwischenablage unverändert ist.
 - **Bedienung:** Passwortverlauf während der Sitzung, grafische Anleitung und gespeicherte Fenstergröße/-position. Die Navigation lautet Passwort → Update → Einstellungen → Info.
@@ -63,7 +63,7 @@ python -m unittest discover -s tests -v
 
 Windows-Installer und Linux-AppImage werden über [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions) erstellt.
 
-**Version 0.19.0 · Schritt 19 von 100 bis zur Vollversion 1.0.0.**
+**Version 0.19.1 · Schritt 19 von 100 bis zur Vollversion 1.0.0.**
 [Änderungen](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
