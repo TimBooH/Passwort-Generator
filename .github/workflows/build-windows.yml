@@ -46,6 +46,9 @@ jobs:
             "build=true" >> $env:GITHUB_OUTPUT
             Write-Host "Building a new Windows x64 installer for $tag."
           }
+          # A missing (not-yet-created) release is expected when Linux and
+          # Windows build concurrently. Reset gh's nonzero native exit code.
+          $global:LASTEXITCODE = 0
 
       - uses: actions/setup-python@v6
         if: steps.version.outputs.build == 'true'
