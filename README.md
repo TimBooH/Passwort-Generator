@@ -1,5 +1,7 @@
 # PasswortGenerator
 
+**Sprache / Language:** **Deutsch** | [English](README.en.md)
+
 **Sichere Passwörter und Passphrasen für Windows und Linux – mit anpassbarem Glass-Design.**
 
 [![Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Version)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
@@ -10,7 +12,7 @@
 
 | Windows 10/11 (64-Bit) | Linux (x86_64, z. B. CachyOS) |
 | --- | --- |
-| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.16.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.16.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.17.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.17.0/PasswortGenerator-x86_64.AppImage) |
 
 [Alle Versionen und Installationsskripte](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -59,7 +61,7 @@ python -m unittest discover -s tests -v
 
 Windows-Installer und Linux-AppImage werden über [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions) erstellt.
 
-**Version 0.16.0 · Schritt 16 von 100 bis zur Vollversion 1.0.0.**
+**Version 0.17.0 · Schritt 17 von 100 bis zur Vollversion 1.0.0.**
 [Änderungen](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
