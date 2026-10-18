@@ -96,7 +96,13 @@ jobs:
             git -c user.name='github-actions[bot]' \
                 -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
                 commit -m "docs: refresh actual Qt screenshot for v$(python3 -c 'from version import APP_VERSION; print(APP_VERSION)')"
-            git push origin HEAD:main
+            # Another workflow may update main during screenshot generation.
+            # Rebase once instead of failing an otherwise passing release.
+            if ! git push origin HEAD:main; then
+              git fetch origin main
+              git rebase origin/main
+              git push origin HEAD:main
+            fi
           fi
 
       - name: Build AppImage
