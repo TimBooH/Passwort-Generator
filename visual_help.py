@@ -42,6 +42,13 @@ class ScaledScreenshot(QLabel):
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.setMinimumSize(100, 80)
+        # Hidden tabs may not receive resizeEvent until first selected.
+        # Preload a small valid preview so all three graphics are available.
+        if not self._original.isNull():
+            self.setPixmap(self._original.scaled(
+                480, 270, Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            ))
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
