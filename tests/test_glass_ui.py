@@ -2,6 +2,7 @@
 
 import unittest
 from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QApplication
 
 from glass_ui import blend, build_glass_stylesheet, is_dark_background, rgba, with_alpha
 from neon_style import circuit_texture, neon_stylesheet
@@ -40,6 +41,9 @@ class GlassStyleTests(unittest.TestCase):
         self.assertIn('QPushButton#modeButton:checked', style)
         self.assertIn('QSlider::handle:horizontal', style)
         self.assertIn('QProgressBar#strengthBar', style)
+        # QPixmap requires a GUI application, even in headless CI.
+        app = QApplication.instance() or QApplication([])
+        self.assertIsNotNone(app)
         pixmap = circuit_texture(220, 300)
         self.assertFalse(pixmap.isNull())
         self.assertEqual((pixmap.width(), pixmap.height()), (220, 300))

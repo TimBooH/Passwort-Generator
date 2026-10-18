@@ -70,6 +70,7 @@ jobs:
           fi
           python -m pip install --disable-pip-version-check --prefer-binary \
             -r requirements.txt pyinstaller==6.22.3
+          python -m py_compile main.py glass_ui.py neon_style.py password_core.py version.py updater.py diagnostics.py
           python -m unittest discover -s tests -v
           PYTHONPATH=. python tests/smoke_glossy_ui.py
           PYTHONPATH=. python tests/smoke_tabs_ui.py
