@@ -246,7 +246,7 @@ class PasswordWindow(QMainWindow):
         self.output.setObjectName('passwordOutput')
         self.output.setReadOnly(True)
         self.output.setEchoMode(QLineEdit.EchoMode.Password)
-        self.output.setPlaceholderText('Generiertes Passwort')
+        self._set_placeholder(self.output, 'Generiertes Passwort')
         self.output.setMinimumHeight(37)
         self.output.setFont(QFont('Monospace', 12))
         password_row.addWidget(self.output, 1)
@@ -758,23 +758,23 @@ class PasswordWindow(QMainWindow):
         self.options_widget.setVisible(not self._phrase_mode)
         self.phrase_options_widget.setVisible(self._phrase_mode)
         if self._phrase_mode:
-            self.length_label.setText('Wörter:')
+            self._set_ui(self.length_label, 'Wörter:')
             self.length.setRange(4, 10)
             self.length_slider.setRange(4, 10)
             self.length.setValue(6)
-            self.generate_button.setText('🔑  Passphrase generieren')
-            self.output.setPlaceholderText('Generierte Passphrase')
+            self._set_ui(self.generate_button, '🔑  Passphrase generieren')
+            self._set_placeholder(self.output, 'Generierte Passphrase')
         else:
-            self.length_label.setText('Länge:')
+            self._set_ui(self.length_label, 'Länge:')
             self.length.setRange(8, 128)
             self.length_slider.setRange(8, 128)
             self.length.setValue(20)
-            self.generate_button.setText('🔑  Passwort generieren')
-            self.output.setPlaceholderText('Generiertes Passwort')
+            self._set_ui(self.generate_button, '🔑  Passwort generieren')
+            self._set_placeholder(self.output, 'Generiertes Passwort')
         self.output.clear()
-        self.strength_label.setText('🛡  Stärke: --')
+        self._set_ui(self.strength_label, '🛡  Stärke: --')
         self.strength_bar.setValue(0)
-        self.status.setText('')
+        self._set_ui(self.status, '')
         if self.reporter is not None:
             self.reporter.note('MODE_CHANGED', 'passphrase' if self._phrase_mode else 'password', force=True)
 
@@ -782,7 +782,7 @@ class PasswordWindow(QMainWindow):
         self.output.setEchoMode(
             QLineEdit.EchoMode.Normal if visible else QLineEdit.EchoMode.Password
         )
-        self.show_button.setText('◉  Verbergen' if visible else '◉  Anzeigen')
+        self._set_ui(self.show_button, '◉  Verbergen' if visible else '◉  Anzeigen')
 
     def show_history(self):
         """Show only passwords from this session; never persist history."""
@@ -811,7 +811,7 @@ class PasswordWindow(QMainWindow):
             secret = self._history[-1 - item][1]
             QApplication.clipboard().setText(secret)
             dialog.accept()
-            self.status.setText('Eintrag aus dem Verlauf kopiert.')
+            self._set_ui(self.status, 'Eintrag aus dem Verlauf kopiert.')
 
         copy_button.clicked.connect(copy_selected)
         actions.addWidget(copy_button)
@@ -842,7 +842,7 @@ class PasswordWindow(QMainWindow):
             self.info_detail_stack.addWidget(panel)
             self._info_visual_loaded = True
         self.info_detail_stack.setCurrentIndex(1)
-        self.visual_guide_button.setText('← Übersicht')
+        self._set_ui(self.visual_guide_button, '← Übersicht')
         # Reuse the same button to return to the compact overview.
         try:
             self.visual_guide_button.clicked.disconnect(self.show_visual_guide)
@@ -852,7 +852,7 @@ class PasswordWindow(QMainWindow):
 
     def show_info_overview(self):
         self.info_detail_stack.setCurrentIndex(0)
-        self.visual_guide_button.setText('▣ Grafische Erklärung')
+        self._set_ui(self.visual_guide_button, '▣ Grafische Erklärung')
         try:
             self.visual_guide_button.clicked.disconnect(self.show_info_overview)
         except (TypeError, RuntimeError):
@@ -925,8 +925,7 @@ class PasswordWindow(QMainWindow):
         if self.reporter is not None:
             self.reporter.note('NAVIGATE', f'tab={self.tab_names[index]}', force=True)
 
-    @staticmethod
-    def select_color(combo, color, default):
+    def select_color(self, combo, color, default):
         if not QColor(color).isValid():
             color = default
         normalized = QColor(color).name().upper()
@@ -934,7 +933,10 @@ class PasswordWindow(QMainWindow):
             if combo.itemData(index).upper() == normalized:
                 combo.setCurrentIndex(index)
                 return
-        combo.addItem(f'Eigene Farbe ({normalized})', normalized)
+        source = f'Eigene Farbe ({normalized})'
+        combo.addItem(self._t(source), normalized)
+        if hasattr(self, '_i18n_combo_sources') and combo in self._i18n_combo_sources:
+            self._i18n_combo_sources[combo].append(source)
         combo.setCurrentIndex(combo.count() - 1)
 
     def restore_colors(self):
@@ -990,7 +992,7 @@ class PasswordWindow(QMainWindow):
         self.apply_colors()
 
     def pick_color(self, combo):
-        selected = QColorDialog.getColor(QColor(combo.currentData()), self, 'Farbe auswählen')
+        selected = QColorDialog.getColor(QColor(combo.currentData()), self, self._t('Farbe auswählen'))
         if selected.isValid():
             self.select_color(combo, selected.name(), '#101827')
 
@@ -1003,8 +1005,9 @@ class PasswordWindow(QMainWindow):
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
-            if button.text() != label:
-                button.setText(label)
+            localized = self._t(label)
+            if button.text() != localized:
+                button.setText(localized)
 
     def set_update_indicator(self, version=None):
         """Show a persistent, contrast-rich update hint on the Update button."""
@@ -1012,8 +1015,8 @@ class PasswordWindow(QMainWindow):
         button = self.nav_buttons[2]
         button.setProperty('updateAvailable', bool(version))
         button.setToolTip(
-            f'Neue Version {version} verfügbar – zum Installieren öffnen'
-            if version else 'Nach neuen Versionen suchen'
+            self._t(f'Neue Version {version} verfügbar – zum Installieren öffnen')
+            if version else self._t('Nach neuen Versionen suchen')
         )
         self.update_navigation_labels()
         # Qt stylesheet dynamic properties need the affected widget re-polished.
@@ -1072,7 +1075,7 @@ class PasswordWindow(QMainWindow):
             card.set_glass_color(actual_background, accent)
             card.set_glass_mode(glass_mode)
         source = 'Bild' if image_color else 'Hintergrund'
-        self.accent_preview.setText(f'●  Automatisch ({source}): {accent}')
+        self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
         self.accent_preview.setToolTip(
             'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
         )
@@ -1099,36 +1102,36 @@ class PasswordWindow(QMainWindow):
         if path:
             try:
                 self.background_surface.set_background_image(path)
-                self.background_file_label.setText(Path(path).name)
+                self._set_ui(self.background_file_label, Path(path).name)
             except (OSError, ValueError):
-                self.background_file_label.setText('Gespeichertes Bild nicht gefunden oder ungültig.')
+                self._set_ui(self.background_file_label, 'Gespeichertes Bild nicht gefunden oder ungültig.')
                 self.background_surface.clear_background_image()
         self.clear_background_button.setEnabled(self.background_surface.has_background_image())
         self.apply_colors()
 
     def choose_background_image(self):
         selected, _ = QFileDialog.getOpenFileName(
-            self, 'Hintergrundbild auswählen', str(Path.home()),
-            'Bilder (*.png *.jpg *.jpeg *.webp *.bmp)',
+            self, self._t('Hintergrundbild auswählen'), str(Path.home()),
+            self._t('Bilder (*.png *.jpg *.jpeg *.webp *.bmp)'),
         )
         if not selected:
             return
         try:
             self.background_surface.set_background_image(selected)
         except (ValueError, OSError) as error:
-            QMessageBox.warning(self, 'Hintergrundbild nicht geladen', str(error))
+            QMessageBox.warning(self, self._t('Hintergrundbild nicht geladen'), self._t(str(error)))
             return
-        self.background_file_label.setText(Path(selected).name)
+        self._set_ui(self.background_file_label, Path(selected).name)
         self.clear_background_button.setEnabled(True)
         self.settings.setValue('background_image_path', selected)
         self.apply_colors()
-        self.status.setText('Hintergrundbild geladen.')
+        self._set_ui(self.status, 'Hintergrundbild geladen.')
         if self.reporter is not None:
             self.reporter.note('BACKGROUND_LOADED', f'format={Path(selected).suffix.lower()}', force=True)
 
     def remove_background_image(self):
         self.background_surface.clear_background_image()
-        self.background_file_label.setText('Kein Hintergrundbild ausgewählt')
+        self._set_ui(self.background_file_label, 'Kein Hintergrundbild ausgewählt')
         self.clear_background_button.setEnabled(False)
         self.settings.remove('background_image_path')
         self.apply_colors()
@@ -1175,13 +1178,13 @@ class PasswordWindow(QMainWindow):
                 )
                 kind = 'Passwort'
         except ValueError as error:
-            QMessageBox.warning(self, 'Auswahl fehlt', str(error))
+            QMessageBox.warning(self, self._t('Auswahl fehlt'), self._t(str(error)))
             return
 
         self.output.setText(generated)
-        self.strength_label.setText(f'🛡  Stärke: {label}')
+        self._set_ui(self.strength_label, f'🛡  Stärke: {label}')
         self.strength_bar.setValue(score)
-        self.status.setText(f'{kind} erstellt.')
+        self._set_ui(self.status, f'{kind} erstellt.')
         self._history.append((kind, generated))
         del self._history[:-20]
         if self.reporter is not None:
@@ -1190,7 +1193,7 @@ class PasswordWindow(QMainWindow):
     def copy(self):
         if self.output.text():
             QApplication.clipboard().setText(self.output.text())
-            self.status.setText('In die Zwischenablage kopiert.')
+            self._set_ui(self.status, 'In die Zwischenablage kopiert.')
 
     @staticmethod
     def make_request(url):
@@ -1209,7 +1212,7 @@ class PasswordWindow(QMainWindow):
             self.load_release_history()
         self.check_button.setEnabled(False)
         self.download_button.hide()
-        self.update_status.setText(f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
+        self._set_ui(self.update_status, f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
         self.check_reply = self.network.get(self.make_request(LATEST_RELEASE_API))
         self.check_reply.finished.connect(self.check_finished)
 
@@ -1229,7 +1232,7 @@ class PasswordWindow(QMainWindow):
             if not self._release_history_loaded and not self._history_releases:
                 note = response.get('body', '')
                 if isinstance(note, str) and note.strip():
-                    self.changelog_title.setText(f'Kurzüberblick · {latest_version}')
+                    self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_version}')
                     self.changelog_view.setPlainText(compact_changelog(note))
             current_number = parse_version(APP_VERSION)
             newest_number = parse_version(latest_version)
@@ -1239,7 +1242,7 @@ class PasswordWindow(QMainWindow):
                 self.latest_asset = None
                 self.latest_version = None
                 self.set_update_indicator()
-                self.update_status.setText(f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
+                self._set_ui(self.update_status, f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
                 return
             assets = response.get('assets', [])
             artifact_name = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
@@ -1255,13 +1258,13 @@ class PasswordWindow(QMainWindow):
             self.latest_asset = asset
             self.latest_version = latest_version
             self.set_update_indicator(latest_version)
-            self.update_status.setText(f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
+            self._set_ui(self.update_status, f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
             self.download_button.show()
             if startup_check:
                 self.queue_update_popup(latest_version)
         except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
             self.latest_asset = None
-            self.update_status.setText(f'Updateprüfung fehlgeschlagen: {error}')
+            self._set_ui(self.update_status, f'Updateprüfung fehlgeschlagen: {error}')
         finally:
             reply.deleteLater()
 
@@ -1269,7 +1272,7 @@ class PasswordWindow(QMainWindow):
         """Fetch at most 100 public releases asynchronously from GitHub."""
         if self.history_reply is not None:
             return
-        self.release_history_status.setText('Lade Versionen von GitHub …')
+        self._set_ui(self.release_history_status, 'Lade Versionen von GitHub …')
         self.history_reply = self.network.get(self.make_request(RELEASE_HISTORY_API))
         self.history_reply.finished.connect(self.release_history_finished)
 
@@ -1294,27 +1297,27 @@ class PasswordWindow(QMainWindow):
                 date_suffix = f" · {entry['date']}" if entry['date'] else ''
                 self.release_combo.addItem(entry['tag'] + date_suffix, entry['tag'])
             if not releases:
-                self.release_combo.addItem('Keine veröffentlichten Versionen', None)
+                self.release_combo.addItem(self._t('Keine veröffentlichten Versionen'), None)
             self.release_combo.setEnabled(bool(releases))
             index = self.release_combo.findData(previous_selection)
             self.release_combo.setCurrentIndex(max(0, index))
             self.release_combo.blockSignals(False)
-            self.release_history_status.setText(
+            self._set_ui(self.release_history_status, 
                 f'{len(releases)} Version(en) · neueste zuerst'
             )
             if releases:
                 self.select_release_history(self.release_combo.currentIndex())
             else:
-                self.changelog_view.setPlainText('Keine veröffentlichten Versionen gefunden.')
+                self.changelog_view.setPlainText(self._t('Keine veröffentlichten Versionen gefunden.'))
         except (ValueError, TypeError, UnicodeDecodeError, KeyError) as error:
-            self.release_history_status.setText(
+            self._set_ui(self.release_history_status, 
                 f'Versionshistorie nicht verfügbar: {error}'
             )
             if not self._release_history_loaded:
-                self.changelog_view.setPlainText(
+                self.changelog_view.setPlainText(self._t(
                     'Die Versionshistorie konnte nicht geladen werden. '
                     'Bitte die Internetverbindung prüfen und erneut versuchen.'
-                )
+                ))
         finally:
             reply.deleteLater()
 
@@ -1324,7 +1327,7 @@ class PasswordWindow(QMainWindow):
         entry = self._history_releases.get(tag)
         if entry is None:
             return
-        self.changelog_title.setText(f'Kurzüberblick · {entry["tag"]}')
+        self._set_ui(self.changelog_title, f'Kurzüberblick · {entry["tag"]}')
         self.changelog_view.setPlainText(compact_changelog(entry['body']))
 
     def download_update(self):
@@ -1354,7 +1357,7 @@ class PasswordWindow(QMainWindow):
             if not save_file.open(QIODevice.OpenModeFlag.WriteOnly):
                 raise OSError(save_file.errorString())
         except OSError as error:
-            QMessageBox.warning(self, 'Download nicht möglich', str(error))
+            QMessageBox.warning(self, self._t('Download nicht möglich'), self._t(str(error)))
             return
 
         self.save_file = save_file
@@ -1367,7 +1370,7 @@ class PasswordWindow(QMainWindow):
         self.check_button.setEnabled(False)
         self.progress_bar.setValue(0)
         self.progress_bar.show()
-        self.update_status.setText(f'Lade {self.latest_version} von GitHub herunter …')
+        self._set_ui(self.update_status, f'Lade {self.latest_version} von GitHub herunter …')
         self.download_reply = self.network.get(self.make_request(self.latest_asset['browser_download_url']))
         self.download_reply.readyRead.connect(self.read_download_data)
         self.download_reply.downloadProgress.connect(self.on_download_progress)
@@ -1430,7 +1433,7 @@ class PasswordWindow(QMainWindow):
                 self.set_update_indicator()
                 self.progress_bar.setRange(0, 100)
                 self.progress_bar.setValue(100)
-                self.update_status.setText(
+                self._set_ui(self.update_status, 
                     'Windows-Installer gestartet. Die App wird für das Update geschlossen …'
                 )
                 self.download_button.hide()
@@ -1456,7 +1459,7 @@ class PasswordWindow(QMainWindow):
             self.set_update_indicator()
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(100)
-            self.update_status.setText(
+            self._set_ui(self.update_status, 
                 f'{self.latest_version} installiert. Die aktualisierte App wird neu gestartet …'
             )
             self.download_button.hide()
@@ -1472,8 +1475,8 @@ class PasswordWindow(QMainWindow):
                     f'Neustart ist fehlgeschlagen: {error}\n'
                     'Bitte die App über das KDE-Menü erneut öffnen.'
                 )
-                self.update_status.setText(msg)
-                QMessageBox.warning(self, 'Manueller Neustart erforderlich', msg)
+                self._set_ui(self.update_status, msg)
+                QMessageBox.warning(self, self._t('Manueller Neustart erforderlich'), self._t(msg))
             else:
                 if self.reporter is not None:
                     self.reporter.note('UPDATE_RESTART', 'old application will exit', force=True)
@@ -1484,8 +1487,8 @@ class PasswordWindow(QMainWindow):
             if self.save_file is not None and self.save_file.isOpen():
                 self.save_file.cancelWriting()
             self.progress_bar.hide()
-            self.update_status.setText(f'Download/Installation fehlgeschlagen: {error}')
-            QMessageBox.warning(self, 'Update fehlgeschlagen', str(error))
+            self._set_ui(self.update_status, f'Download/Installation fehlgeschlagen: {error}')
+            QMessageBox.warning(self, self._t('Update fehlgeschlagen'), self._t(str(error)))
         finally:
             if not installed_successfully and self.download_installed and self.download_stage:
                 try:
