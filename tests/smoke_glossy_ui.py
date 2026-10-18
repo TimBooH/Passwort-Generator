@@ -12,7 +12,7 @@ os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.*=false')
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter
-from PySide6.QtWidgets import QApplication, QScrollArea, QSlider
+from PySide6.QtWidgets import QApplication, QScrollArea, QSlider, QTabWidget
 
 from main import PasswordWindow
 
@@ -22,6 +22,17 @@ window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
+assert isinstance(window.tabs, QTabWidget)
+assert [window.tabs.tabText(i) for i in range(window.tabs.count())] == [
+    'Passwort', 'Einstellungen', 'Updates',
+]
+assert window.tabs.tabPosition() == QTabWidget.TabPosition.North
+assert not window.tabs.tabBar().expanding()
+assert window.tabs.tabBar().geometry().left() <= 25
+assert window.tabs.currentIndex() == 0
+assert window.glass_cards[0].isVisible()
+assert not window.glass_cards[1].isVisible()
+assert not window.glass_cards[2].isVisible()
 assert not window.findChildren(QSlider), 'The glass-opacity slider must be removed'
 assert not hasattr(window, 'glass_slider')
 assert not window.settings.contains('glass_opacity'), 'Legacy opacity setting must be removed'
@@ -74,21 +85,35 @@ with tempfile.TemporaryDirectory() as temp:
     # The glass tiles really resize with the window in both directions.
     window.resize(1680, 900)
     app.processEvents()
-    assert window.glass_cards[0].width() >= 1500, (
-        'Glass tiles must expand instead of being capped at 940 pixels'
-    )
-    assert window.glass_cards[1].width() == window.glass_cards[0].width()
+    for index, card in enumerate(window.glass_cards):
+        window.tabs.setCurrentIndex(index)
+        app.processEvents()
+        assert card.isVisible(), f'Tab {index} card must be visible when selected'
+        assert card.width() >= 1500, (
+            f'Tab {index} glass tile must expand instead of being capped at 940 pixels'
+        )
+        for other_index, other in enumerate(window.glass_cards):
+            if other_index != index:
+                assert not other.isVisible(), 'Only the active tab tile should be visible'
+    window.tabs.setCurrentIndex(1)
+    app.processEvents()
     assert window.grab().save('glossy-wide-preview.png')
     window.resize(520, 770)
     app.processEvents()
-    assert window.glass_cards[0].width() < 520
+    for index, card in enumerate(window.glass_cards):
+        window.tabs.setCurrentIndex(index)
+        app.processEvents()
+        assert card.width() < 520, f'Tab {index} must shrink in narrow windows'
     window.resize(740, 810)
+    window.tabs.setCurrentIndex(1)
     app.processEvents()
     assert window.grab().save('glossy-wallpaper-preview.png')
+    window.tabs.setCurrentIndex(0)
+    app.processEvents()
     window.remove_background_image()
     app.processEvents()
     assert not window.background_surface.has_background_image()
 
 window.close()
 app.processEvents()
-print('Responsive GUI stress test passed: no opacity slider, 6 image modes, 60 resizes, 25 UI changes.')
+print('Tabbed GUI stress test passed: 3 tabs, 6 image modes, 60 resizes, 25 UI changes.')

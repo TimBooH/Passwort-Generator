@@ -35,6 +35,11 @@ app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
+assert window.tabs.tabText(2) == 'Updates'
+window.tabs.setCurrentIndex(2)
+app.processEvents()
+assert window.check_button.isVisible(), 'Update controls must be on the Updates tab'
+assert window.progress_bar.parentWidget() is not None
 
 with tempfile.TemporaryDirectory() as temp:
     folder = Path(temp)

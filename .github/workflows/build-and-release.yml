@@ -72,6 +72,7 @@ jobs:
             -r requirements.txt pyinstaller==6.22.3
           python -m unittest discover -s tests -v
           PYTHONPATH=. python tests/smoke_glossy_ui.py
+          PYTHONPATH=. python tests/smoke_tabs_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
 
       - name: Build AppImage
