@@ -799,7 +799,8 @@ class PasswordWindow(QMainWindow):
         if not hasattr(self, '_i18n_combo_sources'):
             self._i18n_combo_sources = {}
         for combo in (self.scheme_combo, self.bg_combo,
-                      self.image_mode_combo, self.phrase_separator):
+                      self.image_mode_combo, self.phrase_separator,
+                      self.preset_combo, self.clipboard_timeout_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -846,6 +847,89 @@ class PasswordWindow(QMainWindow):
             self.info_detail_stack.removeWidget(old)
             old.deleteLater()
 
+    def current_password_profile(self):
+        return {
+            'length': self.length.value(),
+            **{name: getattr(self, name).isChecked() for name in FIELDS},
+        }
+
+    def mark_password_preset_manual(self, *_):
+        if self._applying_preset or self._phrase_mode:
+            return
+        manual = self.preset_combo.findData('manual')
+        if manual >= 0 and self.preset_combo.currentIndex() != manual:
+            self.preset_combo.blockSignals(True)
+            self.preset_combo.setCurrentIndex(manual)
+            self.preset_combo.blockSignals(False)
+
+    def apply_password_preset(self, *_):
+        if self._phrase_mode or self._applying_preset:
+            return
+        name = self.preset_combo.currentData()
+        if name == 'custom':
+            profile = decode_profile(
+                self.settings.value('profiles/custom_password', '', type=str)
+            )
+            if profile is None:
+                self._set_ui(self.status, 'Noch kein eigenes Profil gespeichert.')
+                return
+        else:
+            profile = PRESETS.get(name)
+        if profile is None:
+            return
+        self._applying_preset = True
+        try:
+            self.length.setValue(profile['length'])
+            for key in FIELDS:
+                getattr(self, key).setChecked(profile[key])
+        finally:
+            self._applying_preset = False
+        self._set_ui(self.status, 'Passwort-Profil geladen.')
+
+    def save_password_preset(self):
+        if self._phrase_mode:
+            return
+        profile = validate_profile(self.current_password_profile())
+        if profile is None:
+            self._set_ui(self.status, 'Bitte gültige Zeichengruppen auswählen.')
+            return
+        self.settings.setValue('profiles/custom_password', encode_profile(profile))
+        index = self.preset_combo.findData('custom')
+        self.preset_combo.blockSignals(True)
+        self.preset_combo.setCurrentIndex(index)
+        self.preset_combo.blockSignals(False)
+        self._set_ui(self.status, 'Eigenes Passwort-Profil gespeichert.')
+
+    def configure_clipboard_clear(self, *_):
+        enabled = self.clear_clipboard_checkbox.isChecked()
+        self.clipboard_timeout_combo.setEnabled(enabled)
+        self.settings.setValue('security/clipboard_auto_clear', enabled)
+        self.settings.setValue(
+            'security/clipboard_seconds', self.clipboard_timeout_combo.currentData()
+        )
+        if not enabled:
+            self.clipboard_timer.stop()
+            self._clipboard_secret = None
+        elif self._clipboard_secret:
+            self.clipboard_timer.start(self.clipboard_timeout_combo.currentData() * 1000)
+
+    def remember_copied_password(self, secret):
+        """Track only our clipboard content, never overwrite newer user copies."""
+        self.clipboard_timer.stop()
+        self._clipboard_secret = None
+        if self.clear_clipboard_checkbox.isChecked() and secret:
+            self._clipboard_secret = secret
+            self.clipboard_timer.start(self.clipboard_timeout_combo.currentData() * 1000)
+
+    def clear_copied_password(self):
+        secret = self._clipboard_secret
+        self._clipboard_secret = None
+        if secret and self.clear_clipboard_checkbox.isChecked():
+            clipboard = QApplication.clipboard()
+            if clipboard.text() == secret:
+                clipboard.clear()
+                self._set_ui(self.status, 'Kopiertes Passwort aus der Zwischenablage entfernt.')
+
     def switch_mode(self, use_passphrase):
         """Switch between a random-character password and a word passphrase."""
         self._phrase_mode = bool(use_passphrase)
@@ -853,6 +937,8 @@ class PasswordWindow(QMainWindow):
         self.passphrase_mode_button.setChecked(self._phrase_mode)
         self.options_widget.setVisible(not self._phrase_mode)
         self.phrase_options_widget.setVisible(self._phrase_mode)
+        self.preset_combo.setEnabled(not self._phrase_mode)
+        self.save_preset_button.setEnabled(not self._phrase_mode)
         if self._phrase_mode:
             self._set_ui(self.length_label, 'Wörter:')
             self.length.setRange(4, 10)
@@ -906,6 +992,7 @@ class PasswordWindow(QMainWindow):
                 return
             secret = self._history[-1 - item][1]
             QApplication.clipboard().setText(secret)
+            self.remember_copied_password(secret)
             dialog.accept()
             self._set_ui(self.status, 'Eintrag aus dem Verlauf kopiert.')
 
@@ -1095,9 +1182,7 @@ class PasswordWindow(QMainWindow):
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
-        labels = (('⌑ Passwort', '⚙ Design', '↻ Update')
-                  if compact else
-                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Update'))
+        labels = ('⌑ Passwort', '⚙ Einstellungen', '↻ Update')
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
@@ -1130,6 +1215,8 @@ class PasswordWindow(QMainWindow):
     def closeEvent(self, event):
         """Keep only window geometry, never secrets or session history."""
         if event.isAccepted():
+            self.clipboard_timer.stop()
+            self._clipboard_secret = None
             self.settings.setValue('window/geometry', self.saveGeometry())
             self.settings.sync()
         super().closeEvent(event)
@@ -1289,6 +1376,7 @@ class PasswordWindow(QMainWindow):
     def copy(self):
         if self.output.text():
             QApplication.clipboard().setText(self.output.text())
+            self.remember_copied_password(self.output.text())
             self._set_ui(self.status, 'In die Zwischenablage kopiert.')
 
     @staticmethod
