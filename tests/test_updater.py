@@ -39,7 +39,8 @@ class UpdaterTests(unittest.TestCase):
             {p.name for p in self.folder.glob('PasswortGenerator*.AppImage')},
             {updater.CURRENT_NAME, updater.PREVIOUS_NAME},
         )
-        self.assertEqual(self.current.stat().st_mode & 0o777, 0o755)
+        if os.name != 'nt':  # POSIX execute bits are not meaningful on Windows.
+            self.assertEqual(self.current.stat().st_mode & 0o777, 0o755)
 
     def test_first_install_has_no_previous(self):
         stage = fake_image(updater.staging_path(self.current), 'v1')
