@@ -32,7 +32,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python tests/smoke_glossy_ui.py
+          PYTHONPATH=. python tests/smoke_glossy_ui.py
       - name: Save design preview
         uses: actions/upload-artifact@v4
         with:
