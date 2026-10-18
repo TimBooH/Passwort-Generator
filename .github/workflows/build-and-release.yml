@@ -26,9 +26,9 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
         run: |
-          python -m py_compile main.py glass_ui.py password_core.py version.py
+          python -m py_compile main.py glass_ui.py password_core.py version.py updater.py diagnostics.py
           python -m unittest discover -s tests -v
-      - name: Render glossy interface offscreen (GUI smoke test)
+      - name: Stress-test GUI, resize events, images and appearance changes
         env:
           QT_QPA_PLATFORM: offscreen
           PYTHONFAULTHANDLER: "1"
