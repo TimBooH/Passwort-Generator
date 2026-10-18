@@ -1,0 +1,111 @@
+name: Build & Release PasswortGenerator (Linux)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  appimage:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2 file libegl1 libopengl0
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt pyinstaller
+      - name: Validate Python files and test password logic
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          python -m py_compile main.py password_core.py version.py
+          python -m unittest discover -s tests -v
+      - name: Build AppImage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: |
+          set -euxo pipefail
+          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator main.py
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/scalable/apps
+          cp -r dist/PasswortGenerator AppDir/usr/bin/
+          cp assets/de.timbooh.passwortgenerator.svg AppDir/de.timbooh.passwortgenerator.svg
+          cp assets/de.timbooh.passwortgenerator.svg AppDir/usr/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg
+          cat > AppDir/AppRun <<'SH'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/PasswortGenerator/PasswortGenerator" "$@"
+          SH
+          chmod +x AppDir/AppRun
+          cat > AppDir/de.timbooh.passwortgenerator.desktop <<'DESKTOP'
+          [Desktop Entry]
+          Type=Application
+          Name=PasswortGenerator
+          Exec=AppRun
+          Icon=de.timbooh.passwortgenerator
+          Categories=Utility;Security;
+          Terminal=false
+          DESKTOP
+          cp AppDir/de.timbooh.passwortgenerator.desktop AppDir/usr/share/applications/de.timbooh.passwortgenerator.desktop
+          wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage -O appimagetool.AppImage
+          test -s appimagetool.AppImage
+          chmod +x appimagetool.AppImage
+          ARCH=x86_64 ./appimagetool.AppImage AppDir PasswortGenerator-x86_64.AppImage
+          test -s PasswortGenerator-x86_64.AppImage
+          file PasswortGenerator-x86_64.AppImage
+      - name: Prepare release files
+        run: |
+          set -euo pipefail
+          mkdir -p release-assets
+          cp PasswortGenerator-x86_64.AppImage install.sh uninstall.sh release-assets/
+          chmod +x release-assets/install.sh release-assets/uninstall.sh
+          (cd release-assets && sha256sum PasswortGenerator-x86_64.AppImage > SHA256SUMS)
+          cat release-assets/SHA256SUMS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PasswortGenerator-Linux
+          path: release-assets/
+          if-no-files-found: error
+
+  release:
+    needs: appimage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: PasswortGenerator-Linux
+          path: release-assets
+      - name: Publish AppImage and installer if new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="$(python -c 'from version import APP_VERSION; print(APP_VERSION)')"
+          TAG="v${VERSION}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG has already been released."
+            exit 0
+          fi
+          test -s release-assets/PasswortGenerator-x86_64.AppImage
+          test -s release-assets/SHA256SUMS
+          gh release create "$TAG" \
+            release-assets/PasswortGenerator-x86_64.AppImage \
+            release-assets/install.sh \
+            release-assets/uninstall.sh \
+            release-assets/SHA256SUMS \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "PasswortGenerator $TAG" \
+            --notes-file RELEASE_NOTES.md \
+            --latest
