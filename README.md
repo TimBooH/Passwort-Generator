@@ -3,12 +3,22 @@
 **Ein moderner Passwortgenerator für Linux und Windows mit anpassbarer Glasoberfläche, lokalen Hintergrundbildern und integrierter Updatefunktion.**
 
 [![Latest Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
-[![Linux](https://img.shields.io/badge/Plattform-Linux%20x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
-[![Build & Release](https://img.shields.io/github/actions/workflow/status/TimBooH/Passwort-Generator/build-and-release.yml?branch=main&label=Build%20%26%20Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)
+[![Windows 10/11](https://img.shields.io/badge/Windows-10%20%2F%2011%20%2864--Bit%29-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
+[![Windows Installer](https://img.shields.io/github/actions/workflow/status/TimBooH/Passwort-Generator/build-windows.yml?branch=main&label=Windows%20Installer&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-windows.yml)
+[![Linux Build](https://img.shields.io/github/actions/workflow/status/TimBooH/Passwort-Generator/build-and-release.yml?branch=main&label=Linux%20Build&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)
 
 PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt mit **Python und Qt 6 (PySide6)**. Die Passworterzeugung erfolgt lokal mit dem kryptografisch sicheren Python-Modul `secrets`. Eine Internetverbindung ist dafür nicht erforderlich; sie wird lediglich für die optionale Updateprüfung und den Download neuer Versionen benötigt.
 
-**[Neueste Version herunterladen](https://github.com/TimBooH/Passwort-Generator/releases/latest)** · [Installationsanleitung](#installation) · [Updates](#updates) · [Fehlerdiagnose](#fehlerdiagnose)
+### Für Windows und Linux verfügbar
+
+| <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
+| :--- | :--- |
+| **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.07.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.07.0/PasswortGenerator-x86_64.AppImage) |
+| Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
+
+**Aktuelle Version: v0.07.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
@@ -55,7 +65,7 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 
 Die dritte Stelle ist für kleine Korrekturen innerhalb eines Schritts reserviert (z. B. `0.07.1`). Ein Meilenstein wird nur erhöht, wenn bewusst der nächste Entwicklungsschritt veröffentlicht wird.
 
-**Wichtiger einmaliger Umstieg:** Die bisherigen Versionen `1.2.0` bis `1.5.1` stammen aus dem alten Nummerierungssystem und bleiben als historische Releases erhalten. Weil die neue Reihe wieder bei `0.01.0` beginnt, können die alten Apps diese Version beim automatischen Update als niedriger einstufen. **Bitte `0.01.0` einmal über den aktuellen Installer von GitHub installieren.** Anschließend funktionieren die Updates innerhalb der neuen Versionsreihe wieder regulär. Die Installer-Sicherung der vorherigen AppImage-Version bleibt erhalten.
+**Hinweis für bisherige Linux-Installationen:** Die bisherigen Versionen `1.2.0` bis `1.5.1` stammen aus dem alten Nummerierungssystem und bleiben als historische Releases erhalten. Weil die neue Reihe wieder bei `0.01.0` beginnt, können die alten Apps diese Version beim automatischen Update als niedriger einstufen. **Bitte `0.01.0` einmal über den aktuellen Installer von GitHub installieren.** Anschließend funktionieren die Updates innerhalb der neuen Versionsreihe wieder regulär. Die Installer-Sicherung der vorherigen AppImage-Version bleibt erhalten.
 
 ## Download
 
