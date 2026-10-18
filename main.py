@@ -424,16 +424,6 @@ class PasswordWindow(QMainWindow):
         colors.layout().setSpacing(2)
         colors_layout = colors.body
         colors_layout.setSpacing(3)
-        language_row = QHBoxLayout()
-        language_row.addWidget(QLabel('Sprache:'))
-        self.language_combo = QComboBox()
-        self.language_combo.setObjectName('languageCombo')
-        self.language_combo.setAccessibleName('Sprache auswählen')
-        for name, code in LANGUAGES:
-            self.language_combo.addItem(name, code)
-        self.language_combo.setCurrentIndex(0 if self.language == 'de' else 1)
-        language_row.addWidget(self.language_combo, 1)
-        colors_layout.addLayout(language_row)
         scheme_row = QHBoxLayout()
         scheme_row.addWidget(QLabel('Farbschema:'))
         self.scheme_combo = QComboBox()
@@ -495,6 +485,26 @@ class PasswordWindow(QMainWindow):
         colors_layout.addStretch(1)
 
         settings_page_layout.addWidget(colors, 1)
+
+        # Language has its own glass tile immediately below Appearance.
+        # There is only one language selector for the entire application.
+        language_card = GlossyGlassCard('SPRACHE')
+        self.language_card = language_card
+        self.secondary_cards.append(language_card)
+        language_card.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred
+        )
+        language_card.layout().setContentsMargins(13, 5, 13, 6)
+        language_card.layout().setSpacing(1)
+        language_card.body.setSpacing(2)
+        self.language_combo = QComboBox()
+        self.language_combo.setObjectName('languageCombo')
+        self.language_combo.setAccessibleName('Sprache auswählen')
+        for name, code in LANGUAGES:
+            self.language_combo.addItem(name, code)
+        self.language_combo.setCurrentIndex(0 if self.language == 'de' else 1)
+        language_card.body.addWidget(self.language_combo)
+        settings_page_layout.addWidget(language_card, 0)
 
         security_card = GlossyGlassCard('SICHERHEIT')
         self.security_card = security_card
