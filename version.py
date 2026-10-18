@@ -1,5 +1,6 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.20.1 refines the smaller centered Generate button and its Glass states.
 Version 0.20.0 adds advanced password policies, bilingual passphrase wordbanks,
 entropy details, keyboard shortcuts, privacy controls and verified rollback.
 Version 0.19.1 moves the global language choice to its own glass card
@@ -61,7 +62,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.20.0"
+APP_VERSION = "0.20.1"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
