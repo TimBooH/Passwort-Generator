@@ -1,10 +1,10 @@
-# PasswortGenerator v0.14.1 – Vereinfachte Oberfläche
+# PasswortGenerator v0.15.0 – Kompaktere Abstände
 
-**Entwicklungsschritt 14 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 15 von 100** bis zur Vollversion 1.0.0.
 
-- Der Navigationsbutton heißt wieder **„Update“** (mit **„NEU“** bei verfügbarem Update).
-- **Update:** Die bisherigen Versionen und **„Änderungen & Versionen“** stehen zusammen in **einer Glaskachel „Changelog“**.
-- **Einstellungen/Design:** Farbschema, Akzentfarbe und Hintergrundbild befinden sich jetzt in **einer einzigen Kachel „Erscheinungsbild“**.
-- Die automatische Updateprüfung, das Versions-Dropdown, die grafische Erklärung und die gespeicherte Fensterposition bleiben erhalten.
-- Korrektur: Zusammengeführte Kacheln behalten ihre **echte Glass-Optik**.
-- Anpassungen und Regressionstests für **Linux und Windows**.
+- **Update:** Der Prüfbutton heißt jetzt **„↻ Auf Update prüfen“**.
+- **Changelog:** Engere Abstände zwischen den bisherigen Versionen und der Änderungsübersicht; Inhalte bleiben innerhalb einer gemeinsamen Glaskachel.
+- **Design / Erscheinungsbild:** Kleinere Innen- und Elementabstände bei Farbschema, Hintergrundfarbe, Akzent und Hintergrundbild.
+- Die Inhalte bleiben oben ausgerichtet, statt durch zusätzlichen Leerraum auseinandergezogen zu werden.
+- **Unverändert:** Updateprüfung beim Start und alle zwei Stunden, Versions-Dropdown, automatische Fenstergrößen-Wiederherstellung, echtes Glass-Design und First-Run-Tour.
+- Anpassungen und Tests für **Linux und Windows**.
