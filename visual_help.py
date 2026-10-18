@@ -4,6 +4,7 @@ All three screenshots come from the actual running Qt pages and remain solely
 in RAM. Preview widgets scale to the available space without scroll areas.
 """
 
+from localization import translate
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
@@ -80,21 +81,25 @@ def create_visual_guide_panel(window, parent=None):
             QApplication.processEvents()
             image = window.tabs.widget(index).grab()
             if image.isNull():
-                raise RuntimeError(f'Bildschirmansicht {tab_name} ist leer.')
+                raise RuntimeError(f'Empty screen preview: {tab_name}')
             page = QWidget()
             page.setObjectName(f'visualGuidePage{index}')
             page_layout = QVBoxLayout(page)
             page_layout.setContentsMargins(5, 4, 5, 4)
             page_layout.setSpacing(2)
-            heading = QLabel(f'{title}: {description}')
+            heading = QLabel(f'{translate(title, window.language)}: '
+                             f'{translate(description, window.language)}')
             heading.setObjectName('visualGuideDescription')
             heading.setWordWrap(True)
             page_layout.addWidget(heading)
             image_label = ScaledScreenshot(image)
             image_label.setObjectName(f'visualGuideImage{index}')
-            image_label.setAccessibleName(f'Grafische Ansicht: {tab_name}')
+            image_label.setAccessibleName(
+                ('Visual preview: ' if window.language == 'en' else 'Grafische Ansicht: ')
+                + translate(tab_name, window.language)
+            )
             page_layout.addWidget(image_label, 1)
-            tabs.addTab(page, tab_name)
+            tabs.addTab(page, translate(tab_name, window.language))
     finally:
         window.tabs.setCurrentIndex(original)
         window.tabs.blockSignals(previous_block)
