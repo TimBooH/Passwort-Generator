@@ -41,6 +41,50 @@ assert window.accent_preview.text().startswith('●  Automatic')
 assert 'Development' in window.info_version.text()
 assert window.background_file_label.text() == 'No background image selected'
 assert window.info_help_card.header.text() == 'GUIDE & HELP'
+assert window.appearance_card.isAncestorOf(window.language_combo)
+assert window.updates_page.findChild(type(window.language_combo), 'languageCombo') is None
+
+# The entire application shares ONE language setting, including GitHub notes
+# that were downloaded before the language was changed.
+bilingual = ('## Deutsch\n- Vollständige Sprachumstellung\n'
+             '## English\n- Full application language support')
+historic = '# PasswortGenerator v0.16.0\n- Nur deutsche Änderungen'
+window._history_releases = {
+    'v0.17.0': {'tag': 'v0.17.0', 'body': bilingual},
+    'v0.16.0': {'tag': 'v0.16.0', 'body': historic},
+}
+window.release_combo.blockSignals(True)
+window.release_combo.clear()
+window.release_combo.addItem('v0.17.0', 'v0.17.0')
+window.release_combo.addItem('v0.16.0', 'v0.16.0')
+window.release_combo.setEnabled(True)
+window.release_combo.blockSignals(False)
+window.tabs.setCurrentIndex(2)
+window.select_release_history(0)
+assert 'Full application' in window.changelog_view.toPlainText()
+assert 'Sprachumstellung' not in window.changelog_view.toPlainText()
+window.release_combo.setCurrentIndex(1)
+assert 'Shortened and streamlined' in window.changelog_view.toPlainText()
+assert 'Nur deutsche' not in window.changelog_view.toPlainText()
+window._set_ui(window.update_status, 'Installiert: v0.17.0 · Prüfe GitHub …')
+assert window.update_status.text().startswith('Installed:')
+window._set_ui(window.release_history_status,
+               'Versionshistorie nicht verfügbar: GitHub hat keine gültige Release-Liste geliefert.')
+assert window.release_history_status.text() == (
+    'Release history unavailable: GitHub returned an invalid release list.'
+)
+window.tabs.setCurrentIndex(1)
+window.language_combo.setCurrentIndex(window.language_combo.findData('de'))
+app.processEvents()
+assert window.language == 'de'
+assert 'Nur deutsche Änderungen' in window.changelog_view.toPlainText()
+assert window.update_status.text().startswith('Installiert:')
+assert 'nicht verfügbar' in window.release_history_status.text()
+window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
+app.processEvents()
+assert window.language == 'en'
+assert 'Shortened and streamlined' in window.changelog_view.toPlainText()
+assert window.update_status.text().startswith('Installed:')
 
 window.tabs.setCurrentIndex(0)
 window.generate()
