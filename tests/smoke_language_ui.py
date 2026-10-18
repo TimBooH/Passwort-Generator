@@ -22,6 +22,7 @@ assert window.language == 'de'
 assert window.language_combo.currentData() == 'de'
 assert window.nav_buttons[0].text().endswith('Passwort')
 assert window.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
+assert window.language_card.header.text() == 'SPRACHE'
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert not window.findChildren(QScrollArea)
 
@@ -32,6 +33,7 @@ assert window.language == 'en'
 assert window.settings.value('ui/language') == 'en'
 assert window.language_combo.currentData() == 'en'
 assert window.appearance_card.header.text() == 'APPEARANCE'
+assert window.language_card.header.text() == 'LANGUAGE'
 assert window.nav_buttons[0].text().endswith('Password')
 assert window.nav_buttons[1].text().endswith('Settings')
 assert window.check_button.text() == '↻ Check for updates'
@@ -49,7 +51,8 @@ window._set_changelog_ui(
     'Bitte die Internetverbindung prüfen und erneut versuchen.'
 )
 assert window.changelog_view.toPlainText().startswith('Could not load release history.')
-assert window.appearance_card.isAncestorOf(window.language_combo)
+assert window.language_card.isAncestorOf(window.language_combo)
+assert not window.appearance_card.isAncestorOf(window.language_combo)
 assert window.updates_page.findChild(type(window.language_combo), 'languageCombo') is None
 
 # The entire application shares ONE language setting, including GitHub notes
@@ -128,6 +131,7 @@ second.language_combo.setCurrentIndex(second.language_combo.findData('de'))
 app.processEvents()
 assert second.language == 'de'
 assert second.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
+assert second.language_card.header.text() == 'SPRACHE'
 assert second.check_button.text() == '↻ Auf Update prüfen'
 assert second.nav_buttons[0].text().endswith('Passwort')
 assert not second.findChildren(QScrollArea)
