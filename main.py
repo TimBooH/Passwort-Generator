@@ -1724,6 +1724,107 @@ class PasswordWindow(QMainWindow):
         self._set_ui(self.changelog_title, f'Kurzüberblick · {entry["tag"]}')
         self._set_changelog_release(entry['body'], entry['tag'])
 
+    def rollback_update(self):
+        """Restore the trusted local AppImage, or a verified older Windows release."""
+        if self.download_reply is not None or self._rollback_reply is not None:
+            return
+        if os.name != 'nt':
+            backup = previous_path(INSTALLED_APPIMAGE)
+            if (not INSTALLED_APPIMAGE.is_file() or not backup.is_file()
+                    or INSTALLED_APPIMAGE.is_symlink() or backup.is_symlink()):
+                QMessageBox.information(
+                    self, self._t('Vorherige Version'),
+                    self._t('Keine vorherige AppImage-Version zur Wiederherstellung vorhanden.')
+                )
+                return
+            choice = QMessageBox.question(
+                self, self._t('Update rückgängig machen'),
+                self._t('Vorherige AppImage-Version wiederherstellen und neu starten?'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if choice != QMessageBox.StandardButton.Yes:
+                return
+            try:
+                restore_previous_appimage(INSTALLED_APPIMAGE)
+                restart_updated_app(INSTALLED_APPIMAGE)
+            except (ValueError, OSError) as error:
+                QMessageBox.warning(self, self._t('Wiederherstellung fehlgeschlagen'),
+                                    self._t(str(error)))
+                return
+            QTimer.singleShot(120, QApplication.instance().quit)
+            return
+        # Windows: the user selects an older published release in the existing
+        # Changelog dropdown. Never execute an untrusted/unchecked setup file.
+        selected_tag = self.release_combo.currentData()
+        previous_version = parse_version(selected_tag)
+        current_version = parse_version(APP_VERSION)
+        if (previous_version is None or current_version is None
+                or previous_version >= current_version
+                or selected_tag not in self._history_releases):
+            QMessageBox.information(
+                self, self._t('Vorherige Version'),
+                self._t('Bitte eine ältere Version im Changelog auswählen.')
+            )
+            return
+        choice = QMessageBox.question(
+            self, self._t('Update rückgängig machen'),
+            self._t('Den offiziellen Installer der ausgewählten älteren Version laden?')
+            + '\n' + str(selected_tag),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if choice != QMessageBox.StandardButton.Yes:
+            return
+        self._rollback_tag = selected_tag
+        request = self.make_request(
+            f'https://api.github.com/repos/{REPO}/releases/tags/{selected_tag}'
+        )
+        self._rollback_reply = self.network.get(request)
+        self._rollback_reply.finished.connect(self.rollback_release_finished)
+
+    def rollback_release_finished(self):
+        reply = self._rollback_reply
+        self._rollback_reply = None
+        if reply is None:
+            return
+        try:
+            if reply.error() != QNetworkReply.NetworkError.NoError:
+                raise ValueError(reply.errorString())
+            raw = bytes(reply.readAll())
+            if len(raw) > 2_000_000:
+                raise ValueError('Die Antwort von GitHub ist zu groß.')
+            release = json.loads(raw.decode('utf-8'))
+            tag = self._rollback_tag
+            if (not isinstance(release, dict)
+                    or release.get('tag_name') != tag or release.get('draft')
+                    or not isinstance(release.get('assets'), list)):
+                raise ValueError('Ungültige GitHub-Version für die Wiederherstellung.')
+            asset = next((a for a in release['assets']
+                          if isinstance(a, dict)
+                          and a.get('name') == WINDOWS_INSTALLER_NAME), None)
+            if asset is None:
+                raise ValueError('Kein Windows-Installer in dieser Version vorhanden.')
+            url = asset.get('browser_download_url', '')
+            if (not isinstance(url, str)
+                    or url != (f'{RELEASE_DOWNLOAD_PREFIX}{tag}/'
+                               f'{WINDOWS_INSTALLER_NAME}')
+                    or not isinstance(asset.get('size'), int)
+                    or asset['size'] < 100000
+                    or not isinstance(asset.get('digest'), str)
+                    or not asset['digest'].startswith('sha256:')):
+                raise ValueError('Verifizierbarer Windows-Installer fehlt.')
+            self.latest_asset = asset
+            self.latest_version = tag
+            self._rollback_pending = True
+            self.download_update()
+        except (OSError, ValueError, UnicodeDecodeError, TypeError) as error:
+            QMessageBox.warning(
+                self, self._t('Wiederherstellung fehlgeschlagen'), self._t(str(error))
+            )
+        finally:
+            reply.deleteLater()
+
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:
             return
@@ -1817,7 +1918,9 @@ class PasswordWindow(QMainWindow):
             if os.name == 'nt':
                 # The Inno installer closes old files and restarts the updated
                 # application after successful installation.
-                start_verified_windows_installer(self.download_target)
+                start_verified_windows_installer(
+                    self.download_target, rollback=self._rollback_pending
+                )
                 if self.reporter is not None:
                     self.reporter.note(
                         'WINDOWS_UPDATE_SETUP_STARTED',
@@ -1891,6 +1994,7 @@ class PasswordWindow(QMainWindow):
                     pass
             self.save_file = None
             self.download_stage = None
+            self._rollback_pending = False
             reply.deleteLater()
 
 
