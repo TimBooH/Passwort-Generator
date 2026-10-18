@@ -1,220 +1,221 @@
-# 🔐 PasswortGenerator
+# PasswortGenerator
 
-**Ein sicherer Passwortgenerator für Linux – mit stabiler, skalierbarer Glasoberfläche, eigenen Hintergrundbildern, Updateprüfung und Startmenü-Installation.**
+**Ein moderner Passwortgenerator für Linux mit anpassbarer Glasoberfläche, lokalen Hintergrundbildern und integrierter Updatefunktion.**
 
-[![Linux AppImage](https://img.shields.io/badge/Linux-AppImage-238636?logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
-[![Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Version)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
-[![Build & Release](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)
+[![Latest Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
+[![Linux](https://img.shields.io/badge/Plattform-Linux%20x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
+[![Build & Release](https://img.shields.io/github/actions/workflow/status/TimBooH/Passwort-Generator/build-and-release.yml?branch=main&label=Build%20%26%20Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)
 
-Der PasswortGenerator ist eine grafische Desktop-Anwendung auf Basis von **Python** und **PySide6 (Qt 6)**. Die Passwörter werden ausschließlich lokal mit dem kryptografisch sicheren Python-Modul `secrets` erzeugt.
+PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python und Qt 6 (PySide6)**. Die Passworterzeugung erfolgt lokal mit dem kryptografisch sicheren Python-Modul `secrets`. Eine Internetverbindung ist dafür nicht erforderlich; sie wird lediglich für die optionale Updateprüfung und den Download neuer Versionen benötigt.
 
-## ✨ Funktionen
+**[Neueste Version herunterladen](https://github.com/TimBooH/Passwort-Generator/releases/latest)** · [Installationsanleitung](#installation) · [Updates](#updates) · [Fehlerdiagnose](#fehlerdiagnose)
 
-- Sichere Passwörter mit **8 bis 128 Zeichen** erzeugen
-- **Kleinbuchstaben**, **Großbuchstaben**, **Zahlen** und **Sonderzeichen** auswählen
-- Ähnliche Zeichen wie `I`, `l`, `1`, `O` und `0` ausschließen
-- Jede aktivierte Zeichengruppe ist im Passwort mindestens einmal enthalten
-- Passwort auf Knopfdruck in die Zwischenablage kopieren
-- **Responsive Glossy-Glas-Panels:** mitwachsende, abgerundete Kacheln mit Qt-eigenen Farbverläufen, feinen Lichtkanten und Glanzeffekten
-- **Glas-Deckkraft** mit einem Schieberegler anpassen (30–85 %)
-- **Eigene Hintergrundbilder** auswählen und zwischen Ausfüllen, Einpassen, Strecken, Zentriert, Originalgröße und Kacheln wechseln
-- **Responsive Fenster-Skalierung:** alle drei Kacheln wachsen und schrumpfen mit der Fenstergröße – ohne feste maximale Breite
-- **Stabilität:** keine Python-Zeichenschleife beim Fensterziehen; Hintergrundbilder werden verzögert neu skaliert
-- Unterschiedliche **Hintergrund- und Textfarben** wählen oder eine eigene Farbe einstellen
-- Farben werden gespeichert und beim nächsten Start wiederhergestellt
-- **Automatische und manuelle Updateprüfung** über GitHub Releases
-- **Update installieren & neu starten:** SHA-256-geprüfter Download, Sicherung der Vorgängerversion und automatischer Neustart
-- **Linux-Installation mit Menüeintrag** (z. B. CachyOS/KDE Plasma), ohne `sudo`
+---
 
-## 📥 Download
+## Funktionen
 
-**[➡️ Neueste Version und Installer auf GitHub Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest)**
-
-Unter **Assets** findest du:
-
-| Datei | Verwendung |
+| Bereich | Möglichkeiten |
 | --- | --- |
-| `PasswortGenerator-x86_64.AppImage` | Direkt ausführbare Linux-App |
-| `install.sh` | Installiert die App mit KDE-/Desktop-Menüeintrag |
-| `uninstall.sh` | Entfernt die App und den Menüeintrag |
-| `SHA256SUMS` | Prüfsumme für die AppImage-Datei |
+| **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
+| **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
+| **Bedienung** | Passwort mit einem Klick erstellen und in die Zwischenablage kopieren |
+| **Design** | Skalierbare Glossy-Glas-Kacheln, eigene Hintergrund- und Textfarben, einstellbare Glas-Deckkraft |
+| **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
+| **Updates** | GitHub-Releaseprüfung, SHA-256-Verifizierung, Installation und automatischer Neustart |
+| **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
 
-## 🖥️ Installation mit Anwendungsmenü (CachyOS / KDE Plasma)
+Die Oberfläche passt ihre Kacheln an die Fenstergröße an und speichert Design-Einstellungen für den nächsten Programmstart.
 
-1. Lade auf der [Release-Seite](https://github.com/TimBooH/Passwort-Generator/releases/latest) die Datei **`install.sh`** herunter.
-2. Öffne das Terminal im Ordner mit der Datei, zum Beispiel `~/Downloads`.
-3. Starte:
+## Download
+
+Die aktuelle Linux-Version findest du unter **[GitHub Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest)**.
+
+| Datei | Zweck |
+| --- | --- |
+| `PasswortGenerator-x86_64.AppImage` | Portable Linux-Anwendung |
+| `install.sh` | Benutzerinstallation mit Anwendungsmenü-Eintrag |
+| `uninstall.sh` | Entfernt die installierte Anwendung und den Menüeintrag |
+| `SHA256SUMS` | SHA-256-Prüfsumme des AppImages |
+
+**Systemanforderungen:** Linux auf x86_64-Basis, beispielsweise CachyOS mit KDE Plasma. Für die Ausführung von AppImages kann je nach Distribution eine kompatible FUSE-Laufzeit erforderlich sein.
+
+## Installation
+
+### Empfohlen: Installation mit Menüeintrag
+
+1. Lade `install.sh` von der [Release-Seite](https://github.com/TimBooH/Passwort-Generator/releases/latest) herunter.
+2. Öffne ein Terminal im Downloadordner.
+3. Führe den Installer aus:
 
    ```bash
    bash install.sh
    ```
 
-Das Skript lädt die **neueste AppImage-Version** von GitHub, überprüft die SHA-256-Prüfsumme und richtet die Anwendung für deinen Benutzer ein.
+Das Skript lädt das aktuelle AppImage herunter, prüft die veröffentlichte SHA-256-Prüfsumme und erstellt einen Eintrag im Linux-Anwendungsmenü. **Für die Benutzerinstallation ist kein `sudo` nötig.** Danach kannst du PasswortGenerator über das KDE-Menü öffnen und an die Taskleiste anheften.
 
-Anschließend findest du **PasswortGenerator** im KDE-Anwendungsmenü. Du kannst den Eintrag auch an die Taskleiste anheften.
-
-Die Installation verwendet **kein `sudo`** und legt die Dateien hier ab:
-
-| Datei | Speicherort |
-| --- | --- |
-| Aktuelle AppImage-Version | `~/.local/opt/passwort-generator/PasswortGenerator.AppImage` |
-| Vorherige AppImage-Version | `~/.local/opt/passwort-generator/PasswortGenerator-previous.AppImage` |
-| Menüeintrag | `~/.local/share/applications/de.timbooh.passwortgenerator.desktop` |
-| Symbol | `~/.local/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg` |
-
-Falls das AppImage bereits heruntergeladen wurde, kannst du es auch ohne Netzwerkverbindung installieren (mit der passenden Datei):
+**Bereits heruntergeladenes AppImage installieren:**
 
 ```bash
 bash install.sh --file ./PasswortGenerator-x86_64.AppImage
 ```
 
-## ⚡ AppImage ohne Installation starten
+Bei `--file` wird die angegebene lokale Datei verwendet. Lade sie nur aus einer vertrauenswürdigen Quelle herunter; die Online-Prüfsummenprüfung des Installers findet bei diesem Aufruf nicht statt.
+
+### Portable Nutzung ohne Installation
+
+Lade das AppImage herunter und starte es im entsprechenden Verzeichnis:
 
 ```bash
 chmod +x PasswortGenerator-x86_64.AppImage
 ./PasswortGenerator-x86_64.AppImage
 ```
 
-Voraussetzung: **64-Bit-Linux (x86_64)**. Unter manchen Distributionen wird eine kompatible **FUSE-2-Laufzeit** benötigt.
+Hierbei wird kein Anwendungsmenü-Eintrag erstellt.
 
-## 🔄 Wie funktionieren Updates und der automatische Neustart?
+### Installationspfade
 
-Der PasswortGenerator prüft die neueste Version über die Releases von **TimBooH/Passwort-Generator**. Die Prüfung findet beim Start oder manuell über **„Auf Updates prüfen“** statt.
+| Komponente | Pfad |
+| --- | --- |
+| Aktuelle Version | `~/.local/opt/passwort-generator/PasswortGenerator.AppImage` |
+| Vorherige Version | `~/.local/opt/passwort-generator/PasswortGenerator-previous.AppImage` |
+| Menüeintrag | `~/.local/share/applications/de.timbooh.passwortgenerator.desktop` |
+| Programmsymbol | `~/.local/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg` |
 
-Wenn eine neuere Version verfügbar ist:
+Die Datei für die vorherige Version wird erst angelegt, wenn eine vorhandene Installation aktualisiert wird.
 
-1. Auf **„Update installieren & neu starten“** klicken. Die App lädt das neue Linux-AppImage herunter und zeigt den Fortschritt an.
-2. Die Datei wird anhand der von GitHub bereitgestellten **SHA-256-Prüfsumme** und Dateigröße überprüft. Fehlerhafte Downloads werden nicht installiert.
-3. **Bei einer Installation mit dem Installer:** Die bisherige Version wird als `PasswortGenerator-previous.AppImage` gesichert. Die neue wird atomar als `PasswortGenerator.AppImage` eingesetzt.
-4. Ein neuer Prozess startet die aktualisierte App nach einer kurzen Verzögerung. Die bisherige App schließt sich automatisch.
-5. **Bei einem einzeln gestarteten AppImage:** Die neue Version wird in den Downloadordner gespeichert und ebenfalls automatisch gestartet. Eine Sicherung unter `previous` wird nur für die Menü-Installation gepflegt.
+## Updates
 
-**Es bleiben im Installationsordner nur die aktuelle und die unmittelbar vorherige AppImage-Version.** Ältere, vom PasswortGenerator verwaltete AppImage-Dateien in diesem Ordner werden entfernt. Andere Programme oder Dateien im Downloadordner werden nicht gelöscht.
+PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator). Über **„Auf Updates prüfen“** kannst du die Prüfung jederzeit wiederholen.
 
-Der Download startet ausschließlich nach deinem Klick. **Es gibt keine unbeaufsichtigten automatischen Installationen.**
+1. Wenn eine neue Version verfügbar ist, wähle **„Update installieren & neu starten“**.
+2. Das AppImage wird heruntergeladen und anhand der veröffentlichten **Dateigröße und SHA-256-Prüfsumme** überprüft.
+3. Bei einer Menü-Installation wird die bisherige Version als `PasswortGenerator-previous.AppImage` gesichert und das aktuelle AppImage ersetzt.
+4. Nach erfolgreichem Download und Austausch startet die neue Version automatisch.
 
-## 🎨 Design ändern
+**Versionsverwaltung:** Im Installationsordner werden die aktuelle und die unmittelbar vorherige AppImage-Version aufbewahrt. Ältere, zur Anwendung gehörende Versionen werden dort entfernt.
 
-Unter **„Design & Farben“** gibt es verschiedene Vorlagen für Hintergrund und Text sowie einen Farbwähler für eigene Farben. Mit **„Glas-Deckkraft“** bestimmst du die Stärke der transparenten Glasflächen. Die Kacheln verwenden Qt-eigene Stylesheets mit glänzenden Farbverläufen, Lichtkanten und abgerundeten Ecken. Beim Verändern der Fenstergröße passt sich jede Kachel an die verfügbare Breite und Höhe an. Der Hintergrund wird ohne eigene Python-PaintEvent-Schleife dargestellt. Farben und Glas-Deckkraft werden lokal über Qt `QSettings` gespeichert. Achte bei eigenen Kombinationen auf guten Kontrast.
+**Portable AppImages:** Wird das Programm ohne Installation gestartet, landet die heruntergeladene Version im Downloadordner und wird von dort neu gestartet. Die `previous`-Sicherung gilt für die reguläre Menü-Installation.
 
-**Hinweis:** Das Design erzeugt den Glas-Look innerhalb des App-Fensters. Eine echte Unschärfe des *Desktops hinter dem Fenster* hängt vom KDE/KWin-Compositor ab und wird nicht vorausgesetzt.
+Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klick**.
 
-## 🖼️ Eigene Hintergrundbilder
+## Oberfläche und Hintergrundbilder
 
-Öffne **Design & Farben → Bild auswählen …** und wähle eine PNG-, JPG-, WEBP- oder BMP-Datei.
+Unter **„Design & Farben“** kannst du Hintergrundfarbe, Textfarbe und Glas-Deckkraft einstellen. Die Einstellungen werden lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
+
+Mit **„Bild auswählen …“** kannst du ein eigenes Hintergrundbild laden und dessen Darstellung festlegen:
 
 | Modus | Darstellung |
 | --- | --- |
-| **Ausfüllen** | Fenster vollständig ausfüllen; überstehende Bildränder werden mittig abgeschnitten |
-| **Einpassen** | Ganzes Bild proportional anzeigen; seitliche oder obere Ränder möglich |
-| **Gestreckt** | Bild auf Fensterbreite und -höhe dehnen, auch wenn es verzerrt wird |
-| **Zentriert (100 %)** | Ohne Skalierung mittig platzieren |
-| **Original (links oben)** | Ohne Skalierung an der linken oberen Ecke beginnen |
-| **Gekachelt** | Bild in Originalgröße wiederholen |
+| **Ausfüllen** | Füllt den verfügbaren Bereich proportional; Bildränder können abgeschnitten werden |
+| **Einpassen** | Zeigt das gesamte Bild proportional mit möglichen freien Rändern |
+| **Gestreckt** | Passt Breite und Höhe unabhängig an; das Bild kann verzerrt werden |
+| **Zentriert (100 %)** | Platziert das Bild ohne weitere Skalierung mittig |
+| **Original (links oben)** | Platziert das Bild ohne weitere Skalierung oben links |
+| **Gekachelt** | Wiederholt das Bild als Muster |
 
-Mit **Bild entfernen** kehrst du zum animierungsfreien Farbverlauf zurück. Der Bildpfad und der Darstellungsmodus werden gespeichert. Das Originalbild bleibt **auf deinem Rechner** und wird nicht in die App kopiert. Wird die Datei verschoben oder gelöscht, musst du sie erneut auswählen.
+Mit **„Bild entfernen“** wechselst du zum farbigen Hintergrund zurück. Das Originalbild bleibt an seinem Speicherort; gespeichert wird sein Dateipfad.
 
-**Schutz gegen große Bilder:** Dateien über 30 MB bzw. extrem große Pixelmaße werden nicht angenommen. Größere Bilder können außerdem beim Laden auf maximal 4096 Pixel Kantenlänge verkleinert werden. Damit bezieht sich „Originalgröße“ auf die sicher geladene Vorschauauflösung.
+**Hinweis zur Bildgröße:** Bilder über 30 MB oder mit extrem großen Abmessungen werden abgelehnt. Große unterstützte Bilder können beim Laden auf maximal 4096 Pixel Kantenlänge reduziert werden. Die Modi „Zentriert“ und „Original“ beziehen sich dann auf diese geladene Auflösung.
 
-## 🛠️ Abstürze diagnostizieren
+## Fehlerdiagnose
 
-Ab **v1.5.0** findest du im Bereich **Updates & Versionen** den Button **„Crash-Log öffnen“**. Das lokale Protokoll liegt unter:
+Über **„Crash-Log öffnen“** im Bereich **„Updates & Versionen“** erreichst du das lokale Fehlerprotokoll:
 
-`~/.local/state/passwort-generator/crash.log`
+```text
+~/.local/state/passwort-generator/crash.log
+```
 
-Wenn `$XDG_STATE_HOME` gesetzt ist, verwendet die App dieses Verzeichnis. Das Protokoll enthält:
+Wenn `XDG_STATE_HOME` gesetzt ist, wird dessen Verzeichnis verwendet. Das Protokoll kann Zeitstempel, App-Version, Prozess-ID, letzte Bedienaktionen, Python-Exceptions, Stacktraces und verfügbare Qt-/Systemmeldungen enthalten.
 
-- **Zeitstempel**, Version, Prozess-ID und Start-/Ende-Ereignisse
-- Zuletzt ausgeführte Bedienaktionen, etwa Fenstergröße, Farbänderung und Updatevorgang
-- **Python-Fehler mit Exception-Typ, Fehlermeldung und vollständigem Stacktrace**
-- Wenn verfügbar, **native Absturzsignale** und Qt/C++-Meldungen aus `stderr`
-- Beim nächsten Start einen Hinweis, wenn der vorherige Prozess nicht normal beendet wurde
+**Wichtig:** Die zuletzt protokollierte Aktion muss nicht die Ursache des Absturzes sein. Insbesondere bei nativen Qt-, Grafiktreiber- oder Speicherfehlern ist eine eindeutige Diagnose nicht immer möglich.
 
-Die letzte protokollierte Aktion ist ein Anhaltspunkt, aber **nicht zwangsläufig die Absturzursache**. Bei Treiber-, Speicher- und Qt-C++-Fehlern ist die genaue Ursache unter Umständen nicht rekonstruierbar. Auch ein harter Abbruch (z. B. `SIGKILL` oder Stromausfall) kann nur als unerwartetes Ende erkannt werden.
+Bei Problemen unter KDE/Wayland kann testweise ein Start über XWayland helfen, sofern XWayland installiert ist:
 
-Die Logs werden **nur lokal gespeichert** und enthalten keine generierten Passwörter. Kontrolliere dennoch Dateipfade oder andere technische Daten im Log, bevor du es weitergibst.
+```bash
+QT_QPA_PLATFORM=xcb ~/.local/opt/passwort-generator/PasswortGenerator.AppImage
+```
 
-Zum Testen einer stabileren Qt-Darstellung unter CachyOS/KDE kannst du die App auch einmal mit `QT_QPA_PLATFORM=xcb` über ein Terminal starten. Dafür muss XWayland verfügbar sein.
+Falls die Anwendung erneut abstürzt, füge bei einer Fehlermeldung möglichst den relevanten Logabschnitt und die Schritte zur Reproduktion hinzu.
 
-## 🧑‍💻 Aus dem Quellcode starten
+## Deinstallation
 
-Voraussetzungen: Python 3.11 oder neuer und ein Linux-Desktop mit Qt-Unterstützung.
+Lade `uninstall.sh` aus den [Release-Assets](https://github.com/TimBooH/Passwort-Generator/releases/latest) herunter und starte:
+
+```bash
+bash uninstall.sh
+```
+
+Der Installer-Eintrag sowie die aktuelle und die vorherige AppImage-Datei werden entfernt. Gespeicherte Benutzereinstellungen bleiben bestehen.
+
+## Entwicklung
+
+### Lokal aus dem Quellcode starten
+
+Benötigt werden **Python 3.11 oder neuer**, ein Linux-Desktop mit Qt-Unterstützung und die von Qt benötigten Systembibliotheken.
 
 ```bash
 git clone https://github.com/TimBooH/Passwort-Generator.git
 cd Passwort-Generator
+
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python main.py
 ```
 
-Tests ausführen:
+### Tests
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-## 🗑️ Deinstallation
-
-Lade `uninstall.sh` von den [Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest) herunter und führe aus:
+Für zusätzliche GUI- und Update-Integrationstests in einer Umgebung mit Qt:
 
 ```bash
-bash uninstall.sh
+QT_QPA_PLATFORM=offscreen PYTHONPATH=. python tests/smoke_glossy_ui.py
+QT_QPA_PLATFORM=offscreen PYTHONPATH=. python tests/smoke_update_gui.py
 ```
 
-Die App und ihr Menüeintrag werden entfernt. Die gespeicherten Farbeingaben bleiben bei Bedarf erhalten.
+### Build und Release
 
-## 🛠️ Technik & Release-Ablauf
+Das Repository verwendet [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml) mit einem gemeinsamen Job für Tests, AppImage-Build und Veröffentlichung.
 
-| Bereich | Technologie |
-| --- | --- |
-| Benutzeroberfläche | PySide6-Essentials / Qt 6 |
-| Passworterzeugung | Python `secrets` / `SystemRandom` |
-| Farbauswahl | Qt `QColorDialog` & `QSettings` |
-| Glasdesign | Native Qt-Stylesheets (QSS), ohne Python-`paintEvent` beim Resize |
-| Updates | GitHub Releases API via Qt `QNetworkAccessManager` |
-| Verifizierung | SHA-256 + erwartete Dateigröße; sicherer Austausch mit previous-Backup |
-| Absturzdiagnostik | Python `faulthandler`, versionierte Fehlerlogs und Sitzungsmarker |
-| Build | PyInstaller und AppImageKit |
-| Release | GitHub Actions |
+Ein automatischer Release-Lauf startet bei einer Änderung von `version.py` auf `main`. Änderungen am Workflow lösen ebenfalls einen Versionscheck aus; ein bereits existierendes Release wird übersprungen. Manuelle Ausführung ist über **Run workflow** möglich.
 
-**Optimierter Release-Prozess (ab v1.5.1):** Ein Release-Build wird ausgelöst, wenn `version.py` auf `main` geändert wird, oder manuell über **Run workflow**. Änderungen an der Workflow-Datei lösen ebenfalls einen kurzen Versionscheck aus; existiert das Release bereits, endet der Lauf ohne Build. Änderungen an README, Tests oder Programmdateien ohne neue Versionsnummer starten keinen vollständigen AppImage-Build.
+**Für ein neues Release:** Programmänderungen und Tests abschließen, `APP_VERSION` in `version.py` erhöhen, `RELEASE_NOTES.md` aktualisieren und alles gemeinsam committen. Nach bestandenen Tests werden das AppImage, Installationsskripte und `SHA256SUMS` veröffentlicht. Reine README-Änderungen lösen keinen Release-Build aus.
 
-Alle Änderungen einer neuen Version werden zusammen mit der geänderten `APP_VERSION` **in einem Commit** nach `main` gepusht. GitHub startet dann **genau einen** Build. Dieser verwendet einen einzigen Runner für den Versionscheck, die Tests, das AppImage und die Veröffentlichung – ohne separaten Release-Job, ohne unnötige Artifact-Uploads/-Downloads.
-
-Beschleunigungen: **PySide6-Essentials** statt des großen PySide6-Metapakets, festgelegte Build-Abhängigkeiten, GitHub-`pip`-Cache, nur die nötigen Qt-Grafikbibliotheken mit vorhandenen Paketlisten (Aktualisierung nur bei Bedarf) und keine überflüssigen Zwischenschritte. Existiert das GitHub-Release für diese Versionsnummer bereits, wird der Build **vor der Installation von Abhängigkeiten** übersprungen. Gleichzeitig gestartete Builds auf demselben Branch werden zusammengefasst bzw. ältere Läufe abgebrochen.
-
-**Neues Release erstellen:** Funktionsänderungen und Tests sammeln, `APP_VERSION` erhöhen, `RELEASE_NOTES.md` aktualisieren und **einen gemeinsamen Commit** pushen. Die Release-Assets `PasswortGenerator-x86_64.AppImage`, `install.sh`, `uninstall.sh` und `SHA256SUMS` werden nach bestandenen Tests direkt hochgeladen.
-
-**Hinweis:** Bei reinen Quellcodeänderungen ohne Versionsänderung erfolgt kein automatischer Testlauf mehr. Für eine Veröffentlichung die Versionsnummer daher immer im selben Commit erhöhen. Der Workflow kann bei Bedarf manuell gestartet werden.
-
-## 🔒 Sicherheit und Privatsphäre
-
-- Passwortgenerierung erfolgt lokal, ohne Übertragung an Server.
-- Die App speichert generierte Passwörter nicht dauerhaft.
-- Die optionale Updateprüfung ruft öffentliche Release-Metadaten auf GitHub ab.
-- Downloads kommen aus den Releases dieses Repositories und werden anhand des GitHub-SHA-256-Digests geprüft.
-- **Hinweis:** Kopierte Passwörter sind in der Systemzwischenablage sichtbar, bis deren Inhalt überschrieben oder gelöscht wird.
-
-## 📁 Repository-Struktur
+### Projektstruktur
 
 ```text
 Passwort-Generator/
-├── main.py
-├── password_core.py
-├── glass_ui.py
-├── version.py
-├── requirements.txt
-├── install.sh
-├── uninstall.sh
-├── RELEASE_NOTES.md
+├── .github/workflows/build-and-release.yml
 ├── assets/
-│   └── de.timbooh.passwortgenerator.svg
 ├── tests/
-│   └── test_password_core.py
-└── .github/workflows/
-    └── build-and-release.yml
+│   ├── smoke_glossy_ui.py
+│   ├── smoke_update_gui.py
+│   └── test_*.py
+├── main.py                 # Anwendung und Benutzeroberfläche
+├── password_core.py        # Passworterzeugung
+├── glass_ui.py             # Glasdesign und Hintergrundbilder
+├── updater.py              # AppImage-Aktualisierung und Neustart
+├── diagnostics.py          # Lokale Fehlerprotokolle
+├── version.py              # Versionsnummer
+├── requirements.txt        # Python-Abhängigkeiten
+├── install.sh              # Installation und Menüeintrag
+├── uninstall.sh            # Deinstallation
+├── RELEASE_NOTES.md        # Änderungen pro Veröffentlichung
+└── README.md
 ```
 
-**Projekt:** [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator) · **Downloads:** [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
+## Sicherheit und Datenschutz
+
+- Passwörter werden **lokal generiert** und nicht an einen Server übertragen.
+- Generierte Passwörter werden von der Anwendung nicht dauerhaft gespeichert.
+- Für die Updateprüfung werden öffentliche Release-Metadaten von GitHub abgerufen.
+- AppImage-Downloads werden vor der Installation anhand der GitHub-Prüfsumme geprüft.
+- Crash-Logs bleiben lokal und werden nicht automatisch hochgeladen.
+- **Zwischenablage:** Kopierte Passwörter können für andere Programme sichtbar sein, bis sie überschrieben oder aus der Zwischenablage entfernt werden.
+
+---
+
+**Projekt:** [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator) · **[Releases](https://github.com/TimBooH/Passwort-Generator/releases)** · **[Build-Status](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)**
