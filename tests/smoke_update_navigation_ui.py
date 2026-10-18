@@ -1,4 +1,4 @@
-"""Offline UI regressions for update badge, scheduled checks, and visual guide.
+"""Offline UI regressions for update badge, scheduled checks, and compact Info.
 
 All requests are faked. This test runs unchanged on Linux and Windows.
 """
@@ -11,7 +11,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtNetwork import QNetworkReply
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTabWidget
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 from main import (
     APPIMAGE_NAME, APP_VERSION, REPO, UPDATE_CHECK_INTERVAL_MS,
@@ -154,25 +154,14 @@ assert window.nav_buttons[2].property('updateAvailable') is False
 assert 'NEU' not in window.nav_buttons[2].text()
 window.update_timer.stop()
 
-# Info has a dedicated visual-guide button and all three screens.
+# Info contains no written or illustrated instructions.
 info = window.build_info_dialog()
-button = info.findChild(QPushButton, 'visualGuideButton')
-assert button is not None
-assert 'Bildliche Anleitung' in button.text()
-prior = window.tabs.currentIndex()
-guide = window.build_visual_guide_dialog(info)
-screens = guide.findChild(QTabWidget, 'visualGuideTabs')
-assert screens is not None and screens.count() == 3
-assert [screens.tabText(i) for i in range(3)] == [
-    '1 · Passwort', '2 · Design', '3 · Updates',
-]
-for i in range(3):
-    preview = guide.findChild(QLabel, f'visualGuideImage{i}')
-    assert preview is not None
-    assert preview.pixmap() is not None and not preview.pixmap().isNull()
-assert window.tabs.currentIndex() == prior
-guide.close()
+assert info.windowTitle().startswith('Info')
+assert info.findChild(QLabel, 'infoCredit').text() == 'Made by Jon Bovi'
+assert not info.findChild(QPushButton, 'visualGuideButton')
+assert not hasattr(window, 'build_visual_guide_dialog')
+assert not info.findChild(QLabel, 'visualGuideTitle')
 info.close()
 window.close()
 app.processEvents()
-print('UI update-badge / 2h timer / compact navigation / no-scroll password / visual guide OK')
+print('UI update-badge / 2h timer / compact navigation / no-scroll password / minimal Info OK')

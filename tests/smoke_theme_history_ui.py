@@ -8,7 +8,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import Qt
 from PySide6.QtNetwork import QNetworkReply
-from PySide6.QtWidgets import QApplication, QLabel, QTextBrowser
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTextBrowser
 
 from main import PasswordWindow, REPO_URL
 from theme_colors import (
@@ -87,18 +87,17 @@ assert window.scheme_combo.currentData() == 'custom'
 assert window.settings.value('color_scheme') == 'custom'
 assert window.accent_preview.text().endswith(accent_for_background('#351A23'))
 
-# Info starts with the author's credit and contains a practical manual.
+# Info stays compact: author and version only, without any tutorial.
 info = window.build_info_dialog()
 credit = info.findChild(QLabel, 'infoCredit')
 assert credit is not None
 assert credit.text() == 'Made by Jon Bovi'
 assert info.layout().itemAt(0).widget() is credit
-guide = info.findChild(QTextBrowser, 'changelogView')
-assert guide is not None
-assert 'Anleitung' in guide.toPlainText()
-assert 'Passphrase' in guide.toPlainText()
-assert 'Glass Dark' in guide.toPlainText()
-assert 'Updates' in guide.toPlainText()
+assert f'v{window.windowTitle().split("v")[-1]}' in info.findChildren(QLabel)[1].text()
+assert not info.findChildren(QTextBrowser)
+assert not info.findChild(QPushButton, 'visualGuideButton')
+assert not hasattr(window, 'build_visual_guide_dialog')
+assert 'Anleitung' not in info.windowTitle()
 info.close()
 
 # No network calls: feed a deterministic GitHub response to the real GUI.

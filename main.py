@@ -187,7 +187,7 @@ class PasswordWindow(QMainWindow):
         self.nav_buttons[0].setChecked(True)
         self.info_nav_button = QPushButton('ⓘ  Info')
         self.info_nav_button.setObjectName('infoNavButton')
-        self.info_nav_button.setToolTip('Über das Programm und Anleitung')
+        self.info_nav_button.setToolTip('Über PasswortGenerator')
         self.info_nav_button.setAccessibleName('Info')
         self.info_nav_button.setMinimumHeight(25)
         self.info_nav_button.clicked.connect(self.show_info)
@@ -608,11 +608,15 @@ class PasswordWindow(QMainWindow):
         dialog.exec()
 
     def build_info_dialog(self):
-        """Build a readable manual, with visible author credit at the very top."""
+        """Minimal program information without instructions or tutorial buttons."""
         dialog = QDialog(self)
-        dialog.setWindowTitle('Info & Anleitung')
-        dialog.resize(610, 630)
+        dialog.setObjectName('infoDialog')
+        dialog.setWindowTitle('Info · PasswortGenerator')
+        dialog.resize(470, 260)
         layout = QVBoxLayout(dialog)
+        layout.setContentsMargins(22, 20, 22, 17)
+        layout.setSpacing(12)
+
         credit = QLabel('Made by Jon Bovi')
         credit.setObjectName('infoCredit')
         credit.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -621,68 +625,26 @@ class PasswordWindow(QMainWindow):
             'font-size: 22px; font-weight: 850; padding: 10px;'
         )
         layout.addWidget(credit)
-        subheading = QLabel(f'Passwort-Generator v{APP_VERSION}  ·  {version_status()}')
-        subheading.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        subheading = QLabel(f'Passwort-Generator v{APP_VERSION} · {version_status()}')
         subheading.setObjectName('supportText')
+        subheading.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subheading)
 
-        guide = QTextBrowser(dialog)
-        guide.setObjectName('changelogView')
-        guide.setReadOnly(True)
-        guide.setOpenExternalLinks(False)
-        guide.setMarkdown(
-            '# Anleitung\n\n'
-            '### 1. Sicheres Passwort erstellen\n'
-            'Öffne **Passwort**, wähle die gewünschte Länge mit dem Regler oder dem '
-            'Zahlenfeld (8–128 Zeichen) und aktiviere die gewünschten Zeichengruppen. '
-            'Klicke auf **Passwort generieren**.\n\n'
-            '### 2. Passphrase erstellen\n'
-            'Wechsle oben auf **Passphrase**. Wähle 4–10 Wörter und klicke auf '
-            '**Passphrase generieren**. Die Wörter werden lokal zufällig gewählt '
-            'und mit Bindestrichen verbunden.\n\n'
-            '### 3. Passwort verwenden\n'
-            '**Kopieren** übernimmt das Ergebnis in die Zwischenablage. '
-            '**Anzeigen / Verbergen** steuert, ob es im Eingabefeld lesbar ist. '
-            'Das Symbol **↻** erstellt ein neues Ergebnis.\n\n'
-            '### 4. Stärke und Verlauf\n'
-            'Die Stärkeanzeige ist eine grobe mathematische Schätzung, keine '
-            'Sicherheitsgarantie. Unter **Verlauf** findest du maximal 20 Ergebnisse '
-            'dieser Sitzung. Beim Beenden wird dieser Verlauf verworfen.\n\n'
-            '### 5. Farben und Hintergrund\n'
-            'Öffne **Einstellungen**. Wähle ein Farbschema wie **Glass Dark**, '
-            '**Glass Light** oder **Neon Blue**. Die Akzentfarbe passt sich '
-            'automatisch an die Hintergrundfarbe an. Du kannst auch eigene Farben '
-            'und Hintergrundbilder verwenden.\n\n'
-            '### 6. Updates und ältere Versionen\n'
-            'Unter **Updates** siehst du den Changelog und frühere Releases. '
-            'Über **Auf Updates prüfen** und anschließend '
-            '**Update installieren & neu starten** installierst du eine neue '
-            'Version. Fehler werden weiterhin automatisch lokal protokolliert.\n\n'
-            '### Datenschutz\n'
-            'Passwörter werden auf deinem Gerät erzeugt und nicht hochgeladen. '
-            'Beachte, dass andere Anwendungen gegebenenfalls auf den Inhalt '
-            'der Systemzwischenablage zugreifen können.'
+        about = QLabel(
+            'Sichere Passwörter und Passphrasen – lokal erstellt. '
+            'Windows und Linux. Keine Übertragung der erzeugten Passwörter.'
         )
-        layout.addWidget(guide, 1)
+        about.setObjectName('infoDescription')
+        about.setWordWrap(True)
+        about.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(about)
+        layout.addStretch()
 
-        info_actions = QHBoxLayout()
-        self.visual_guide_button = QPushButton('▣  Bildliche Anleitung')
-        self.visual_guide_button.setObjectName('visualGuideButton')
-        self.visual_guide_button.setToolTip('Drei Bildschirmbilder mit Erklärungen ansehen')
-        self.visual_guide_button.clicked.connect(
-            lambda: self.build_visual_guide_dialog(dialog).exec()
-        )
-        info_actions.addWidget(self.visual_guide_button, 1)
         close = QPushButton('Schließen')
         close.clicked.connect(dialog.accept)
-        info_actions.addWidget(close)
-        layout.addLayout(info_actions)
+        layout.addWidget(close)
         return dialog
-
-    def build_visual_guide_dialog(self, parent=None):
-        # This imports only reusable Qt widgets; never changes files or settings.
-        from visual_help import create_visual_guide
-        return create_visual_guide(self, parent=parent)
 
     def show_info(self):
         self.build_info_dialog().exec()

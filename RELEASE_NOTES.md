@@ -1,11 +1,9 @@
-# PasswortGenerator v0.08.0 – Kleineres Menü und Update-Hinweis
+# PasswortGenerator v0.08.1 – Info vereinfacht
 
-**Entwicklungsschritt 8 von 100** bis zur Vollversion 1.0.0.
+Kleines Wartungsupdate innerhalb von **Schritt 8 von 100**.
 
-- **„Updates • NEU“** oben rechts, sobald eine neue Windows- oder Linux-Version bereitsteht.
-- Updateprüfung beim Start und danach **alle 2 Stunden**, solange die App geöffnet ist.
-- Kleinere Navigationsbuttons oben rechts und kompaktere Passwortseite **ohne Scrollen**.
-- **Info → Bildliche Anleitung** zeigt drei echte Anwendungsansichten und Erklärungen.
-- Alle Neuerungen für **Windows 10/11 x64** und **Linux x86_64**.
+- Aus **Info** wurden die lange Textanleitung und „Bildliche Anleitung“ entfernt.
+- „Made by Jon Bovi“, die Versionsnummer und die kurze Programminformation bleiben.
+- **Windows und Linux** erhalten dieselbe Änderung.
 
-Die Passworterzeugung ist weiterhin offline möglich. Updates werden nur nach Bestätigung installiert.
+Passworterzeugung, Farbschemas, Zwei-Stunden-Updateprüfung und Versionshistorie bleiben unverändert.

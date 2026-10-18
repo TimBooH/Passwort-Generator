@@ -15,10 +15,10 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
 | :--- | :--- |
 | **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
-| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.1/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.1/PasswortGenerator-x86_64.AppImage) |
 | Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
 
-**Aktuelle Version: v0.08.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
+**Aktuelle Version: v0.08.1** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
@@ -42,7 +42,7 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
 | **Updates** | Beim Start und alle 2 Stunden prüfen, „Updates • NEU“-Hinweis, Changelog und sicherer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
-| **Info** | „Made by Jon Bovi“, Textanleitung und „Bildliche Anleitung“ mit drei echten Bildschirmansichten |
+| **Info** | Nur „Made by Jon Bovi“, Versionsstand und kurze Programminformationen – ohne Anleitung |
 
 Die Oberfläche hat eine futuristische Glasoptik mit Schloss-Symbol, Akzentrahmen, Passwort/Passphrase-Umschalter, Stärkeanzeige und großem Generieren-Button. **Passwort, Einstellungen, Updates und Info** befinden sich gemeinsam **oben rechts**. Es gibt keine linke Seitenleiste und keinen zusätzlichen Info-Button am unteren Fensterrand.
 
@@ -59,7 +59,7 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **5 von 100** | `0.05.0` | Farbschemas, Changelog und Anleitung |
 | **6 von 100** | `0.06.0` | Linke Navigation und kompakte Versionshistorie |
 | **7 von 100** | `0.07.0` | Navigation oben rechts, transparenteres Glas und adaptive Farben |
-| **8 von 100** | **`0.08.0`** | **Aktueller Stand: Update-Hinweis, 2-Stunden-Prüfung, kompakte Ansicht und Bild-Anleitung** |
+| **8 von 100** | **`0.08.1`** | **Aktueller Stand: Update-Hinweis, 2-Stunden-Prüfung und kompakter Info-Bereich** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -168,9 +168,9 @@ Die **kleineren, platzsparenden Buttons** befinden sich **oben rechts**. Drei we
 | **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen und Verlauf |
 | **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
 | **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
-| **Info** | „Made by Jon Bovi“, Textanleitung und „Bildliche Anleitung“ mit drei echten Bildschirmansichten |
+| **Info** | Nur „Made by Jon Bovi“, Versionsstand und kurze Programminformationen – ohne Anleitung |
 
-Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. Die kompakte Passwortansicht passt vollständig ins unterstützte Fenster, sodass du **nicht scrollen musst**; längere Einstellungs- und Versionsseiten können weiterhin scrollen. Über **Info → Bildliche Anleitung** öffnest du eine grafische Anleitung mit drei echten, zur Laufzeit aufgenommenen Ansichten von **Passwort**, **Design** und **Updates**. Die Bildschirmbilder werden nur im Arbeitsspeicher angezeigt und nicht gespeichert. Das funktioniert unter **Windows und Linux**.
+Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. Die kompakte Passwortansicht passt vollständig ins unterstützte Fenster, sodass du **nicht scrollen musst**; längere Einstellungs- und Versionsseiten können weiterhin scrollen. **Info** zeigt nur den Urheber, die Version und eine kurze Programmbeschreibung. Die bisherige Text- und Bildanleitung wurde entfernt. Das funktioniert unter **Windows und Linux**.
 
 Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt eine **automatisch gut lesbare Textfarbe**, die nicht mehr manuell eingestellt werden muss. Die **Akzentfarbe übernimmt den Farbton des gewählten Hintergrunds** und wird auf einen gut sichtbaren Kontrast abgestimmt. Bei eigenen Hintergrundbildern fließt ein repräsentativer Bildfarbton in die Akzentwahl ein. Das aktualisiert Rahmen, Buttons und Regler; das dekorative Schaltkreismuster bleibt aus Stabilitätsgründen unverändert. Bei manueller Hintergrundfarbwahl schaltet die App auf **„Eigene Farben“**. Die transparenten Glas-Kacheln haben eine feste, reduzierte Deckkraft ohne zusätzlichen Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 
