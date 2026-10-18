@@ -12,7 +12,7 @@ os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.*=false')
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter
-from PySide6.QtWidgets import QApplication, QScrollArea, QSlider, QTabWidget
+from PySide6.QtWidgets import QApplication, QScrollArea, QSlider, QStackedWidget
 
 from main import PasswordWindow
 
@@ -22,13 +22,11 @@ window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
-assert isinstance(window.tabs, QTabWidget)
-assert [window.tabs.tabText(i) for i in range(window.tabs.count())] == [
-    'Passwort', 'Einstellungen', 'Updates',
-]
-assert window.tabs.tabPosition() == QTabWidget.TabPosition.North
-assert not window.tabs.tabBar().expanding()
-assert window.tabs.tabBar().geometry().left() <= 25
+assert isinstance(window.tabs, QStackedWidget)
+assert len(window.nav_buttons) == 3
+assert len(window.secondary_cards) == 2
+assert window.nav_sidebar.x() < window.tabs.x()
+assert window.tab_names == ('Passwort', 'Einstellungen', 'Updates')
 assert window.tabs.currentIndex() == 0
 assert window.glass_cards[0].isVisible()
 assert not window.glass_cards[1].isVisible()
@@ -91,8 +89,8 @@ with tempfile.TemporaryDirectory() as temp:
         window.tabs.setCurrentIndex(index)
         app.processEvents()
         assert card.isVisible(), f'Tab {index} card must be visible when selected'
-        assert card.width() >= 1500, (
-            f'Tab {index} glass tile must expand instead of being capped at 940 pixels'
+        assert card.width() >= 1300, (
+            f'Page {index} glass tile must expand with the window'
         )
         for other_index, other in enumerate(window.glass_cards):
             if other_index != index:
@@ -118,4 +116,4 @@ with tempfile.TemporaryDirectory() as temp:
 
 window.close()
 app.processEvents()
-print('Neon GUI stress test passed: 3 tabs, length slider, 6 image modes, 60 resizes, 25 UI changes.')
+print('Neon GUI stress passed: left sidebar, 5 cards, length slider, 60 resizes, 25 color changes.')

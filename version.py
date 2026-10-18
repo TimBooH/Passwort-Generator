@@ -1,6 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
-Version 0.05.0 adds configurable glass schemes and release-history browsing.
+Version 0.06.0 streamlines sidebar navigation, responsive cards, and release history.
+Version 0.05.0 added configurable glass schemes and release-history browsing.
 Neon artwork stays cached across palette changes to avoid native Qt crashes.
 The earlier 1.2.x–1.5.x tags were published before the scheme reset.
 They are retained on GitHub for transparency and are treated as legacy builds.
@@ -8,7 +9,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.05.0"
+APP_VERSION = "0.06.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

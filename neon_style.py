@@ -92,23 +92,48 @@ QLabel#lengthCaption {{ color: {fg}; font-weight: 700; }}
 QWidget#passwordPage, QWidget#settingsPage, QWidget#updatesPage {{
     background: transparent;
 }}
-QTabWidget#mainTabs::pane {{ border: none; background: transparent; }}
-QTabBar::tab {{
-    color: {muted};
+QStackedWidget#mainPages {{
+    background: transparent;
+    border: none;
+}}
+QFrame#navSidebar {{
     background: {panel};
     border: 1px solid {border};
-    border-radius: 9px;
-    padding: 8px 13px;
-    min-width: 85px;
-    margin: 0 6px 0 0;
-    font-weight: 700;
+    border-radius: 16px;
 }}
-QTabBar::tab:selected {{
+QLabel#navTitle {{
+    color: {muted};
+    font-size: 10px;
+    font-weight: 800;
+    padding: 5px 9px;
+}}
+QLabel#navFooter {{
+    color: {muted};
+    font-size: 11px;
+    padding: 9px;
+}}
+QPushButton#navButton {{
+    color: {fg};
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    min-height: 36px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+}}
+QPushButton#navButton:hover:!checked {{
+    color: {bright};
+    background: {panel_hover};
+    border-color: {border};
+}}
+QPushButton#navButton:checked {{
     color: {fg};
     background: {tab_selected};
-    border: 1px solid {bright};
+    border: 1px solid {accent};
+    border-left: 3px solid {bright};
 }}
-QTabBar::tab:hover:!selected {{ color: {fg}; background: {panel_hover}; }}
 QPushButton {{
     color: {fg};
     background: {panel};
@@ -120,11 +145,6 @@ QPushButton {{
 }}
 QPushButton:hover {{ border: 1px solid {bright}; background: {panel_hover}; }}
 QPushButton:pressed {{ background: {tab_selected}; }}
-QPushButton#headerSettings {{
-    background: transparent; border: none;
-    color: {fg}; font-weight: 700;
-}}
-QPushButton#headerSettings:hover {{ color: {bright}; }}
 QPushButton#modeButton {{
     background: {field}; border: 1px solid {border}; border-radius: 8px;
     font-size: 13px; font-weight: 700; padding: 8px 5px;

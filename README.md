@@ -24,11 +24,11 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
 | **Design** | Farbschemas (Glass Dark, Glass Light, Neon Blue, Violet Glass, Forest Glass), automatische Akzentfarben und eigene Farben |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
-| **Updates** | GitHub-Releaseprüfung mit Changelog und bis zu 100 früheren Releases, SHA-256-Verifizierung und Neustart |
+| **Updates** | GitHub-Releaseprüfung, kurze Änderungsübersicht, neueste der bis zu 100 Releases oben und sicherer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
 | **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
 
-Der PasswortGenerator wurde nach dem futuristischen dunkelblauen Designentwurf umgestaltet: Schloss-Symbol, blaue Neon-Umrandungen, Passwort/Passphrase-Umschalter, Stärkeanzeige, Längenregler und eine große Generieren-Taste. Die Reiter **Passwort**, **Einstellungen** und **Updates** bleiben oben links erreichbar. Das Einstellungen-Symbol im Kopf führt ebenfalls zu Design & Farben.
+Der PasswortGenerator wurde nach dem futuristischen dunkelblauen Designentwurf umgestaltet: Schloss-Symbol, blaue Neon-Umrandungen, Passwort/Passphrase-Umschalter, Stärkeanzeige, Längenregler und eine große Generieren-Taste. Die drei Schaltflächen **Passwort**, **Einstellungen** und **Updates** befinden sich jetzt gut sichtbar **links in einer Seitenleiste**. Der zusätzliche Einstellungen-Button rechts oben entfällt.
 
 ## Versionsplan: 100 Schritte bis Version 1.0
 
@@ -40,7 +40,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **2 von 100** | `0.02.0` | Glas-Deckkraft-Regler entfernt |
 | **3 von 100** | `0.03.0` | Drei Reiter |
 | **4 von 100** | `0.04.0` | Neon-Design und Passwort/Passphrase |
-| **5 von 100** | **`0.05.0`** | **Aktueller Stand: Farbschemas, Changelog und Anleitung** |
+| **5 von 100** | `0.05.0` | Farbschemas, Changelog und Anleitung |
+| **6 von 100** | **`0.06.0`** | **Aktueller Stand: linke Navigation und kompakte Versionshistorie** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -112,7 +113,7 @@ PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository 
 
 ### Changelog und frühere Versionen
 
-Der Update-Reiter enthält einen **Changelog** mit den Änderungen der ausgewählten Version und eine **Versionshistorie**. Beim ersten Öffnen des Reiters lädt die App über die GitHub-API bis zu **100 veröffentlichte Releases**. Klicke auf eine Version, um ihre offiziellen Release-Notizen anzuzeigen. Über **„Versionshistorie laden“** kannst du die Liste aktualisieren; **„Release auf GitHub öffnen“** führt zur jeweiligen Release-Seite. Auch ältere Versionen aus dem früheren 1.x-Nummerierungssystem sind in der Liste sichtbar, sofern sie in den letzten 100 Releases enthalten sind.
+Der Update-Bereich hat zwei übersichtliche Kacheln: **Update & Version** für die Updateprüfung sowie **Änderungen & Versionen** für den Changelog und die Versionshistorie. Beim ersten Öffnen werden bis zu **100 veröffentlichte Releases** automatisch von GitHub geladen. **Die neueste Veröffentlichung steht oben, die älteste unten** – maßgeblich ist das Veröffentlichungsdatum, auch für die historischen 1.x-Versionen. Ein Klick auf eine Version zeigt **maximal fünf kurze Änderungspunkte** statt langer Release-Texte. Die Buttons „Versionshistorie laden“ und „Release auf GitHub öffnen“ entfallen. Mit **„Auf Updates prüfen“** kannst du auch die Versionsliste neu laden.
 
 **Wichtig:** Die Liste dient der Information; ein Anklicken installiert **keine** ältere Version. Ohne Internetverbindung bleibt die Passworterzeugung nutzbar, die Online-Versionshistorie ist dann nicht abrufbar.
 
@@ -129,15 +130,15 @@ Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klic
 
 ## Oberfläche und Hintergrundbilder
 
-Die Navigation befindet sich **oben links** und bietet drei Bereiche:
+Die Navigation befindet sich **links als vertikale Seitenleiste** und bietet drei Bereiche:
 
 | Reiter | Inhalt |
 | --- | --- |
 | **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen, Verlauf und Info inklusive Anleitung |
-| **Einstellungen** | Design & Farben, eigene Hintergrundbilder und Bilddarstellung |
-| **Updates** | Changelog, frühere Versionen, Updateprüfung, Installation und Crash-Log |
+| **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
+| **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
 
-Wechsle einfach zwischen den Reitern. Die eingestellten Farben und Hintergrundbilder gelten für alle drei Bereiche.
+Wechsle über die drei linken Schaltflächen zwischen den Seiten. In **Einstellungen** liegen nun zwei getrennte, skalierbare Kacheln für „Design & Farben“ und „Hintergrundbild“. In **Updates** sind Updateprüfung und Versionshistorie ebenfalls getrennt. Auf schmalen Fenstern stehen die Zeichenoptionen untereinander, damit die Bedienung übersichtlich bleibt. Die Farben und Hintergrundbilder gelten weiterhin für alle Seiten.
 
 Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt passende Hintergrund- und Textfarben; die **Akzentfarbe wird automatisch aus dem Hintergrund abgeleitet** und färbt Buttons, Umrandungen und Regler passend ein. Der dekorative Schaltkreis-Hintergrund bleibt bei Farbwechseln stabil erhalten, statt neu gezeichnet zu werden. Bei manuell ausgewählten Hintergrund- oder Textfarben wechselt die Auswahl automatisch zu **„Eigene Farben“**. Das ausgewählte Schema wird lokal gespeichert. Die Glas-Kacheln verwenden eine feste Transparenz ohne Deckkraft-Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 

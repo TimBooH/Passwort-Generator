@@ -32,14 +32,17 @@ class GlassStyleTests(unittest.TestCase):
             style = build_glass_stylesheet(bg, fg)
             self.assertIn('QPushButton#primaryButton', style)
             self.assertNotIn('QSlider::', style)
-            self.assertIn('QTabBar::tab:selected', style)
-            self.assertIn('QTabWidget#mainTabs::pane', style)
+            self.assertIn('QStackedWidget#mainPages', style)
+            self.assertNotIn('QTabBar::tab', style)
             self.assertIn('rgba(', style)
             self.assertIn(fg, style)
 
     def test_neon_theme_and_circuit_texture(self):
         style = neon_stylesheet('#071322', '#FFFFFF')
         self.assertIn('QPushButton#modeButton:checked', style)
+        self.assertIn('QPushButton#navButton:checked', style)
+        self.assertIn('QFrame#navSidebar', style)
+        self.assertNotIn('QPushButton#headerSettings', style)
         self.assertIn('QSlider::handle:horizontal', style)
         self.assertIn('QProgressBar#strengthBar', style)
         # QPixmap requires a GUI application, even in headless CI.

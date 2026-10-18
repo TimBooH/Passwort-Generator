@@ -153,31 +153,7 @@ QLabel#globalStatus {{ color: {muted}; font-size: 11px; padding: 0 4px; }}
 QWidget#passwordPage, QWidget#settingsPage, QWidget#updatesPage {{
     background: transparent;
 }}
-QTabWidget#mainTabs::pane {{
-    border: none;
-    background: transparent;
-    top: 0;
-}}
-QTabBar::tab {{
-    color: {muted};
-    background: {button};
-    border: 1px solid {border};
-    border-radius: 10px;
-    padding: 9px 14px;
-    margin-right: 5px;
-    min-width: 82px;
-    font-weight: 700;
-}}
-QTabBar::tab:selected {{
-    color: {foreground};
-    background: {field};
-    border-color: {focus};
-    border-bottom: 3px solid {primary_start};
-}}
-QTabBar::tab:hover:!selected {{
-    background: {hover};
-    color: {foreground};
-}}
+QStackedWidget#mainPages {{ background: transparent; border: none; }}
 QCheckBox {{ color: {foreground}; background: transparent; spacing: 9px; padding: 3px 0; }}
 QCheckBox::indicator {{ width: 17px; height: 17px; }}
 QLineEdit, QSpinBox, QComboBox {{

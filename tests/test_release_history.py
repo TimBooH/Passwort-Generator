@@ -2,7 +2,7 @@
 
 import unittest
 
-from release_history import normalized_releases
+from release_history import normalized_releases, compact_changelog
 
 REPO = 'https://github.com/TimBooH/Passwort-Generator'
 
@@ -47,6 +47,40 @@ class ReleaseHistoryTests(unittest.TestCase):
         self.assertEqual(normalized_releases([], REPO), [])
         with self.assertRaises(ValueError):
             normalized_releases({'message': 'rate limit'}, REPO)
+
+    def test_chronological_order_with_legacy_versions(self):
+        releases = [
+            {'tag_name': 'v1.5.1', 'published_at': '2026-10-18T02:10:00Z',
+             'html_url': f'{REPO}/releases/tag/v1.5.1'},
+            {'tag_name': 'v0.04.0', 'published_at': '2026-10-18T10:16:00Z',
+             'html_url': f'{REPO}/releases/tag/v0.04.0'},
+            {'tag_name': 'v0.06.0', 'published_at': '2026-10-18T12:05:00Z',
+             'html_url': f'{REPO}/releases/tag/v0.06.0'},
+            {'tag_name': 'v0.05.0', 'published_at': '2026-10-18T10:51:00Z',
+             'html_url': f'{REPO}/releases/tag/v0.05.0'},
+        ]
+        ordered = normalized_releases(releases, REPO)
+        self.assertEqual([release['tag'] for release in ordered],
+                         ['v0.06.0', 'v0.05.0', 'v0.04.0', 'v1.5.1'])
+
+    def test_short_changes(self):
+        long_note = (
+            '# v0.06.0\n**Entwicklungsschritt 6 von 100**\n'
+            '## Oberfläche\n'
+            '- **Navigation** links\n'
+            '- Mehr Abstand zwischen Kacheln\n'
+            '- Neueste Releases oben\n'
+            '- Kurzbeschreibungen\n'
+            '- Zwei unnötige Buttons entfernt\n'
+            '- Sechster Punkt soll weg\n'
+            '## Tests\n- Nicht anzeigen\n'
+        )
+        brief = compact_changelog(long_note)
+        self.assertEqual(len(brief.splitlines()), 5)
+        self.assertIn('• Navigation links', brief)
+        self.assertNotIn('Sechster', brief)
+        self.assertNotIn('Tests', brief)
+        self.assertIn('keine Änderungen', compact_changelog(''))
 
     def test_truncates_changelog(self):
         results = normalized_releases([

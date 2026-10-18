@@ -125,16 +125,19 @@ assert reply.deleted
 assert window.release_list.count() == 3
 assert window._release_history_loaded
 assert window.release_list.currentRow() == 0
+assert window.release_list.item(0).data(Qt.ItemDataRole.UserRole) == 'v0.05.0'
+assert window.release_list.item(2).data(Qt.ItemDataRole.UserRole) == 'v1.5.1'
 assert 'Automatische Akzentfarbe' in window.changelog_view.toPlainText()
-assert window.open_release_button.isEnabled()
+assert not hasattr(window, 'open_release_button')
+assert not hasattr(window, 'reload_history_button')
+assert 'neueste oben' in window.release_history_status.text()
 window.release_list.setCurrentRow(2)
 app.processEvents()
 assert window.changelog_title.text().endswith('v1.5.1')
 assert 'Historische Version' in window.changelog_view.toPlainText()
-with mock.patch('main.QDesktopServices.openUrl') as opener:
-    window.open_selected_release()
-    assert opener.call_count == 1
-    assert opener.call_args.args[0].toString() == f'{REPO_URL}/releases/tag/v1.5.1'
+assert '• ' in window.changelog_view.toPlainText()
+assert '## ' not in window.changelog_view.toPlainText()
+assert len(window.changelog_view.toPlainText().splitlines()) <= 5
 
 # Invalid response must produce an informative state, not empty false data.
 bad_reply = FakeReleaseReply({'message': 'rate limit'})

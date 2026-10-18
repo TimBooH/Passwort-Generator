@@ -11,9 +11,9 @@ from PySide6.QtGui import QColor, QDesktopServices, QFont
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
-    QFileDialog, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSizePolicy, QSlider, QSpinBox, QTabWidget, QTextBrowser,
+    QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTextBrowser,
     QVBoxLayout, QWidget,
 )
 
@@ -21,7 +21,7 @@ from diagnostics import CrashReporter, default_state_directory
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from neon_style import neon_stylesheet
 from theme_colors import COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background, preset_colors
-from release_history import normalized_releases
+from release_history import normalized_releases, compact_changelog
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from password_core import make_password, make_passphrase, estimate_strength, parse_version
 from version import APP_VERSION, is_newer_release, version_status
@@ -79,13 +79,12 @@ class PasswordWindow(QMainWindow):
         self.history_reply = None
         self._release_history_loaded = False
         self._history_releases = {}
-        self._selected_release_url = ''
         self._auto_check = auto_check
         self._phrase_mode = False
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}')
-        self.resize(730, 880)
+        self.resize(850, 865)
         self.setMinimumSize(460, 540)
 
         scroll = QScrollArea(self)
@@ -107,12 +106,14 @@ class PasswordWindow(QMainWindow):
         outer_layout.addWidget(content, 1)
         content_layout = QVBoxLayout(content)
         content_layout.setSpacing(8)
-        content_layout.setContentsMargins(12, 15, 12, 14)
+        content_layout.setContentsMargins(16, 15, 16, 14)
         self.glass_cards = []
+        self.secondary_cards = []
+        self._compact_options = None
         self._applied_palette = None
         self._restoring = False
 
-        # Logo, heading and settings action follow the reference composition.
+        # Compact brand header; all navigation actions move into the left sidebar.
         header = QHBoxLayout()
         header.setSpacing(13)
         lock = QLabel('🔒')
@@ -130,22 +131,52 @@ class PasswordWindow(QMainWindow):
         subtitle.setObjectName('brandSubtitle')
         heading.addWidget(subtitle)
         header.addLayout(heading, 1)
-        self.settings_shortcut = QPushButton('⚙ Einstellungen')
-        self.settings_shortcut.setObjectName('headerSettings')
-        self.settings_shortcut.setToolTip('Design und Farben öffnen')
-        header.addWidget(self.settings_shortcut, 0, Qt.AlignmentFlag.AlignTop)
         content_layout.addLayout(header)
         content_layout.addSpacing(5)
 
-        # Three real pages stay available, with compact tabs at the upper left.
-        self.tabs = QTabWidget(content)
-        self.tabs.setObjectName('mainTabs')
-        self.tabs.setTabPosition(QTabWidget.TabPosition.North)
-        self.tabs.setDocumentMode(True)
-        self.tabs.tabBar().setExpanding(False)
+        # Plain horizontal text buttons in a fixed left sidebar, not
+        # rotated vertical QTabBar labels. The QStackedWidget keeps pages
+        # alive so passwords, colors, and update state survive navigation.
+        workspace = QHBoxLayout()
+        workspace.setSpacing(14)
+        self.nav_sidebar = QFrame(content)
+        self.nav_sidebar.setObjectName('navSidebar')
+        self.nav_sidebar.setFixedWidth(158)
+        nav_layout = QVBoxLayout(self.nav_sidebar)
+        nav_layout.setContentsMargins(9, 15, 9, 12)
+        nav_layout.setSpacing(9)
+        nav_title = QLabel('MENÜ')
+        nav_title.setObjectName('navTitle')
+        nav_layout.addWidget(nav_title)
+        self.nav_group = QButtonGroup(self)
+        self.nav_group.setExclusive(True)
+        self.nav_buttons = []
+        self.tab_names = ('Passwort', 'Einstellungen', 'Updates')
+        for index, (label, icon) in enumerate((
+            ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Updates', '↻'),
+        )):
+            button = QPushButton(f'{icon}  {label}')
+            button.setObjectName('navButton')
+            button.setCheckable(True)
+            button.setMinimumHeight(43)
+            button.setToolTip(label)
+            button.setAccessibleName(label)
+            self.nav_group.addButton(button)
+            nav_layout.addWidget(button)
+            button.clicked.connect(lambda checked=False, i=index: self.tabs.setCurrentIndex(i))
+            self.nav_buttons.append(button)
+        self.nav_buttons[0].setChecked(True)
+        nav_layout.addStretch(1)
+        nav_footer = QLabel(f'v{APP_VERSION}')
+        nav_footer.setObjectName('navFooter')
+        nav_layout.addWidget(nav_footer)
+        workspace.addWidget(self.nav_sidebar, 0)
+
+        self.tabs = QStackedWidget(content)
+        self.tabs.setObjectName('mainPages')
         self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        content_layout.addWidget(self.tabs, 1)
-        self.settings_shortcut.clicked.connect(lambda: self.tabs.setCurrentIndex(1))
+        workspace.addWidget(self.tabs, 1)
+        content_layout.addLayout(workspace, 1)
 
         self.password_page = QWidget()
         self.password_page.setObjectName('passwordPage')
@@ -245,6 +276,7 @@ class PasswordWindow(QMainWindow):
         self.options_widget = QWidget()
         self.options_widget.setObjectName('passwordOptions')
         check_layout = QGridLayout(self.options_widget)
+        self.check_layout = check_layout
         check_layout.setContentsMargins(0, 0, 0, 0)
         check_layout.setHorizontalSpacing(9)
         check_layout.setVerticalSpacing(3)
@@ -298,6 +330,7 @@ class PasswordWindow(QMainWindow):
         self.glass_cards.append(colors)
         colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         colors_layout = colors.body
+        colors_layout.setSpacing(11)
         scheme_row = QHBoxLayout()
         scheme_row.addWidget(QLabel('Farbschema:'))
         self.scheme_combo = QComboBox()
@@ -337,35 +370,45 @@ class PasswordWindow(QMainWindow):
         self.accent_preview.setObjectName('accentPreview')
         self.accent_preview.setMinimumHeight(25)
         colors_layout.addWidget(self.accent_preview)
+        colors_note = QLabel('Farbschema und Akzentfarbe werden automatisch gespeichert.')
+        colors_note.setWordWrap(True)
+        colors_layout.addWidget(colors_note)
+        settings_page_layout.addWidget(colors, 0)
+        # Background image controls belong to their own glass tile.
+        image_card = GlossyGlassCard('HINTERGRUNDBILD')
+        self.secondary_cards.append(image_card)
+        image_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        image_layout = image_card.body
+        image_layout.setSpacing(11)
         # The chosen image stays on disk; only its path and display mode are stored.
         picture_title = QLabel('Eigenes Hintergrundbild')
         picture_title.setObjectName('supportText')
-        colors_layout.addWidget(picture_title)
-        picture_actions = QHBoxLayout()
+        image_layout.addWidget(picture_title)
+        # Vertical actions avoid cramped/overlapping buttons in narrow windows.
+        picture_actions = QVBoxLayout()
+        picture_actions.setSpacing(7)
         self.choose_background_button = QPushButton('Bild auswählen …')
         self.choose_background_button.clicked.connect(self.choose_background_image)
         picture_actions.addWidget(self.choose_background_button)
         self.clear_background_button = QPushButton('Bild entfernen')
         self.clear_background_button.clicked.connect(self.remove_background_image)
         picture_actions.addWidget(self.clear_background_button)
-        colors_layout.addLayout(picture_actions)
+        image_layout.addLayout(picture_actions)
         self.background_file_label = QLabel('Kein Hintergrundbild ausgewählt')
         self.background_file_label.setObjectName('supportText')
         self.background_file_label.setWordWrap(True)
-        colors_layout.addWidget(self.background_file_label)
+        image_layout.addWidget(self.background_file_label)
         mode_row = QHBoxLayout()
         mode_row.addWidget(QLabel('Bilddarstellung:'))
         self.image_mode_combo = QComboBox()
         for label, mode in IMAGE_MODES:
             self.image_mode_combo.addItem(label, mode)
         mode_row.addWidget(self.image_mode_combo, 1)
-        colors_layout.addLayout(mode_row)
+        image_layout.addLayout(mode_row)
 
-        colors_note = QLabel('Farbschema, Akzentfarbe und Bilddarstellung passen sich an und werden automatisch gespeichert.')
-        colors_note.setWordWrap(True)
-        colors_layout.addWidget(colors_note)
-        settings_page_layout.addWidget(colors, 1)
-        settings_page_layout.addStretch(0)
+
+        settings_page_layout.addWidget(image_card, 0)
+        settings_page_layout.addStretch(1)
 
         self.updates_page = QWidget()
         self.updates_page.setObjectName('updatesPage')
@@ -373,7 +416,7 @@ class PasswordWindow(QMainWindow):
         updates_page_layout.setSpacing(12)
         updates_page_layout.setContentsMargins(4, 10, 4, 8)
 
-        updates = GlossyGlassCard('UPDATES & VERSIONEN')
+        updates = GlossyGlassCard('UPDATE & VERSION')
         self.glass_cards.append(updates)
         updates.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         updates_layout = updates.body
@@ -403,57 +446,55 @@ class PasswordWindow(QMainWindow):
         update_note.setWordWrap(True)
         updates_layout.addWidget(update_note)
 
-        changelog_header = QLabel('CHANGELOG – WAS IST NEU?')
-        changelog_header.setObjectName('glassCardTitle')
-        updates_layout.addWidget(changelog_header)
+        diagnostic_button = QPushButton('Crash-Log öffnen')
+        diagnostic_button.clicked.connect(self.open_crash_log)
+        updates_layout.addWidget(diagnostic_button)
+        updates_page_layout.addWidget(updates, 0)
+        # Concise changes and newest-to-oldest chronological history are
+        # grouped separately; selecting a version only changes the text.
+        history_card = GlossyGlassCard('ÄNDERUNGEN & VERSIONEN')
+        self.secondary_cards.append(history_card)
+        history_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        history_layout = history_card.body
+        history_layout.setSpacing(10)
         self.changelog_title = QLabel('Änderungen der veröffentlichten Version')
         self.changelog_title.setObjectName('supportText')
         self.changelog_title.setWordWrap(True)
-        updates_layout.addWidget(self.changelog_title)
+        history_layout.addWidget(self.changelog_title)
         self.changelog_view = QTextBrowser()
         self.changelog_view.setObjectName('changelogView')
         self.changelog_view.setOpenExternalLinks(False)
         self.changelog_view.setOpenLinks(False)
-        self.changelog_view.setMinimumHeight(135)
-        self.changelog_view.setMaximumHeight(220)
-        self.changelog_view.setMarkdown(
-            '### Changelog\n\nÖffne den Reiter **Updates**, um die Änderungen von GitHub zu laden.'
+        self.changelog_view.setMinimumHeight(100)
+        self.changelog_view.setMaximumHeight(155)
+        self.changelog_view.setPlainText(
+            'Die Änderungen werden beim Öffnen dieser Seite automatisch geladen.'
         )
-        updates_layout.addWidget(self.changelog_view)
+        history_layout.addWidget(self.changelog_view)
 
         history_header = QLabel('BISHERIGE VERSIONEN')
         history_header.setObjectName('glassCardTitle')
-        updates_layout.addWidget(history_header)
+        history_layout.addWidget(history_header)
         self.release_list = QListWidget()
         self.release_list.setObjectName('releaseList')
-        self.release_list.setMinimumHeight(125)
-        self.release_list.setMaximumHeight(190)
+        self.release_list.setMinimumHeight(145)
+        self.release_list.setMaximumHeight(290)
         self.release_list.currentItemChanged.connect(self.select_release_history)
-        updates_layout.addWidget(self.release_list)
+        history_layout.addWidget(self.release_list)
         self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
         self.release_history_status.setObjectName('supportText')
         self.release_history_status.setWordWrap(True)
-        updates_layout.addWidget(self.release_history_status)
-        history_actions = QHBoxLayout()
-        self.reload_history_button = QPushButton('Versionshistorie laden')
-        self.reload_history_button.clicked.connect(self.load_release_history)
-        history_actions.addWidget(self.reload_history_button, 1)
-        self.open_release_button = QPushButton('Release auf GitHub öffnen')
-        self.open_release_button.setEnabled(False)
-        self.open_release_button.clicked.connect(self.open_selected_release)
-        history_actions.addWidget(self.open_release_button, 1)
-        updates_layout.addLayout(history_actions)
+        history_layout.addWidget(self.release_history_status)
 
-        diagnostic_button = QPushButton('Crash-Log öffnen')
-        diagnostic_button.clicked.connect(self.open_crash_log)
-        updates_layout.addWidget(diagnostic_button)
-        updates_page_layout.addWidget(updates, 1)
+
+
+        updates_page_layout.addWidget(history_card, 1)
         updates_page_layout.addStretch(0)
 
 
-        self.tabs.addTab(self.password_page, 'Passwort')
-        self.tabs.addTab(self.settings_page, 'Einstellungen')
-        self.tabs.addTab(self.updates_page, 'Updates')
+        self.tabs.addWidget(self.password_page)
+        self.tabs.addWidget(self.settings_page)
+        self.tabs.addWidget(self.updates_page)
         self.tabs.setCurrentIndex(0)
 
         self.status = QLabel('')
@@ -618,10 +659,13 @@ class PasswordWindow(QMainWindow):
         self.build_info_dialog().exec()
 
     def on_tab_changed(self, index):
-        if index == 2 and self._auto_check and not self._release_history_loaded:
+        for position, button in enumerate(self.nav_buttons):
+            button.setChecked(position == index)
+        if (index == 2 and self._auto_check and not self._release_history_loaded
+                and self.history_reply is None):
             self.load_release_history()
         if self.reporter is not None:
-            self.reporter.note('NAVIGATE', f'tab={self.tabs.tabText(index)}', force=True)
+            self.reporter.note('NAVIGATE', f'tab={self.tab_names[index]}', force=True)
 
     @staticmethod
     def select_color(combo, color, default):
@@ -701,6 +745,30 @@ class PasswordWindow(QMainWindow):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        if hasattr(self, 'nav_sidebar'):
+            # Keep navigation readable but allow more content width in narrow windows.
+            width = 126 if self.width() < 700 else 158
+            if self.nav_sidebar.width() != width:
+                self.nav_sidebar.setFixedWidth(width)
+            # Short labels fit in narrow windows; full names remain in tooltips.
+            labels = (('⌑  Passwort', '⚙  Farben', '↻  Updates')
+                      if width == 126 else
+                      ('⌑  Passwort', '⚙  Einstellungen', '↻  Updates'))
+            for button, label in zip(self.nav_buttons, labels):
+                if button.text() != label:
+                    button.setText(label)
+        if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
+            compact = self.width() < 730
+            if compact != self._compact_options:
+                self._compact_options = compact
+                boxes = (self.upper, self.lower, self.digits, self.symbols, self.exclude)
+                for checkbox in boxes:
+                    self.check_layout.removeWidget(checkbox)
+                for index, checkbox in enumerate(boxes):
+                    row, column = (index, 0) if compact else (
+                        (index, 0) if index < 3 else (index - 3, 1)
+                    )
+                    self.check_layout.addWidget(checkbox, row, column)
         if self.reporter is not None:
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
@@ -711,7 +779,7 @@ class PasswordWindow(QMainWindow):
         fg = self.fg_combo.currentData() or '#FFFFFF'
         accent = accent_for_background(bg)
         self.background_surface.set_base_color(bg)
-        for card in self.glass_cards:
+        for card in self.glass_cards + self.secondary_cards:
             card.set_glass_color(bg, accent)
         self.accent_preview.setText(f'●  Automatisch: {accent}')
         self.accent_preview.setToolTip('Wird aus der gewählten Hintergrundfarbe berechnet.')
@@ -828,6 +896,10 @@ class PasswordWindow(QMainWindow):
     def check_for_updates(self):
         if self.check_reply is not None or self.download_reply is not None:
             return
+        # The existing update-check action also refreshes the list.
+        # No extra "Versionshistorie laden" button is necessary.
+        if self.tabs.currentIndex() == 2 and self.history_reply is None:
+            self.load_release_history()
         self.check_button.setEnabled(False)
         self.download_button.hide()
         self.update_status.setText(f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
@@ -848,8 +920,8 @@ class PasswordWindow(QMainWindow):
             if not self._release_history_loaded and self.release_list.count() == 0:
                 note = response.get('body', '')
                 if isinstance(note, str) and note.strip():
-                    self.changelog_title.setText(f'Änderungen in {latest_version}')
-                    self.changelog_view.setMarkdown(note[:16_000])
+                    self.changelog_title.setText(f'Kurzüberblick · {latest_version}')
+                    self.changelog_view.setPlainText(compact_changelog(note))
             current_number = parse_version(APP_VERSION)
             newest_number = parse_version(latest_version)
             if newest_number is None or current_number is None:
@@ -879,15 +951,13 @@ class PasswordWindow(QMainWindow):
         """Fetch at most 100 public releases asynchronously from GitHub."""
         if self.history_reply is not None:
             return
-        self.reload_history_button.setEnabled(False)
-        self.release_history_status.setText('Lade Versionshistorie von GitHub …')
+        self.release_history_status.setText('Lade Versionen von GitHub …')
         self.history_reply = self.network.get(self.make_request(RELEASE_HISTORY_API))
         self.history_reply.finished.connect(self.release_history_finished)
 
     def release_history_finished(self):
         reply = self.history_reply
         self.history_reply = None
-        self.reload_history_button.setEnabled(True)
         if reply is None:
             return
         try:
@@ -908,14 +978,12 @@ class PasswordWindow(QMainWindow):
                 self.release_list.addItem(label)
             self._release_history_loaded = True
             self.release_history_status.setText(
-                f'{len(releases)} veröffentlichte Version(en) geladen. '
-                'Für weitere ältere Releases: GitHub öffnen.'
+                f'{len(releases)} Version(en) · neueste oben, älteste unten'
             )
             if releases:
                 self.release_list.setCurrentRow(0)
             else:
                 self.changelog_view.setPlainText('Keine veröffentlichten Versionen gefunden.')
-                self.open_release_button.setEnabled(False)
         except (ValueError, TypeError, UnicodeDecodeError, KeyError) as error:
             self.release_history_status.setText(
                 f'Versionshistorie nicht verfügbar: {error}'
@@ -930,24 +998,13 @@ class PasswordWindow(QMainWindow):
 
     def select_release_history(self, current, _previous=None):
         if current is None:
-            self.open_release_button.setEnabled(False)
             return
         tag = current.data(Qt.ItemDataRole.UserRole)
         entry = self._history_releases.get(tag)
         if entry is None:
-            self.open_release_button.setEnabled(False)
             return
-        self.changelog_title.setText(f'Änderungen in {entry["tag"]}')
-        self.changelog_view.setMarkdown(
-            entry['body'] or 'Für diese Version sind keine Release-Notizen vorhanden.'
-        )
-        self._selected_release_url = entry['url']
-        self.open_release_button.setEnabled(True)
-
-    def open_selected_release(self):
-        if (self._selected_release_url.startswith(REPO_URL + '/releases/tag/')
-                and len(self._selected_release_url) < 500):
-            QDesktopServices.openUrl(QUrl(self._selected_release_url))
+        self.changelog_title.setText(f'Kurzüberblick · {entry["tag"]}')
+        self.changelog_view.setPlainText(compact_changelog(entry['body']))
 
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:
