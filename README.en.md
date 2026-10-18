@@ -25,6 +25,7 @@
 - **Passwords:** 8–128 characters, selectable character groups, and a strength indicator.
 - **Passphrases:** 4–10 words, configurable separators, and an optional random two-digit number.
 - **Glass design:** multiple color themes, automatic accent colors, and custom background images.
+- **Language:** German or English under **Settings → Appearance**; the selected language is saved.
 - **Updates:** checks at startup and every 2 hours; release history and changes in the Changelog.
 - **Usability:** session-only password history, visual walkthrough, and saved window size/position.
 
