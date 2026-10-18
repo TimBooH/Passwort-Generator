@@ -126,8 +126,8 @@ with tempfile.TemporaryDirectory() as state_dir:
     assert 'nichts automatisch installiert' in popup.informativeText()
     actions = {button.text(): button for button in popup.buttons()}
     assert 'Später' in actions
-    assert 'Updates öffnen' in actions
-    actions['Updates öffnen'].click()
+    assert 'Changelog öffnen' in actions
+    actions['Changelog öffnen'].click()
     app.processEvents()
     assert window.tabs.currentIndex() == 2
     assert window._update_popup_dialog is None
