@@ -44,10 +44,11 @@ def prune_owned_appimages(directory, current, previous):
         candidate.unlink()
         removed.append(candidate.name)
     # Abandoned staging files are not versions and may safely be removed.
-    for candidate in directory.glob('.PasswortGenerator-update-*.AppImage'):
-        if candidate.is_file() and not candidate.is_symlink():
-            candidate.unlink()
-            removed.append(candidate.name)
+    for pattern in ('.PasswortGenerator-update-*.AppImage', '.PasswortGenerator-prev-*'):
+        for candidate in directory.glob(pattern):
+            if candidate.is_file() and not candidate.is_symlink():
+                candidate.unlink()
+                removed.append(candidate.name)
     return removed
 
 
