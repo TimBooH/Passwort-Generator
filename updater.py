@@ -94,6 +94,46 @@ def install_staged_appimage(staged, installed):
     return previous if had_current else None
 
 
+def restore_previous_appimage(installed):
+    """Safely restore the previous AppImage and preserve the current as backup.
+
+    We create distinct temporary snapshots before changing either installed
+    pathname, and verify both ELF headers. If a rename fails, we restore the
+    existing version and do not discard the previous version.
+    """
+    installed = Path(installed)
+    previous = previous_path(installed)
+    if (not installed.is_file() or not previous.is_file()
+            or installed.is_symlink() or previous.is_symlink()):
+        raise ValueError('Keine sichere vorherige AppImage-Version vorhanden.')
+    if installed.resolve().parent != previous.resolve().parent:
+        raise ValueError('Ungültiger AppImage-Installationsordner.')
+    verify_appimage_header(installed)
+    verify_appimage_header(previous)
+    old_current = installed.with_name('.PasswortGenerator-snapshot-' + uuid.uuid4().hex)
+    new_current = installed.with_name('.PasswortGenerator-rollback-' + uuid.uuid4().hex)
+    switched = False
+    try:
+        for source, destination in ((installed, old_current), (previous, new_current)):
+            try:
+                os.link(source, destination)
+            except OSError:
+                shutil.copy2(source, destination)
+        os.chmod(new_current, 0o755)
+        os.replace(new_current, installed)
+        switched = True
+        os.replace(old_current, previous)
+        switched = False
+    except OSError:
+        if switched and old_current.exists():
+            os.replace(old_current, installed)
+        raise
+    finally:
+        old_current.unlink(missing_ok=True)
+        new_current.unlink(missing_ok=True)
+    return installed
+
+
 def restart_updated_app(executable):
     """Launch the downloaded binary after the original GUI has exited.
 
