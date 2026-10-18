@@ -5,6 +5,7 @@ Coordinates are converted via the native global mapping and checked against
 each real widget's rectangle. Passphrase-only widgets are shown when needed.
 """
 
+from localization import translate
 from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QApplication, QPushButton, QWidget
@@ -50,13 +51,13 @@ class FirstRunTour(QWidget):
         self.step_index = 0
         self.finished = False
 
-        self.back_button = QPushButton('← Zurück', self)
+        self.back_button = QPushButton(translate('← Zurück', window.language), self)
         self.back_button.setObjectName('tourBack')
         self.back_button.clicked.connect(self.previous_step)
-        self.skip_button = QPushButton('Überspringen', self)
+        self.skip_button = QPushButton(translate('Überspringen', window.language), self)
         self.skip_button.setObjectName('tourSkip')
         self.skip_button.clicked.connect(self.finish)
-        self.next_button = QPushButton('Weiter →', self)
+        self.next_button = QPushButton(translate('Weiter →', window.language), self)
         self.next_button.setObjectName('tourNext')
         self.next_button.clicked.connect(self.next_step)
         self.setStyleSheet('''
@@ -101,8 +102,9 @@ class FirstRunTour(QWidget):
             )
         self.back_button.setEnabled(self.step_index > 0)
         self.next_button.setText(
-            'Fertig ✓' if self.step_index == len(TOUR_STEPS) - 1
-            else 'Weiter →'
+            translate('Fertig ✓', self.window.language)
+            if self.step_index == len(TOUR_STEPS) - 1
+            else translate('Weiter →', self.window.language)
         )
         self._position_buttons()
         self.raise_()
@@ -234,7 +236,9 @@ class FirstRunTour(QWidget):
         painter.drawText(
             QRect(card.x() + 16, card.y() + 11, card.width() - 32, 23),
             Qt.AlignmentFlag.AlignLeft,
-            f'Schritt {self.step_index + 1}/{len(TOUR_STEPS)} · {title}',
+            f"{('Step' if self.window.language == 'en' else 'Schritt')} "
+            f"{self.step_index + 1}/{len(TOUR_STEPS)} · "
+            f"{translate(title, self.window.language)}",
         )
         painter.setPen(QColor('#F6FAFF'))
         painter.setFont(QFont('Sans Serif', 10))
@@ -242,7 +246,7 @@ class FirstRunTour(QWidget):
             QRect(card.x() + 16, card.y() + 40, card.width() - 32, 73),
             int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
                 | Qt.TextFlag.TextWordWrap),
-            description,
+            translate(description, self.window.language),
         )
         start, tip = self._arrow_line()
         vx, vy = tip.x() - start.x(), tip.y() - start.y()
