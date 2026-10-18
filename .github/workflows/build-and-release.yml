@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - version.py
+      - 'tests/**'
       - .github/workflows/build-and-release.yml
   workflow_dispatch:
 
