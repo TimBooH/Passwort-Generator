@@ -544,7 +544,7 @@ class PasswordWindow(QMainWindow):
         self.changelog_view.setFixedHeight(124)
         self.changelog_view.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.changelog_view.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.changelog_view.setPlainText(
+        self._set_changelog_ui(
             'Die Änderungen werden beim Öffnen dieser Seite automatisch geladen.'
         )
         changelog_layout.addWidget(self.changelog_view)
@@ -675,6 +675,18 @@ class PasswordWindow(QMainWindow):
         widget.setProperty('_i18n_de_placeholder', german)
         widget.setPlaceholderText(self._t(german))
 
+    def _set_changelog_ui(self, german):
+        """Local UI state, rather than GitHub notes, changes with the language."""
+        self.changelog_view.setProperty('_i18n_de_content', german)
+        self.changelog_view.setPlainText(self._t(german))
+
+    def _set_changelog_release(self, body, tag):
+        """Render the selected release from its original, unmodified Markdown."""
+        self.changelog_view.setProperty('_i18n_de_content', None)
+        self.changelog_view.setPlainText(
+            release_changelog(body, tag, self.language)
+        )
+
     def _translate_interface(self):
         """Retranslate visible widgets in place; do not rebuild pages or controls."""
         from PySide6.QtWidgets import QAbstractButton
@@ -723,13 +735,11 @@ class PasswordWindow(QMainWindow):
                     combo.setItemText(index, label)
         self.update_navigation_labels()
 
-        # Default changelog copy is translated; published release bodies stay
-        # exactly as supplied by GitHub.
-        if not self._release_history_loaded and not self._history_releases:
-            default = ('Die Änderungen werden beim Öffnen dieser Seite '
-                       'automatisch geladen.')
-            if self.changelog_view.toPlainText() in (default, translate(default, 'en')):
-                self.changelog_view.setPlainText(self._t(default))
+        # Re-render any local Changelog placeholder or error. GitHub data is
+        # handled by _set_changelog_release in change_language.
+        local_source = self.changelog_view.property('_i18n_de_content')
+        if local_source is not None:
+            self.changelog_view.setPlainText(self._t(local_source))
 
     def change_language(self, *_):
         selected = self.language_combo.currentData()
@@ -748,9 +758,7 @@ class PasswordWindow(QMainWindow):
         elif self._latest_release_note is not None:
             latest_tag, body = self._latest_release_note
             self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_tag}')
-            self.changelog_view.setPlainText(
-                release_changelog(body, latest_tag, self.language)
-            )
+            self._set_changelog_release(body, latest_tag)
         # Recreate cached screenshots in the newly selected language.
         if self._info_visual_loaded:
             from visual_help import create_visual_guide_panel
@@ -1247,9 +1255,7 @@ class PasswordWindow(QMainWindow):
                 if isinstance(note, str) and note.strip():
                     self._latest_release_note = (latest_version, note)
                     self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_version}')
-                    self.changelog_view.setPlainText(
-                        release_changelog(note, latest_version, self.language)
-                    )
+                    self._set_changelog_release(note, latest_version)
             current_number = parse_version(APP_VERSION)
             newest_number = parse_version(latest_version)
             if newest_number is None or current_number is None:
@@ -1324,16 +1330,16 @@ class PasswordWindow(QMainWindow):
             if releases:
                 self.select_release_history(self.release_combo.currentIndex())
             else:
-                self.changelog_view.setPlainText(self._t('Keine veröffentlichten Versionen gefunden.'))
+                self._set_changelog_ui('Keine veröffentlichten Versionen gefunden.')
         except (ValueError, TypeError, UnicodeDecodeError, KeyError) as error:
             self._set_ui(self.release_history_status, 
                 f'Versionshistorie nicht verfügbar: {error}'
             )
             if not self._release_history_loaded:
-                self.changelog_view.setPlainText(self._t(
+                self._set_changelog_ui(
                     'Die Versionshistorie konnte nicht geladen werden. '
                     'Bitte die Internetverbindung prüfen und erneut versuchen.'
-                ))
+                )
         finally:
             reply.deleteLater()
 
@@ -1344,9 +1350,7 @@ class PasswordWindow(QMainWindow):
         if entry is None:
             return
         self._set_ui(self.changelog_title, f'Kurzüberblick · {entry["tag"]}')
-        self.changelog_view.setPlainText(
-            release_changelog(entry['body'], entry['tag'], self.language)
-        )
+        self._set_changelog_release(entry['body'], entry['tag'])
 
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:
