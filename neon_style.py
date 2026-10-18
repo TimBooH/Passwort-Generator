@@ -187,6 +187,33 @@ QPushButton#primaryButton:hover {{
         stop:0 {primary_top}, stop:1 {accent});
     border-color: {bright};
 }}
+/* Polished, compact Generate button; intentionally independent of Update CTA. */
+QPushButton#generatePasswordButton {{
+    color: {accent_text};
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+        stop:0 {primary_top}, stop:0.10 {accent},
+        stop:0.72 {color.darker(117).name()}, stop:1 {primary_bottom});
+    border: 1px solid {bright};
+    border-radius: 13px;
+    min-height: 28px;
+    padding: 3px 15px;
+    font-size: 13px;
+    font-weight: 800;
+}}
+QPushButton#generatePasswordButton:hover {{
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+        stop:0 {primary_top}, stop:0.25 {accent},
+        stop:1 {color.darker(120).name()});
+    border: 2px solid {bright};
+}}
+QPushButton#generatePasswordButton:pressed {{
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+        stop:0 {color.darker(150).name()}, stop:1 {accent});
+    border: 2px solid {accent};
+}}
+QPushButton#generatePasswordButton:focus {{
+    border: 2px solid {bright};
+}}
 QPushButton#checkUpdateButton {{
     min-height: 20px;
     max-height: 25px;
