@@ -26,6 +26,22 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 
 Die Oberfläche passt ihre Kacheln an die Fenstergröße an und speichert Design-Einstellungen für den nächsten Programmstart.
 
+## Versionsplan: 100 Schritte bis Version 1.0
+
+Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen bis zur ersten Vollversion**:
+
+| Meilenstein | Version | Status |
+| --- | --- | --- |
+| **1 von 100** | `0.01.0` | Beginn der neuen Entwicklungsreihe |
+| **2 von 100** | `0.02.0` | Nächster Entwicklungsschritt |
+| **50 von 100** | `0.50.0` | Halbzeit |
+| **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
+| **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
+
+Die dritte Stelle ist für kleine Korrekturen innerhalb eines Schritts reserviert (z. B. `0.07.1`). Ein Meilenstein wird nur erhöht, wenn bewusst der nächste Entwicklungsschritt veröffentlicht wird.
+
+**Wichtiger einmaliger Umstieg:** Die bisherigen Versionen `1.2.0` bis `1.5.1` stammen aus dem alten Nummerierungssystem und bleiben als historische Releases erhalten. Weil die neue Reihe wieder bei `0.01.0` beginnt, können die alten Apps diese Version beim automatischen Update als niedriger einstufen. **Bitte `0.01.0` einmal über den aktuellen Installer von GitHub installieren.** Anschließend funktionieren die Updates innerhalb der neuen Versionsreihe wieder regulär. Die Installer-Sicherung der vorherigen AppImage-Version bleibt erhalten.
+
 ## Download
 
 Die aktuelle Linux-Version findest du unter **[GitHub Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest)**.

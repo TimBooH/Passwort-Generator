@@ -19,7 +19,7 @@ from diagnostics import CrashReporter, default_state_directory
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from password_core import make_password, parse_version
-from version import APP_VERSION
+from version import APP_VERSION, is_newer_release, version_status
 
 REPO = 'TimBooH/Passwort-Generator'
 REPO_URL = f'https://github.com/{REPO}'
@@ -105,7 +105,8 @@ class PasswordWindow(QMainWindow):
         title.setFont(QFont('Sans Serif', 22, QFont.Weight.Bold))
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
-        subtitle = QLabel(f'Sichere Passwörter lokal erstellen  ·  v{APP_VERSION}')
+        subtitle = QLabel(f'Sichere Passwörter lokal erstellen  ·  v{APP_VERSION}  ·  {version_status()}')
+        subtitle.setWordWrap(True)
         subtitle.setObjectName('heroSubtitle')
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(subtitle)
@@ -436,7 +437,7 @@ class PasswordWindow(QMainWindow):
             newest_number = parse_version(latest_version)
             if newest_number is None or current_number is None:
                 raise ValueError('Ungültige Versionsnummer bei GitHub.')
-            if newest_number <= current_number:
+            if not is_newer_release(latest_version, APP_VERSION):
                 self.latest_asset = None
                 self.update_status.setText(f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
                 return

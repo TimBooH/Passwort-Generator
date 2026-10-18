@@ -2,6 +2,7 @@ import string
 import unittest
 
 from password_core import SIMILAR_CHARS, SYMBOLS, make_password, parse_version
+from version import APP_VERSION, TOTAL_RELEASE_STEPS, is_newer_release, release_step, version_status
 
 
 class PasswordGeneratorTests(unittest.TestCase):
@@ -11,6 +12,31 @@ class PasswordGeneratorTests(unittest.TestCase):
         self.assertGreater(parse_version('1.10.0'), parse_version('1.9.9'))
         self.assertIsNone(parse_version('v1.2.0-beta'))
         self.assertIsNone(parse_version('latest'))
+
+    def test_100_step_release_plan(self):
+        self.assertEqual(APP_VERSION, '0.01.0')
+        self.assertEqual(TOTAL_RELEASE_STEPS, 100)
+        for step in range(1, 100):
+            self.assertEqual(release_step(f'v0.{step:02d}.0'), step)
+        self.assertEqual(release_step('v1.0.0'), 100)
+        self.assertEqual(release_step('v1.0.2'), 100)
+        self.assertIsNone(release_step('v0.00.0'))
+        self.assertEqual(version_status('v0.01.0'), 'Entwicklung 01/100')
+        self.assertEqual(version_status('v0.99.0'), 'Entwicklung 99/100')
+        self.assertEqual(version_status('v1.0.0'), 'Vollversion')
+
+    def test_new_version_order_and_legacy_tags(self):
+        self.assertTrue(is_newer_release('v0.02.0', '0.01.0'))
+        self.assertTrue(is_newer_release('v0.99.0', 'v0.98.3'))
+        self.assertTrue(is_newer_release('v1.0.0', 'v0.99.0'))
+        self.assertFalse(is_newer_release('v0.01.0', '0.01.0'))
+        self.assertFalse(is_newer_release('v0.01.0', '0.02.0'))
+        # The old 1.5.x tags must never be mistaken for the next update.
+        self.assertFalse(is_newer_release('v1.5.1', 'v0.01.0'))
+        self.assertFalse(is_newer_release('v1.2.0', 'v1.0.0'))
+        # New code can compare migration order, but old binaries cannot.
+        self.assertTrue(is_newer_release('v0.01.0', 'v1.5.1'))
+        self.assertFalse(is_newer_release('latest', 'v0.01.0'))
 
     def test_all_selected_groups_and_length(self):
         for length in (8, 20, 64, 128):
