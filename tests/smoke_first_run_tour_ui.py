@@ -56,13 +56,27 @@ with tempfile.TemporaryDirectory() as state_dir:
     tour = window._first_run_tour
     assert tour is not None and tour.isVisible()
     assert tour.objectName() == 'firstRunTour'
-    assert len(TOUR_STEPS) == 7
+    assert len(TOUR_STEPS) == 8
     for step in range(len(TOUR_STEPS)):
         tour.go_to_step(step)
         app.processEvents()
         assert tour.step_index == step
         assert window.tabs.currentIndex() == TOUR_STEPS[step][0]
-        assert tour._highlight_rect().isValid()
+        target = tour.target_widget()
+        assert target.isVisible(), f'Invisible target at step {step}'
+        rect = tour._highlight_rect()
+        assert rect.isValid() and rect.width() > 0 and rect.height() > 0
+        # The yellow arrow must actually END at the highlighted widget edge.
+        start, tip = tour._arrow_line()
+        assert start != tip
+        assert (abs(tip.y() - rect.top()) <= 8 or
+                abs(tip.y() - rect.bottom()) <= 8 or
+                abs(tip.x() - rect.left()) <= 8 or
+                abs(tip.x() - rect.right()) <= 8), (
+                f'Arrow tip missed highlighted target: {step} {tip} {rect}'
+        )
+        if TOUR_STEPS[step][1] in ('phrase_two_digits', 'phrase_separator'):
+            assert window._phrase_mode, 'Extras must be visible in Passphrase mode'
         assert tour.next_button.isVisible()
         assert not tour.grab().isNull(), f'Overlay failed to render at step {step}'
     assert tour.next_button.text().startswith('Fertig')
@@ -75,12 +89,19 @@ with tempfile.TemporaryDirectory() as state_dir:
     # Simulate the real startup response while the arrow guide is active.
     window._startup_update_check_pending = True
     package = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
+    from version import APP_VERSION
+    from password_core import parse_version
+    major, minor, patch = parse_version(APP_VERSION)
+    latest = (
+        f'v0.{minor + 1:02d}.0' if major == 0 and minor < 99 else
+        'v1.0.0' if major == 0 else f'v{major}.{minor}.{patch + 1}'
+    )
     response = {
-        'tag_name': 'v0.11.0',
+        'tag_name': latest,
         'assets': [{
             'name': package,
             'browser_download_url':
-                f'https://github.com/{REPO}/releases/download/v0.11.0/{package}',
+                f'https://github.com/{REPO}/releases/download/{latest}/{package}',
             'size': 60000000,
         }],
     }
@@ -88,8 +109,8 @@ with tempfile.TemporaryDirectory() as state_dir:
     window.check_reply = reply
     window.check_finished()
     assert reply.deleted
-    assert window._available_update == 'v0.11.0'
-    assert window._pending_update_popup == 'v0.11.0'
+    assert window._available_update == latest
+    assert window._pending_update_popup == latest
     assert window._update_popup_dialog is None
     assert 'NEU' in window.nav_buttons[2].text()
 
@@ -101,7 +122,7 @@ with tempfile.TemporaryDirectory() as state_dir:
     wait(225)
     popup = window._update_popup_dialog
     assert isinstance(popup, QMessageBox) and popup.isVisible()
-    assert '0.11.0' in popup.text()
+    assert latest in popup.text()
     assert 'nichts automatisch installiert' in popup.informativeText()
     actions = {button.text(): button for button in popup.buttons()}
     assert 'Später' in actions
@@ -115,19 +136,19 @@ with tempfile.TemporaryDirectory() as state_dir:
     window.show_first_run_tour()
     assert window._first_run_tour is None
 
-    # "Tour mit Pfeilen" is available from Info at any time.
-    info = window.build_info_dialog()
-    restart = info.findChild(QPushButton, 'repeatTourButton')
+    # "Tour mit Pfeilen" is a button in the fourth built-in Info page.
+    window.show_info()
+    assert window.tabs.currentIndex() == 3
+    restart = window.repeat_tour_button
     assert restart is not None and 'Pfeilen' in restart.text()
-    info.close()
-    window.show_first_run_tour(force=True)
+    restart.click()
     tour = window._first_run_tour
     assert tour is not None
-    assert tour.original_page == 2
+    assert tour.original_page == 3
     tour.skip_button.click()
     app.processEvents()
     assert window._first_run_tour is None
-    assert window.tabs.currentIndex() == 2
+    assert window.tabs.currentIndex() == 3
     assert window._update_popup_dialog is None
 
     # Periodic update checks must not repeat the startup popup.

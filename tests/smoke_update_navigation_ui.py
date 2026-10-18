@@ -9,7 +9,7 @@ from unittest import mock
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, QPoint, Qt, Signal
 from PySide6.QtNetwork import QNetworkReply
 from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTabWidget
 
@@ -81,20 +81,21 @@ app.processEvents()
 assert window.update_timer.interval() == 2 * 60 * 60 * 1000
 assert UPDATE_CHECK_INTERVAL_MS == 7200000
 assert not window.update_timer.isActive()
-assert window.scroll_area.verticalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-assert window.scroll_area.verticalScrollBar().maximum() == 0, (
-    f'Password page must not scroll at 850x760: '
-    f'{window.scroll_area.verticalScrollBar().maximum()}'
-)
+assert not hasattr(window, 'scroll_area')
+assert window.centralWidget() is window.background_surface
+assert window.tabs.count() == 4
 
 # Narrow yet supported window, with a single column of checkbox options.
 for width, height in ((610, 700), (530, 700), (850, 760)):
     window.resize(width, height)
     app.processEvents()
-    assert window.scroll_area.verticalScrollBar().maximum() == 0, (
-        f'Unexpected password scrolling at {width}x{height}: '
-        f'{window.scroll_area.verticalScrollBar().maximum()}'
-    )
+    assert window.password_page.isVisible()
+    # No clipping: Generate and History stay inside the real client area.
+    for target in (window.generate_button, window.history_button):
+        bottom = target.mapTo(window, QPoint(0, target.height())).y()
+        assert 0 < bottom <= window.height(), (
+            f'{target.objectName()} clipped at {width}x{height}: bottom={bottom}'
+        )
     assert window.generate_button.isVisible()
     assert window.history_button.isVisible()
 
@@ -160,21 +161,25 @@ assert window.nav_buttons[2].property('updateAvailable') is False
 assert 'NEU' not in window.nav_buttons[2].text()
 window.update_timer.stop()
 
-# Info keeps the on-demand graphical guide (without a long written manual).
-info = window.build_info_dialog()
-assert info.windowTitle().startswith('Info')
-assert info.findChild(QLabel, 'infoCredit').text() == 'Made by Jon Bovi'
-button = info.findChild(QPushButton, 'visualGuideButton')
-assert button is not None and 'Grafische Erklärung' in button.text()
-guide = window.build_visual_guide_dialog(info)
-screens = guide.findChild(QTabWidget, 'visualGuideTabs')
+# Info is embedded in the main page, and the visual explanation is inline.
+window.show_info()
+app.processEvents()
+assert window.tabs.currentIndex() == 3
+assert window.info_nav_button.isChecked()
+assert window.info_credit.text() == 'Made by Jon Bovi'
+assert not hasattr(window, 'build_info_dialog')
+assert not hasattr(window, 'build_visual_guide_dialog')
+window.visual_guide_button.click()
+app.processEvents()
+assert window.info_detail_stack.currentIndex() == 1
+screens = window.info_detail_stack.findChild(QTabWidget, 'visualGuideTabs')
 assert screens is not None and screens.count() == 3
 for i in range(3):
-    screenshot = guide.findChild(QLabel, f'visualGuideImage{i}')
+    screenshot = window.info_detail_stack.findChild(QLabel, f'visualGuideImage{i}')
     assert screenshot is not None and screenshot.pixmap() is not None
     assert not screenshot.pixmap().isNull()
-guide.close()
-info.close()
+window.visual_guide_button.click()
+assert window.info_detail_stack.currentIndex() == 0
 window.close()
 app.processEvents()
 print('UI update-badge / 2h timer / compact navigation / graphical Info guide OK')

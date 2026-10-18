@@ -5,7 +5,7 @@ import os
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QStackedWidget
+from PySide6.QtWidgets import QApplication, QStackedWidget, QTabWidget
 
 from main import PasswordWindow
 
@@ -19,13 +19,15 @@ app.processEvents()
 tabs = window.tabs
 assert isinstance(tabs, QStackedWidget)
 assert tabs.currentIndex() == 0
-assert tabs.count() == 3
-assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Updates')
+assert tabs.count() == 4
+assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Updates', 'Info')
 assert len(window.nav_buttons) == 3
 assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names)
 assert all(button.isVisible() for button in window.nav_buttons)
 assert window.info_nav_button.isVisible()
 assert window.info_nav_button.accessibleName() == 'Info'
+assert window.centralWidget() is window.background_surface
+assert not hasattr(window, 'scroll_area')
 assert not hasattr(window, 'nav_sidebar')
 assert not hasattr(window, 'settings_shortcut')
 assert window.nav_container.y() < tabs.y()
@@ -84,6 +86,22 @@ assert window.check_button.isVisible()
 assert window.update_status.isVisible()
 assert not window.output.isVisible()
 assert not window.bg_combo.isVisible()
+
+# Info is now a regular fourth page, never a new window.
+window.info_nav_button.click()
+app.processEvents()
+assert tabs.currentIndex() == 3
+assert window.info_nav_button.isChecked()
+assert window.info_page.isVisible()
+assert window.info_credit.text() == 'Made by Jon Bovi'
+assert not window.update_status.isVisible()
+window.visual_guide_button.click()
+app.processEvents()
+assert window.info_detail_stack.currentIndex() == 1
+assert window.info_detail_stack.findChild(QTabWidget, 'visualGuideTabs').count() == 3
+window.visual_guide_button.click()
+app.processEvents()
+assert window.info_detail_stack.currentIndex() == 0
 
 tabs.setCurrentIndex(0)
 app.processEvents()
@@ -151,4 +169,4 @@ tabs.setCurrentIndex(0)
 app.processEvents()
 window.close()
 app.processEvents()
-print('Top-right navigation: 3 pages + Info, 5 responsive cards, no crash or text color controls.')
+print('Top-right navigation: 4 inline pages, responsive cards and no scroll container.')

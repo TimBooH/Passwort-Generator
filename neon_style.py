@@ -90,7 +90,7 @@ QLabel#neonHint {{ color: {muted}; font-size: 11px; }}
 QLabel#strengthCaption {{ color: {fg}; font-size: 12px; font-weight: 700; }}
 QLabel#lengthValue {{ color: {bright}; font-size: 17px; font-weight: 750; }}
 QLabel#lengthCaption {{ color: {fg}; font-weight: 700; }}
-QWidget#passwordPage, QWidget#settingsPage, QWidget#updatesPage {{
+QWidget#passwordPage, QWidget#settingsPage, QWidget#updatesPage, QWidget#infoPage {{
     background: transparent;
 }}
 QStackedWidget#mainPages {{

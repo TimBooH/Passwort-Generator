@@ -1,109 +1,96 @@
-"""Interactive illustrated guide using screenshots of the running Qt widgets.
+"""An illustrated explanation embedded in the Info page, never a new window.
 
-The three screens are captured in memory, never written to disk or uploaded.
-The password input stays masked. Works unchanged on Linux and Windows.
+All three screenshots come from the actual running Qt pages and remain solely
+in RAM. Preview widgets scale to the available space without scroll areas.
 """
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
-    QApplication, QDialog, QHBoxLayout, QLabel, QPushButton,
-    QScrollArea, QTabWidget, QVBoxLayout, QWidget,
+    QApplication, QLabel, QSizePolicy, QTabWidget, QVBoxLayout, QWidget,
 )
 
 SCREENS = (
     (
         '1 · Passwort',
-        'PASSWORT / PASSPHRASE',
-        'Zwischen Passwort und Passphrase wechseln. Bei Passphrase können '
-        'Trennzeichen und eine zufällige zweistellige Zahl gewählt werden. '
-        'Mit dem großen Knopf generieren, mit ⧉ kopieren.',
+        'Passwort und Passphrase',
+        'Modus wählen, Länge einstellen und auf „Generieren“ klicken. '
+        'Eine zweistellige Zahl und das Trennzeichen kannst du bei Passphrase wählen.',
     ),
     (
         '2 · Design',
-        'DESIGN & FARBEN',
-        'Unter Einstellungen kannst du Glass Dark, Glass Light und weitere '
-        'Farbschemas auswählen. Auch eigene Hintergrundbilder sind möglich.',
+        'Farben und Glas',
+        'Unter Einstellungen kannst du „Glass“ für gut sichtbare '
+        'Hintergrundbilder oder andere Farbschemas auswählen.',
     ),
     (
         '3 · Updates',
-        'UPDATES & VERSIONEN',
-        'Hier siehst du Änderungen und frühere Versionen. Wenn ein Update '
-        'verfügbar ist, erscheint oben rechts „Updates • NEU“. Nach einem Klick '
-        'auf „Update installieren“ lädt und prüft die App die neue Version.',
+        'Updateprüfung und Versionen',
+        'Neue Versionen erscheinen oben als „Updates • NEU“. '
+        'Die Versionen sind ohne Scrollen über „Neuer“ und „Älter“ erreichbar.',
     ),
 )
 
 
-def create_visual_guide(window, parent=None):
-    """Return a dialog containing three REAL Qt page screenshots and captions."""
-    dialog = QDialog(parent or window)
-    dialog.setObjectName('visualGuideDialog')
-    dialog.setWindowTitle('Bildliche Anleitung · PasswortGenerator')
-    dialog.resize(780, 680)
-    dialog.setMinimumSize(550, 480)
-    layout = QVBoxLayout(dialog)
-    heading = QLabel('BILDLICHE ANLEITUNG')
-    heading.setObjectName('glassCardTitle')
-    layout.addWidget(heading)
-    summary = QLabel(
-        'Drei echte Ansichten deiner App mit Erklärungen. '
-        'Zum Wechseln auf Passwort, Design oder Updates klicken.'
-    )
-    summary.setWordWrap(True)
-    layout.addWidget(summary)
+class ScaledScreenshot(QLabel):
+    """Keep a real screenshot proportional without content overflow."""
 
-    visual_tabs = QTabWidget(dialog)
-    visual_tabs.setObjectName('visualGuideTabs')
-    layout.addWidget(visual_tabs, 1)
+    def __init__(self, pixmap, parent=None):
+        super().__init__(parent)
+        self._original = QPixmap(pixmap)
+        self.setObjectName('visualGuideImage')
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        self.setMinimumSize(100, 80)
 
-    active = window.tabs.currentIndex()
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if not self._original.isNull() and self.width() > 0 and self.height() > 0:
+            preview = self._original.scaled(
+                self.size(), Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            self.setPixmap(preview)
+
+
+def create_visual_guide_panel(window, parent=None):
+    """Return a responsive Info child widget with 3 graphical pages."""
+    panel = QWidget(parent)
+    panel.setObjectName('inlineVisualGuide')
+    layout = QVBoxLayout(panel)
+    layout.setContentsMargins(0, 3, 0, 0)
+    layout.setSpacing(4)
+
+    tabs = QTabWidget(panel)
+    tabs.setObjectName('visualGuideTabs')
+    layout.addWidget(tabs, 1)
+
+    original = window.tabs.currentIndex()
     previous_block = window.tabs.blockSignals(True)
     try:
-        for index, (tab, title, description) in enumerate(SCREENS):
+        for index, (tab_name, title, description) in enumerate(SCREENS):
             window.tabs.setCurrentIndex(index)
             QApplication.processEvents()
-            # QWidget.grab() draws the actual page; avoids files or fake mockups.
-            screenshot = window.tabs.widget(index).grab()
-            if screenshot.isNull():
-                raise RuntimeError('Die Bildschirmansicht konnte nicht aufgenommen werden.')
+            image = window.tabs.widget(index).grab()
+            if image.isNull():
+                raise RuntimeError(f'Bildschirmansicht {tab_name} ist leer.')
             page = QWidget()
+            page.setObjectName(f'visualGuidePage{index}')
             page_layout = QVBoxLayout(page)
-            page_layout.setSpacing(10)
-            title_label = QLabel(title)
-            title_label.setObjectName('visualGuideTitle')
-            page_layout.addWidget(title_label)
-            explanation = QLabel(description)
-            explanation.setObjectName('visualGuideDescription')
-            explanation.setWordWrap(True)
-            page_layout.addWidget(explanation)
-
-            image_label = QLabel()
+            page_layout.setContentsMargins(5, 4, 5, 4)
+            page_layout.setSpacing(2)
+            heading = QLabel(f'{title}: {description}')
+            heading.setObjectName('visualGuideDescription')
+            heading.setWordWrap(True)
+            page_layout.addWidget(heading)
+            image_label = ScaledScreenshot(image)
             image_label.setObjectName(f'visualGuideImage{index}')
-            image_label.setAccessibleName(f'Bildschirmansicht {title}')
-            image_label.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop)
-            image_label.setPixmap(
-                screenshot.scaledToWidth(
-                    min(680, max(400, screenshot.width())),
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-
-            image_scroll = QScrollArea(page)
-            image_scroll.setObjectName('visualGuideImageScroll')
-            image_scroll.setWidgetResizable(True)
-            image_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
-            image_scroll.setWidget(image_label)
-            page_layout.addWidget(image_scroll, 1)
-            visual_tabs.addTab(page, tab)
+            image_label.setAccessibleName(f'Grafische Ansicht: {tab_name}')
+            page_layout.addWidget(image_label, 1)
+            tabs.addTab(page, tab_name)
     finally:
-        window.tabs.setCurrentIndex(active)
+        window.tabs.setCurrentIndex(original)
         window.tabs.blockSignals(previous_block)
         QApplication.processEvents()
 
-    close_row = QHBoxLayout()
-    close_row.addStretch()
-    close_button = QPushButton('Schließen')
-    close_button.clicked.connect(dialog.accept)
-    close_row.addWidget(close_button)
-    layout.addLayout(close_row)
-    return dialog
+    return panel

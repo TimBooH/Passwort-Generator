@@ -1,5 +1,8 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.11.0 precisely targets real widgets with the arrow tour, embeds
+Info and graphical guidance as a fourth page, and replaces scrolling with
+compact layouts and paginated release history on Windows and Linux.
 Version 0.10.0 checks widget transparency in a dedicated GUI smoke process,
 not during unittest interpreter teardown, to avoid native Qt refcount crashes.
 Version 0.10.0 restores the pure Glass palette and transparency engine
@@ -31,7 +34,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.10.0"
+APP_VERSION = "0.11.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

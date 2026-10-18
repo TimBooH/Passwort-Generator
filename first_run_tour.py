@@ -1,44 +1,37 @@
-"""First-launch on-screen introduction with highlighted controls and drawn arrows.
+"""Interactive first-start tour with arrows aimed at actual visible controls.
 
-Works with ordinary framed Qt windows on Windows and Linux. The overlay never
-captures a password, exports screenshots, or generates a password itself.
+An overlay lives on the main window, no screenshot or modal is created.
+Coordinates are converted via the native global mapping and checked against
+each real widget's rectangle. Passphrase-only widgets are shown when needed.
 """
-
-import math
 
 from PySide6.QtCore import QPoint, QPointF, QRect, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QApplication, QPushButton, QWidget
 
 
-# (page, target attribute on PasswordWindow, heading, explanation)
 TOUR_STEPS = (
-    (0, 'password_mode_button', 'Passwort und Passphrase',
-     'Hier wählst du zwischen einem zufälligen Passwort und einer Passphrase '
-     'aus sicheren Wörtern.'),
-    (0, 'length_slider', 'Länge bestimmen',
-     'Mit dem Regler legst du die Länge fest. Bei Passphrase wählst du '
-     'stattdessen die Anzahl der Wörter.'),
-    (0, 'passphrase_mode_button', 'Passphrase-Extras',
-     'Im Passphrase-Modus kannst du Trennzeichen auswählen und auf Wunsch '
-     'eine zufällige zweistellige Zahl anhängen.'),
-    (0, 'generate_button', 'Generieren und kopieren',
-     'Erstelle dein Passwort mit dieser Taste. Über das Kopiersymbol '
-     'neben dem Ergebnis kopierst du es in die Zwischenablage.'),
-    (1, 'scheme_combo', 'Design und Glass',
-     'Hier findest du die Farbschemas. Das neue Schema „Glass“ lässt '
-     'den Hintergrund durch die Glaskacheln durchscheinen.'),
-    (0, 'nav_buttons', 'Update-Bereich',
-     'Oben rechts gelangst du zu Updates. Beim Start sucht die App '
-     'automatisch nach neuen Versionen und meldet sie per Popup.'),
-    (0, 'info_nav_button', 'Info und grafische Erklärung',
-     'Über Info kannst du die bebilderte Erklärung später erneut '
-     'öffnen. Fertig – viel Spaß mit dem PasswortGenerator!'),
+    (0, 'password_mode_button', 'Passwort oder Passphrase',
+     'Hier wählst du, ob du ein Passwort oder eine Passphrase erzeugen möchtest.'),
+    (0, 'length_slider', 'Länge wählen',
+     'Mit diesem Regler bestimmst du die Zeichenlänge beziehungsweise die Wörterzahl.'),
+    (0, 'phrase_two_digits', 'Zweistellige Zufallszahl',
+     'Diese Option hängt an eine Passphrase eine sichere Zufallszahl von 10 bis 99 an.'),
+    (0, 'phrase_separator', 'Trennzeichen',
+     'Mit diesem Dropdown wählst du das Zeichen zwischen Wörtern und Zufallszahl.'),
+    (0, 'generate_button', 'Neues Passwort generieren',
+     'Klicke hier, um ein Passwort zu erzeugen. Das Symbol am Ergebnis kopiert es.'),
+    (1, 'scheme_combo', 'Glass und Farben',
+     'Hier wählst du „Glass“ oder ein anderes Farbschema.'),
+    (0, 'nav_buttons', 'Updates',
+     'Über diesen Button öffnest du Updates und die Versionshistorie.'),
+    (0, 'info_nav_button', 'Info',
+     'Info ist jetzt ein eigener Bereich im Fenster. Hier lässt sich die Tour wiederholen.'),
 )
 
 
 class FirstRunTour(QWidget):
-    """A dimmed see-through overlay with a highlighted target and arrow."""
+    """Translucent spotlight and pointed arrow to the selected Qt widget."""
 
     def __init__(self, window):
         super().__init__(window)
@@ -48,6 +41,12 @@ class FirstRunTour(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, False)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.original_page = window.tabs.currentIndex()
+        self.original_phrase_mode = window._phrase_mode
+        self._original_output = window.output.text()
+        self._original_length = window.length.value()
+        self._original_strength = window.strength_label.text()
+        self._original_strength_score = window.strength_bar.value()
+        self._original_status = window.status.text()
         self.step_index = 0
         self.finished = False
 
@@ -64,7 +63,7 @@ class FirstRunTour(QWidget):
             QPushButton {
                 background: #243C58; color: #F4FAFF;
                 border: 1px solid #77CBF5; border-radius: 9px;
-                font-weight: bold; padding: 5px 9px; min-height: 24px;
+                font-weight: bold; padding: 4px 9px; min-height: 23px;
             }
             QPushButton:hover { background: #375F82; }
             QPushButton#tourNext { background: #1769AA; }
@@ -75,7 +74,7 @@ class FirstRunTour(QWidget):
         self.go_to_step(0)
 
     def target_widget(self):
-        page, name, _title, _description = TOUR_STEPS[self.step_index]
+        _page, name, _title, _explanation = TOUR_STEPS[self.step_index]
         if name == 'nav_buttons':
             return self.window.nav_buttons[2]
         return getattr(self.window, name)
@@ -84,17 +83,27 @@ class FirstRunTour(QWidget):
         if self.finished:
             return
         self.step_index = max(0, min(index, len(TOUR_STEPS) - 1))
-        page = TOUR_STEPS[self.step_index][0]
+        page, target_name, _title, _explanation = TOUR_STEPS[self.step_index]
         if self.window.tabs.currentIndex() != page:
             self.window.tabs.setCurrentIndex(page)
-        self.window.scroll_area.verticalScrollBar().setValue(0)
+        if target_name in ('phrase_two_digits', 'phrase_separator'):
+            if not self.window._phrase_mode:
+                self.window.switch_mode(True)
+        elif page == 0 and target_name not in ('nav_buttons', 'info_nav_button'):
+            if self.window._phrase_mode:
+                self.window.switch_mode(False)
         QApplication.processEvents()
+        self.resize(self.window.size())
+        focus = self._highlight_rect()
+        if focus.isEmpty() or not self.target_widget().isVisible():
+            raise AssertionError(
+                f'Tour-Ziel ist nicht sichtbar: {target_name}, Seite {page}'
+            )
         self.back_button.setEnabled(self.step_index > 0)
         self.next_button.setText(
             'Fertig ✓' if self.step_index == len(TOUR_STEPS) - 1
             else 'Weiter →'
         )
-        self.resize(self.window.size())
         self._position_buttons()
         self.raise_()
         self.update()
@@ -112,7 +121,13 @@ class FirstRunTour(QWidget):
         if self.finished:
             return
         self.finished = True
-        # Set the setting only after explicit completion or skipping.
+        if self.window._phrase_mode != self.original_phrase_mode:
+            self.window.switch_mode(self.original_phrase_mode)
+        self.window.length.setValue(self._original_length)
+        self.window.output.setText(self._original_output)
+        self.window.strength_label.setText(self._original_strength)
+        self.window.strength_bar.setValue(self._original_strength_score)
+        self.window.status.setText(self._original_status)
         self.window.settings.setValue('first_run_tour_completed', True)
         self.window.tabs.setCurrentIndex(self.original_page)
         self.hide()
@@ -122,27 +137,55 @@ class FirstRunTour(QWidget):
 
     def _highlight_rect(self):
         target = self.target_widget()
-        top_left = target.mapTo(self, QPoint(0, 0))
-        target_rect = QRect(top_left, target.size()).adjusted(-5, -5, 5, 5)
-        return target_rect.intersected(self.rect().adjusted(6, 6, -6, -6))
+        origin = self.mapFromGlobal(target.mapToGlobal(QPoint(0, 0)))
+        rect = QRect(origin, target.size()).adjusted(-5, -5, 5, 5)
+        return rect.intersected(self.rect().adjusted(5, 5, -5, -5))
 
     def _card_rect(self):
-        width = min(485, max(320, self.width() - 22))
+        width = min(485, max(290, self.width() - 22))
         x = max(11, (self.width() - width) // 2)
-        h = 160
+        height = 155
         focus = self._highlight_rect()
-        if focus.center().y() < self.height() // 2:
-            y = max(12, self.height() - h - 18)
+        upper = focus.top() - 14 - height
+        lower = self.height() - focus.bottom() - 14 - height
+        if lower >= upper:
+            y = max(12, self.height() - height - 14)
         else:
-            y = 22
-        return QRect(x, y, width, h)
+            y = 14
+        return QRect(x, y, width, height)
+
+    def _arrow_line(self):
+        """Arrow tip is on the actual highlight BORDER, never a guessed center."""
+        focus = self._highlight_rect()
+        card = self._card_rect()
+        if card.bottom() < focus.top():
+            point_y = focus.top() - 3
+            base_y = card.bottom()
+        elif card.top() > focus.bottom():
+            point_y = focus.bottom() + 3
+            base_y = card.top()
+        else:
+            # A very small window: connect sideways from the nearest edge.
+            focus_on_right = focus.center().x() > card.center().x()
+            if focus_on_right:
+                return (
+                    QPointF(card.right(), card.center().y()),
+                    QPointF(focus.left() - 3, focus.center().y())
+                )
+            return (
+                QPointF(card.left(), card.center().y()),
+                QPointF(focus.right() + 3, focus.center().y())
+            )
+        x = max(focus.left() + 7,
+                min(card.center().x(), focus.right() - 7))
+        return QPointF(card.center().x(), base_y), QPointF(x, point_y)
 
     def _position_buttons(self):
         card = self._card_rect()
-        y = card.bottom() - 40
-        self.back_button.setGeometry(card.x() + 16, y, 94, 30)
-        self.skip_button.setGeometry(card.x() + 119, y, 112, 30)
-        self.next_button.setGeometry(card.right() - 117, y, 101, 30)
+        y = card.bottom() - 37
+        self.back_button.setGeometry(card.x() + 13, y, 93, 28)
+        self.skip_button.setGeometry(card.x() + 111, y, 108, 28)
+        self.next_button.setGeometry(card.right() - 108, y, 96, 28)
         for button in (self.back_button, self.skip_button, self.next_button):
             button.raise_()
 
@@ -153,74 +196,65 @@ class FirstRunTour(QWidget):
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Escape:
             self.finish()
-            event.accept()
-        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter,
-                              Qt.Key.Key_Right):
+        elif event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Right):
             self.next_step()
-            event.accept()
         elif event.key() == Qt.Key.Key_Left:
             self.previous_step()
-            event.accept()
         else:
-            super().keyPressEvent(event)
+            return super().keyPressEvent(event)
+        event.accept()
 
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         focus = self._highlight_rect()
         w, h = self.width(), self.height()
-        # Four simple bands leave a genuinely transparent hole over the
-        # selected control. This is lighter than rasterising a full window.
-        shadow = QColor(3, 11, 24, 188)
+        shadow = QColor(3, 11, 24, 186)
         painter.fillRect(QRect(0, 0, w, max(0, focus.top())), shadow)
-        painter.fillRect(QRect(0, focus.bottom() + 1, w,
-                               max(0, h - focus.bottom() - 1)), shadow)
-        painter.fillRect(QRect(0, focus.top(), max(0, focus.left()),
-                               focus.height()), shadow)
-        painter.fillRect(QRect(focus.right() + 1, focus.top(),
-                               max(0, w - focus.right() - 1), focus.height()),
-                         shadow)
+        painter.fillRect(QRect(
+            0, focus.bottom() + 1, w, max(0, h - focus.bottom() - 1)
+        ), shadow)
+        painter.fillRect(QRect(
+            0, focus.top(), max(0, focus.left()), focus.height()
+        ), shadow)
+        painter.fillRect(QRect(
+            focus.right() + 1, focus.top(),
+            max(0, w - focus.right() - 1), focus.height()
+        ), shadow)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor('#75E6FA'), 3))
-        painter.drawRoundedRect(QRectF(focus), 9, 9)
-
+        painter.drawRoundedRect(QRectF(focus), 8, 8)
         card = self._card_rect()
         painter.setPen(QPen(QColor('#6AD6F9'), 2))
-        painter.setBrush(QColor(10, 25, 45, 246))
-        painter.drawRoundedRect(QRectF(card), 15, 15)
-        page, _name, title, description = TOUR_STEPS[self.step_index]
+        painter.setBrush(QColor(10, 25, 45, 247))
+        painter.drawRoundedRect(QRectF(card), 13, 13)
+        _page, _name, title, description = TOUR_STEPS[self.step_index]
         painter.setPen(QColor('#87E2FF'))
         painter.setFont(QFont('Sans Serif', 10, QFont.Weight.Bold))
         painter.drawText(
-            QRect(card.x() + 18, card.y() + 11, card.width() - 36, 20),
+            QRect(card.x() + 16, card.y() + 11, card.width() - 32, 23),
             Qt.AlignmentFlag.AlignLeft,
-            f'Schritt {self.step_index + 1}/{len(TOUR_STEPS)}  ·  {title}',
+            f'Schritt {self.step_index + 1}/{len(TOUR_STEPS)} · {title}',
         )
         painter.setPen(QColor('#F6FAFF'))
         painter.setFont(QFont('Sans Serif', 10))
         painter.drawText(
-            QRect(card.x() + 18, card.y() + 39, card.width() - 36, 74),
+            QRect(card.x() + 16, card.y() + 40, card.width() - 32, 73),
             int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
                 | Qt.TextFlag.TextWordWrap),
             description,
         )
-        # Draw a directional arrow between the card and the real widget.
-        center = QPointF(focus.center())
-        origin = QPointF(card.center().x(),
-                         card.top() if card.center().y() > center.y()
-                         else card.bottom())
-        vx = center.x() - origin.x()
-        vy = center.y() - origin.y()
-        distance = max(1.0, math.hypot(vx, vy))
+        start, tip = self._arrow_line()
+        vx, vy = tip.x() - start.x(), tip.y() - start.y()
+        distance = max(1.0, (vx * vx + vy * vy) ** .5)
         ux, uy = vx / distance, vy / distance
-        tip = QPointF(center.x() - ux * 9, center.y() - uy * 9)
-        base = QPointF(tip.x() - ux * 14, tip.y() - uy * 14)
+        stem = QPointF(tip.x() - ux * 14, tip.y() - uy * 14)
         painter.setPen(QPen(QColor('#FFE9A7'), 3))
-        painter.drawLine(origin, base)
+        painter.drawLine(start, stem)
         painter.setBrush(QColor('#FFE9A7'))
         painter.drawPolygon(QPolygonF([
             tip,
-            QPointF(base.x() - uy * 7, base.y() + ux * 7),
-            QPointF(base.x() + uy * 7, base.y() - ux * 7),
+            QPointF(stem.x() - uy * 7, stem.y() + ux * 7),
+            QPointF(stem.x() + uy * 7, stem.y() - ux * 7),
         ]))
         painter.end()

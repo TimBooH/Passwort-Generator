@@ -94,24 +94,25 @@ assert window.scheme_combo.currentData() == 'custom'
 assert window.settings.value('color_scheme') == 'custom'
 assert window.accent_preview.text().endswith(accent_for_background('#351A23'))
 
-# Info remains concise but restores the graphical, on-demand explanation.
-info = window.build_info_dialog()
-credit = info.findChild(QLabel, 'infoCredit')
-assert credit is not None
-assert credit.text() == 'Made by Jon Bovi'
-assert info.layout().itemAt(0).widget() is credit
-assert f'v{window.windowTitle().split("v")[-1]}' in info.findChildren(QLabel)[1].text()
-assert not info.findChildren(QTextBrowser), 'The long written manual stays removed'
-graphic_button = info.findChild(QPushButton, 'visualGuideButton')
+# The concise Info page is inline, with scalable illustrated help in the same tab.
+window.show_info()
+app.processEvents()
+assert window.tabs.currentIndex() == 3
+assert window.info_credit.text() == 'Made by Jon Bovi'
+assert 'v' in window.info_version.text()
+assert not hasattr(window, 'build_info_dialog')
+graphic_button = window.visual_guide_button
 assert graphic_button is not None and 'Grafische Erklärung' in graphic_button.text()
-graphic = window.build_visual_guide_dialog(info)
-tabs = graphic.findChild(QTabWidget, 'visualGuideTabs')
+graphic_button.click()
+app.processEvents()
+tabs = window.info_detail_stack.findChild(QTabWidget, 'visualGuideTabs')
 assert tabs is not None and tabs.count() == 3
 for i in range(3):
-    label = graphic.findChild(QLabel, f'visualGuideImage{i}')
+    label = window.info_detail_stack.findChild(QLabel, f'visualGuideImage{i}')
     assert label is not None and label.pixmap() is not None and not label.pixmap().isNull()
-graphic.close()
-info.close()
+assert window.info_detail_stack.currentIndex() == 1
+graphic_button.click()
+assert window.info_detail_stack.currentIndex() == 0
 
 # No network calls: feed a deterministic GitHub response to the real GUI.
 window.tabs.setCurrentIndex(2)

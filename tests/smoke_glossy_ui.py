@@ -28,8 +28,9 @@ assert len(window.secondary_cards) == 2
 assert window.nav_container.y() < window.tabs.y()
 assert window.info_nav_button.isVisible()
 assert not hasattr(window, 'nav_sidebar')
+assert not hasattr(window, 'scroll_area')
 assert not hasattr(window, 'fg_combo')
-assert window.tab_names == ('Passwort', 'Einstellungen', 'Updates')
+assert window.tab_names == ('Passwort', 'Einstellungen', 'Updates', 'Info')
 assert window.tabs.currentIndex() == 0
 assert window.glass_cards[0].isVisible()
 assert not window.glass_cards[1].isVisible()

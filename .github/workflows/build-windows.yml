@@ -80,6 +80,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows update badge / 2-hour timer / visual help smoke failed' }
           python tests/smoke_first_run_tour_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows first-run arrow tour and update popup smoke failed' }
+          python tests/smoke_no_scroll_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows four-page scroll-free UI smoke failed' }
 
       - name: Build Windows exe and run packaged smoke test
         if: steps.version.outputs.build == 'true'
