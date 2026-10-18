@@ -23,8 +23,8 @@ TOUR_STEPS = (
      'Klicke hier, um ein Passwort zu erzeugen. Das Symbol am Ergebnis kopiert es.'),
     (1, 'scheme_combo', 'Glass und Farben',
      'Hier wählst du „Glass“ oder ein anderes Farbschema.'),
-    (0, 'nav_buttons', 'Changelog',
-     'Über diesen Button öffnest du den Changelog mit Updateprüfung und Versionshistorie.'),
+    (0, 'nav_buttons', 'Update',
+     'Über diesen Button öffnest du die Updateprüfung und den Changelog mit Versionshistorie.'),
     (0, 'info_nav_button', 'Info',
      'Info ist jetzt ein eigener Bereich im Fenster. Hier lässt sich die Tour wiederholen.'),
 )
