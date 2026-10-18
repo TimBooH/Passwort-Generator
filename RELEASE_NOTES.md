@@ -1,10 +1,9 @@
-# PasswortGenerator v0.15.0 – Kompaktere Abstände
+# PasswortGenerator v0.16.0 – Schlankere GitHub-README
 
-**Entwicklungsschritt 15 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 16 von 100** bis zur Vollversion 1.0.0.
 
-- **Update:** Der Prüfbutton heißt jetzt **„↻ Auf Update prüfen“**.
-- **Changelog:** Engere Abstände zwischen den bisherigen Versionen und der Änderungsübersicht; Inhalte bleiben innerhalb einer gemeinsamen Glaskachel.
-- **Design / Erscheinungsbild:** Kleinere Innen- und Elementabstände bei Farbschema, Hintergrundfarbe, Akzent und Hintergrundbild.
-- Die Inhalte bleiben oben ausgerichtet, statt durch zusätzlichen Leerraum auseinandergezogen zu werden.
-- **Unverändert:** Updateprüfung beim Start und alle zwei Stunden, Versions-Dropdown, automatische Fenstergrößen-Wiederherstellung, echtes Glass-Design und First-Run-Tour.
-- Anpassungen und Tests für **Linux und Windows**.
+- GitHub-README deutlich gekürzt und übersichtlicher gestaltet.
+- Direkte Downloads für Linux und Windows stehen jetzt ganz oben.
+- Screenshot, Hauptfunktionen, kurze Installationshinweise, Sicherheit und Entwicklung bleiben enthalten.
+- Lange historische Versionsübersichten, Wiederholungen und technische Detailerklärungen entfernt.
+- **Keine Änderungen am Passwortgenerator selbst.** Oberfläche, Glass-Design und Updatefunktionen bleiben unverändert.
