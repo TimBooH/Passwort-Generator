@@ -255,32 +255,6 @@ Ein automatischer Release-Lauf startet bei einer Änderung von `version.py` auf 
 
 **Für ein neues Release:** Programmänderungen und Tests abschließen, `APP_VERSION` in `version.py` erhöhen, `RELEASE_NOTES.md` aktualisieren und alles gemeinsam committen. Nach bestandenen Tests werden das AppImage, Installationsskripte und `SHA256SUMS` veröffentlicht. Reine README-Änderungen lösen keinen Release-Build aus. Der Windows-Workflow wird bei einer neuen Versionsnummer oder nach einer Workflow-Änderung ausgeführt und überspringt bereits vorhandene Windows-Installer.
 
-### Projektstruktur
-
-```text
-Passwort-Generator/
-├── .github/workflows/build-and-release.yml
-├── .github/workflows/build-windows.yml
-├── windows/PasswortGenerator.iss # Inno Setup: Windows-Installation
-├── windows_support.py        # Windows-Update-Übergabe
-├── tools/make_windows_icon.py # Generiert das .ico aus dem SVG
-├── assets/
-├── tests/
-│   ├── smoke_glossy_ui.py
-│   ├── smoke_update_gui.py
-│   └── test_*.py
-├── main.py                 # Anwendung und Benutzeroberfläche
-├── password_core.py        # Passworterzeugung
-├── glass_ui.py             # Glasdesign und Hintergrundbilder
-├── updater.py              # AppImage-Aktualisierung und Neustart
-├── diagnostics.py          # Lokale Fehlerprotokolle
-├── version.py              # Versionsnummer
-├── requirements.txt        # Python-Abhängigkeiten
-├── install.sh              # Installation und Menüeintrag
-├── uninstall.sh            # Deinstallation
-├── RELEASE_NOTES.md        # Änderungen pro Veröffentlichung
-└── README.md
-```
 
 ## Sicherheit und Datenschutz
 
