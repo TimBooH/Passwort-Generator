@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.08.0 sizes each page independently so the Updates screen cannot
+force a scrollbar onto the Password screen.
 Version 0.08.0 adds two-hour update checks, visible badge, compact pages,
 and an in-memory illustrated guide for Linux and Windows.
 Version 0.07.0 chooses accessible automatic text even on medium-tone backgrounds
