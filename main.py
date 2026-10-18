@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QTextBrowser, QVBoxLayout, QWidget,
 )
 
+from localization import LANGUAGES, translate
 from diagnostics import CrashReporter
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from neon_style import neon_stylesheet
@@ -83,6 +84,9 @@ class PasswordWindow(QMainWindow):
         super().__init__()
         self.reporter = reporter
         self.settings = QSettings('TimBooH', 'PasswortGenerator')
+        self.language = self.settings.value('ui/language', 'de', type=str)
+        if self.language not in ('de', 'en'):
+            self.language = 'de'
         self.network = QNetworkAccessManager(self)
         self.check_reply = None
         self.download_reply = None
@@ -382,6 +386,16 @@ class PasswordWindow(QMainWindow):
         colors.layout().setSpacing(2)
         colors_layout = colors.body
         colors_layout.setSpacing(3)
+        language_row = QHBoxLayout()
+        language_row.addWidget(QLabel('Sprache:'))
+        self.language_combo = QComboBox()
+        self.language_combo.setObjectName('languageCombo')
+        self.language_combo.setAccessibleName('Sprache auswählen')
+        for name, code in LANGUAGES:
+            self.language_combo.addItem(name, code)
+        self.language_combo.setCurrentIndex(0 if self.language == 'de' else 1)
+        language_row.addWidget(self.language_combo, 1)
+        colors_layout.addLayout(language_row)
         scheme_row = QHBoxLayout()
         scheme_row.addWidget(QLabel('Farbschema:'))
         self.scheme_combo = QComboBox()
@@ -624,6 +638,7 @@ class PasswordWindow(QMainWindow):
         self.scheme_combo.currentIndexChanged.connect(self.apply_color_scheme)
         self.bg_combo.currentIndexChanged.connect(self.on_manual_color_change)
         self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
+        self.language_combo.currentIndexChanged.connect(self.change_language)
         self.restore_colors()
         self.restore_background_image()
         self.tabs.currentChanged.connect(self.on_tab_changed)
@@ -639,10 +654,101 @@ class PasswordWindow(QMainWindow):
             QTimer.singleShot(280, self.show_first_run_tour)
             QTimer.singleShot(800, self.check_for_updates)
         self.on_tab_changed(self.tabs.currentIndex())
+        self._translate_interface()
         self.update_navigation_labels()
         self.restore_window_geometry()
         if self.reporter is not None:
             self.reporter.note('UI_STARTED', 'neon interface ready', force=True)
+
+    def _t(self, german):
+        """Translate only UI text, never generated secrets or release bodies."""
+        return translate(german, self.language)
+
+    def _set_ui(self, widget, german):
+        """Remember original German for switching back without losing state."""
+        widget.setProperty('_i18n_de_text', german)
+        widget.setText(self._t(german))
+
+    def _set_placeholder(self, widget, german):
+        widget.setProperty('_i18n_de_placeholder', german)
+        widget.setPlaceholderText(self._t(german))
+
+    def _translate_interface(self):
+        """Retranslate visible widgets in place; do not rebuild pages or controls."""
+        from PySide6.QtWidgets import QAbstractButton
+
+        for widget in self.findChildren(QWidget):
+            if isinstance(widget, (QLabel, QAbstractButton)):
+                source = widget.property('_i18n_de_text')
+                if source is None:
+                    source = widget.text()
+                    widget.setProperty('_i18n_de_text', source)
+                if source:
+                    widget.setText(self._t(source))
+            for prop, setter, getter in (
+                ('_i18n_de_tooltip', widget.setToolTip, widget.toolTip),
+                ('_i18n_de_accessible', widget.setAccessibleName, widget.accessibleName),
+            ):
+                source = widget.property(prop)
+                if source is None:
+                    source = getter()
+                    if source:
+                        widget.setProperty(prop, source)
+                if source:
+                    setter(self._t(source))
+            if isinstance(widget, QLineEdit):
+                source = widget.property('_i18n_de_placeholder')
+                if source is None:
+                    source = widget.placeholderText()
+                    if source:
+                        widget.setProperty('_i18n_de_placeholder', source)
+                if source:
+                    widget.setPlaceholderText(self._t(source))
+
+        # Never retranslate the release dropdown: its labels come from GitHub.
+        # Keep itemData unchanged so saved schemes and separators still work.
+        if not hasattr(self, '_i18n_combo_sources'):
+            self._i18n_combo_sources = {}
+        for combo in (self.scheme_combo, self.bg_combo,
+                      self.image_mode_combo, self.phrase_separator):
+            originals = self._i18n_combo_sources.get(combo)
+            if originals is None or len(originals) != combo.count():
+                originals = [combo.itemText(i) for i in range(combo.count())]
+                self._i18n_combo_sources[combo] = originals
+            for index, source in enumerate(originals):
+                label = self._t(source)
+                if combo.itemText(index) != label:
+                    combo.setItemText(index, label)
+        self.update_navigation_labels()
+
+        # Default changelog copy is translated; published release bodies stay
+        # exactly as supplied by GitHub.
+        if not self._release_history_loaded and not self._history_releases:
+            default = ('Die Änderungen werden beim Öffnen dieser Seite '
+                       'automatisch geladen.')
+            if self.changelog_view.toPlainText() in (default, translate(default, 'en')):
+                self.changelog_view.setPlainText(self._t(default))
+
+    def change_language(self, *_):
+        selected = self.language_combo.currentData()
+        if selected not in ('de', 'en') or selected == self.language:
+            return
+        self.language = selected
+        self.settings.setValue('ui/language', selected)
+        self._translate_interface()
+        self.apply_colors()
+        self.set_update_indicator(self._available_update)
+        # Recreate cached screenshots in the newly selected language.
+        if self._info_visual_loaded:
+            from visual_help import create_visual_guide_panel
+            old = self.info_detail_stack.widget(1)
+            selected_visual = self.info_detail_stack.currentWidget() is old
+            panel = create_visual_guide_panel(self, self.info_detail_stack)
+            self.info_detail_stack.addWidget(panel)
+            if selected_visual:
+                self.info_detail_stack.setCurrentWidget(panel)
+            self.info_detail_stack.removeWidget(old)
+            old.deleteLater()
 
     def switch_mode(self, use_passphrase):
         """Switch between a random-character password and a word passphrase."""
