@@ -92,6 +92,7 @@ class PasswordGeneratorTests(unittest.TestCase):
         plain = estimate_strength(phrase, phrase_words=5)[1]
         with_digits = estimate_strength(phrase, phrase_words=5, extra_entropy_bits=6.49)[1]
         self.assertGreater(with_digits, plain)
+
     def test_all_selected_groups_and_length(self):
         for length in (8, 20, 64, 128):
             for _ in range(10):

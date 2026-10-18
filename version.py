@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.09.0 adds test syntax prechecks and requires a one-time manual
+Windows installer run when migrating from per-user AppData to Program Files.
 Version 0.09.0 restores the graphical explanation, adds passphrase number/separator
 options, and moves Windows setup to protected 64-bit Program Files with UAC.
 Version 0.08.1 removed the written tutorial while retaining author and version.
