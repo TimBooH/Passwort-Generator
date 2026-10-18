@@ -22,15 +22,18 @@ window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
+assert window.appearance_card.isAncestorOf(window.choose_background_button)
+assert window.changelog_card.isAncestorOf(window.release_combo)
+assert window.changelog_card.isAncestorOf(window.changelog_view)
 assert isinstance(window.tabs, QStackedWidget)
 assert len(window.nav_buttons) == 3
-assert len(window.secondary_cards) == 4
+assert len(window.secondary_cards) == 2
 assert window.nav_container.y() < window.tabs.y()
 assert window.info_nav_button.isVisible()
 assert not hasattr(window, 'nav_sidebar')
 assert not hasattr(window, 'scroll_area')
 assert not hasattr(window, 'fg_combo')
-assert window.tab_names == ('Passwort', 'Einstellungen', 'Changelog', 'Info')
+assert window.tab_names == ('Passwort', 'Einstellungen', 'Update', 'Info')
 assert window.tabs.currentIndex() == 0
 assert window.glass_cards[0].isVisible()
 assert not window.glass_cards[1].isVisible()
