@@ -18,7 +18,9 @@
 
 ## Preview
 
-![PasswortGenerator with its glass-style interface](assets/screenshots/passwort-generator.png)
+![Original screenshot of PasswortGenerator running on Linux in Glass theme](assets/screenshots/passwort-generator-live.png)
+
+*Real screenshot of the running Linux Qt/PySide6 application in Glass Dark mode. The displayed password was generated exclusively for this preview.*
 
 ## Features
 
