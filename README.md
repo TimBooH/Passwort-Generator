@@ -25,6 +25,7 @@
 - **Passwörter:** 8–128 Zeichen, wählbare Zeichengruppen und Stärkeanzeige.
 - **Passphrasen:** 4–10 Wörter, wählbare Trennzeichen und optional eine zufällige zweistellige Zahl.
 - **Glass-Design:** verschiedene Farbschemas, automatische Akzentfarbe und eigene Hintergrundbilder.
+- **Sprache:** Deutsch oder Englisch unter **Einstellungen → Erscheinungsbild**; Auswahl wird gespeichert.
 - **Update:** automatische Prüfung beim Start und alle 2 Stunden; Versionshistorie und Änderungen im Changelog.
 - **Bedienung:** Passwortverlauf während der Sitzung, grafische Anleitung und gespeicherte Fenstergröße/-position.
 
