@@ -1,18 +1,21 @@
-# PasswortGenerator v0.02.0 – Aufgeräumte Design-Einstellungen
+# PasswortGenerator v0.03.0 – Übersichtliche Reiter-Navigation
 
-**Entwicklungsschritt 2 von 100** auf dem Weg zur Vollversion `1.0.0`.
+**Entwicklungsschritt 3 von 100** auf dem Weg zu v1.0.0.
 
-## Änderungen
+## Neues Oberflächendesign
 
-- Den Regler **„Glas-Deckkraft“** und die zugehörige Prozentanzeige vollständig aus der Oberfläche entfernt.
-- Die Glas-Kacheln behalten eine feste, einheitliche Transparenz mit glänzenden Lichtkanten.
-- Die nicht mehr benötigte Einstellung `glass_opacity` wird aus den lokal gespeicherten App-Einstellungen entfernt.
-- Nicht mehr benötigte Slider-Ereignisse, Codepfade und Qt-Stylesheet-Regeln entfernt.
-- GUI-Belastungstest und Design-Tests an die vereinfachte Oberfläche angepasst.
+- Drei Reiter oben links: **Passwort**, **Einstellungen** und **Updates**
+- **Passwort:** Passwort erstellen, Länge und Zeichengruppen festlegen, kopieren
+- **Einstellungen:** Design & Farben und alle Einstellungen für Hintergrundbilder
+- **Updates:** Versionsstatus, Updateprüfung, Installation mit Neustart und Crash-Log
+- Die glänzenden Glas-Kacheln und das Hintergrundbild bleiben auf allen Reitern erhalten
+- Responsive Größenänderungen und bestehende Farb-/Bildeinstellungen funktionieren weiterhin
+- Die Statusanzeige bleibt beim Wechsel zwischen den Reitern sichtbar
+- GUI-Tests prüfen Tabwechsel, Bedienbarkeit und Fenster-Skalierung
 
-## Weiterhin verfügbar
+## Unverändert
 
-- Eigene Hintergrund- und Textfarben sowie Hintergrundbilder mit sechs Darstellungsmodi
-- Responsive Glossy-Kacheln beim Ändern der Fenstergröße
-- Automatische GitHub-Updateprüfung mit Neustart
-- Sicherung der vorherigen AppImage-Version und Crash-Logs mit Zeitstempel
+- Sichere lokale Passwortgenerierung
+- Updates über GitHub mit SHA-256-Prüfung und automatischem Neustart
+- Aktuelle und vorherige AppImage-Version werden aufbewahrt
+- Lokaler Crash-Log mit Zeitstempel und Versionsnummer

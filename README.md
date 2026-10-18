@@ -24,7 +24,7 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python
 | **Updates** | GitHub-Releaseprüfung, SHA-256-Verifizierung, Installation und automatischer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
 
-Die Oberfläche passt ihre Kacheln an die Fenstergröße an und speichert Design-Einstellungen für den nächsten Programmstart.
+Die Oberfläche ist in drei Reiter gegliedert, die **oben links** im Fenster erreichbar sind. Glas-Kacheln und Inhalte passen sich an die Fenstergröße an; Design-Einstellungen werden gespeichert.
 
 ## Versionsplan: 100 Schritte bis Version 1.0
 
@@ -33,7 +33,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | Meilenstein | Version | Status |
 | --- | --- | --- |
 | **1 von 100** | `0.01.0` | Beginn der neuen Entwicklungsreihe |
-| **2 von 100** | **`0.02.0`** | Aktueller Stand: Glas-Deckkraft-Regler entfernt |
+| **2 von 100** | `0.02.0` | Glas-Deckkraft-Regler entfernt |
+| **3 von 100** | **`0.03.0`** | **Aktueller Stand: Navigation mit drei Reitern** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -101,7 +102,7 @@ Die Datei für die vorherige Version wird erst angelegt, wenn eine vorhandene In
 
 ## Updates
 
-PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator). Über **„Auf Updates prüfen“** kannst du die Prüfung jederzeit wiederholen.
+PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator). Im eigenen Reiter **„Updates“** kannst du die Prüfung über **„Auf Updates prüfen“** jederzeit wiederholen.
 
 1. Wenn eine neue Version verfügbar ist, wähle **„Update installieren & neu starten“**.
 2. Das AppImage wird heruntergeladen und anhand der veröffentlichten **Dateigröße und SHA-256-Prüfsumme** überprüft.
@@ -116,7 +117,17 @@ Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klic
 
 ## Oberfläche und Hintergrundbilder
 
-Unter **„Design & Farben“** kannst du Hintergrund- und Textfarbe auswählen. Die Glas-Kacheln verwenden eine feste, abgestimmte Transparenz ohne Deckkraft-Regler. Die Farbauswahl wird lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
+Die Navigation befindet sich **oben links** und bietet drei Bereiche:
+
+| Reiter | Inhalt |
+| --- | --- |
+| **Passwort** | Passwortlänge, Zeichengruppen, Generieren und Kopieren |
+| **Einstellungen** | Design & Farben, eigene Hintergrundbilder und Bilddarstellung |
+| **Updates** | Versionsinformationen, Updateprüfung, Installation und Crash-Log |
+
+Wechsle einfach zwischen den Reitern. Die eingestellten Farben und Hintergrundbilder gelten für alle drei Bereiche.
+
+Im Reiter **„Einstellungen“** unter **„Design & Farben“** kannst du Hintergrund- und Textfarbe auswählen. Die Glas-Kacheln verwenden eine feste, abgestimmte Transparenz ohne Deckkraft-Regler. Die Farbauswahl wird lokal gespeichert. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 
 Mit **„Bild auswählen …“** kannst du ein eigenes Hintergrundbild laden und dessen Darstellung festlegen:
 
@@ -135,7 +146,7 @@ Mit **„Bild entfernen“** wechselst du zum farbigen Hintergrund zurück. Das 
 
 ## Fehlerdiagnose
 
-Über **„Crash-Log öffnen“** im Bereich **„Updates & Versionen“** erreichst du das lokale Fehlerprotokoll:
+Über **„Crash-Log öffnen“** im Reiter **„Updates“** erreichst du das lokale Fehlerprotokoll:
 
 ```text
 ~/.local/state/passwort-generator/crash.log

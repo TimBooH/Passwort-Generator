@@ -29,6 +29,8 @@ class GlassStyleTests(unittest.TestCase):
             style = build_glass_stylesheet(bg, fg)
             self.assertIn('QPushButton#primaryButton', style)
             self.assertNotIn('QSlider::', style)
+            self.assertIn('QTabBar::tab:selected', style)
+            self.assertIn('QTabWidget#mainTabs::pane', style)
             self.assertIn('rgba(', style)
             self.assertIn(fg, style)
 

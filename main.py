@@ -12,7 +12,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 from PySide6.QtWidgets import (
     QApplication, QCheckBox, QColorDialog, QComboBox, QFileDialog, QHBoxLayout,
     QLabel, QLineEdit, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSizePolicy, QSpinBox, QVBoxLayout, QWidget,
+    QScrollArea, QSizePolicy, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
 from diagnostics import CrashReporter, default_state_directory
@@ -83,7 +83,7 @@ class PasswordWindow(QMainWindow):
         root.setObjectName('appRoot')
         self.background_surface = root
         scroll.setWidget(root)
-        # A centered column stays readable even when the window becomes ultrawide.
+        # Background spans the entire application; navigation sits top-left.
         outer_layout = QHBoxLayout(root)
         outer_layout.setContentsMargins(8, 0, 8, 0)
         outer_layout.setSpacing(0)
@@ -92,13 +92,28 @@ class PasswordWindow(QMainWindow):
         content.setMinimumWidth(0)
         content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         outer_layout.addWidget(content, 1)
-        # All three panels expand with the window, without a fixed maximum width.
-        layout = QVBoxLayout(content)
-        layout.setSpacing(12)
-        layout.setContentsMargins(12, 18, 12, 22)
+        # The tab bar is anchored to the upper-left; only the active page
+        # is shown. Each page keeps its own responsive glass card.
+        content_layout = QVBoxLayout(content)
+        content_layout.setSpacing(8)
+        content_layout.setContentsMargins(12, 12, 12, 18)
+        self.tabs = QTabWidget(content)
+        self.tabs.setObjectName('mainTabs')
+        self.tabs.setTabPosition(QTabWidget.TabPosition.North)
+        self.tabs.setDocumentMode(True)
+        self.tabs.tabBar().setExpanding(False)
+        self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        content_layout.addWidget(self.tabs, 1)
+
         self.glass_cards = []
         self._applied_palette = None
         self._restoring = False
+
+        self.password_page = QWidget()
+        self.password_page.setObjectName('passwordPage')
+        layout = QVBoxLayout(self.password_page)
+        layout.setSpacing(12)
+        layout.setContentsMargins(4, 12, 4, 14)
 
         title = QLabel('PASSWORT GENERATOR')
         title.setObjectName('heroTitle')
@@ -148,7 +163,14 @@ class PasswordWindow(QMainWindow):
         copy_button.clicked.connect(self.copy)
         actions.addWidget(copy_button)
         group_layout.addLayout(actions)
-        layout.addWidget(group, 2)
+        layout.addWidget(group, 1)
+        layout.addStretch(0)
+
+        self.settings_page = QWidget()
+        self.settings_page.setObjectName('settingsPage')
+        settings_page_layout = QVBoxLayout(self.settings_page)
+        settings_page_layout.setSpacing(12)
+        settings_page_layout.setContentsMargins(4, 12, 4, 14)
 
         colors = GlossyGlassCard('DESIGN & FARBEN')
         self.glass_cards.append(colors)
@@ -201,7 +223,14 @@ class PasswordWindow(QMainWindow):
         colors_note = QLabel('Farben und Bilddarstellung werden automatisch gespeichert.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
-        layout.addWidget(colors, 3)
+        settings_page_layout.addWidget(colors, 1)
+        settings_page_layout.addStretch(0)
+
+        self.updates_page = QWidget()
+        self.updates_page.setObjectName('updatesPage')
+        updates_page_layout = QVBoxLayout(self.updates_page)
+        updates_page_layout.setSpacing(12)
+        updates_page_layout.setContentsMargins(4, 12, 4, 14)
 
         updates = GlossyGlassCard('UPDATES & VERSIONEN')
         self.glass_cards.append(updates)
@@ -235,12 +264,18 @@ class PasswordWindow(QMainWindow):
         diagnostic_button = QPushButton('Crash-Log öffnen')
         diagnostic_button.clicked.connect(self.open_crash_log)
         updates_layout.addWidget(diagnostic_button)
-        layout.addWidget(updates, 2)
+        updates_page_layout.addWidget(updates, 1)
+        updates_page_layout.addStretch(0)
 
+        # Persistent feedback stays visible under the tabs on every page.
+        self.tabs.addTab(self.password_page, 'Passwort')
+        self.tabs.addTab(self.settings_page, 'Einstellungen')
+        self.tabs.addTab(self.updates_page, 'Updates')
+        self.tabs.setCurrentIndex(0)
         self.status = QLabel('')
         self.status.setWordWrap(True)
-        layout.addWidget(self.status)
-        layout.addStretch(0)
+        self.status.setObjectName('globalStatus')
+        content_layout.addWidget(self.status)
 
         self.bg_combo.currentIndexChanged.connect(self.apply_colors)
         self.fg_combo.currentIndexChanged.connect(self.apply_colors)
@@ -248,10 +283,15 @@ class PasswordWindow(QMainWindow):
         self.restore_colors()
         self.restore_background_image()
         self.generate()
+        self.tabs.currentChanged.connect(self.on_tab_changed)
         if auto_check:
             QTimer.singleShot(800, self.check_for_updates)
         if self.reporter is not None:
             self.reporter.note('UI_STARTED', 'interface ready', force=True)
+
+    def on_tab_changed(self, index):
+        if self.reporter is not None:
+            self.reporter.note('NAVIGATE', f'tab={self.tabs.tabText(index)}', force=True)
 
     @staticmethod
     def select_color(combo, color, default):
