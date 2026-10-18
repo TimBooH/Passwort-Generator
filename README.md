@@ -15,10 +15,10 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
 | :--- | :--- |
 | **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
-| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.07.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.07.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.0/PasswortGenerator-x86_64.AppImage) |
 | Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
 
-**Aktuelle Version: v0.07.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
+**Aktuelle Version: v0.08.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
@@ -35,14 +35,14 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
 | **Passphrasen** | 4–10 lokal zufällig erzeugte zusammengesetzte Wörter, jeweils 1.024 Möglichkeiten |
 | **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
-| **Bedienung** | Längenregler, Passwort anzeigen/verbergen, kopieren und erneut erzeugen |
+| **Bedienung** | Längenregler, anzeigen/verbergen, kopieren und erneut erzeugen – ohne Scrollen in der Passwortansicht |
 | **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
 | **Stärke** | Geschätzte Entropie und visuelle Stärkeanzeige |
 | **Design** | Glass-Dark-/Light- und weitere Themes, transparenteres Glas, kontrastreiche Akzent- und Textfarben, optional eigene Hintergrundbilder |
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
-| **Updates** | GitHub-Releaseprüfung, kurze Änderungsübersicht, neueste der bis zu 100 Releases oben und sicherer Neustart |
+| **Updates** | Beim Start und alle 2 Stunden prüfen, „Updates • NEU“-Hinweis, Changelog und sicherer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
-| **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
+| **Info** | „Made by Jon Bovi“, Textanleitung und „Bildliche Anleitung“ mit drei echten Bildschirmansichten |
 
 Die Oberfläche hat eine futuristische Glasoptik mit Schloss-Symbol, Akzentrahmen, Passwort/Passphrase-Umschalter, Stärkeanzeige und großem Generieren-Button. **Passwort, Einstellungen, Updates und Info** befinden sich gemeinsam **oben rechts**. Es gibt keine linke Seitenleiste und keinen zusätzlichen Info-Button am unteren Fensterrand.
 
@@ -58,7 +58,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **4 von 100** | `0.04.0` | Neon-Design und Passwort/Passphrase |
 | **5 von 100** | `0.05.0` | Farbschemas, Changelog und Anleitung |
 | **6 von 100** | `0.06.0` | Linke Navigation und kompakte Versionshistorie |
-| **7 von 100** | **`0.07.0`** | **Aktueller Stand: Navigation oben rechts, transparenteres Glas, adaptive Farben und Screenshot** |
+| **7 von 100** | `0.07.0` | Navigation oben rechts, transparenteres Glas und adaptive Farben |
+| **8 von 100** | **`0.08.0`** | **Aktueller Stand: Update-Hinweis, 2-Stunden-Prüfung, kompakte Ansicht und Bild-Anleitung** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -139,7 +140,7 @@ Die Datei für die vorherige Version wird erst angelegt, wenn eine vorhandene In
 
 ## Updates
 
-PasswortGenerator prüft beim Start die neueste Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator). Im eigenen Reiter **„Updates“** kannst du die Prüfung über **„Auf Updates prüfen“** jederzeit wiederholen.
+PasswortGenerator prüft **beim Start und danach alle 2 Stunden, solange die App geöffnet ist**, ob es eine neue Veröffentlichung im Repository [TimBooH/Passwort-Generator](https://github.com/TimBooH/Passwort-Generator) gibt. Wenn eine passende Version für dein Betriebssystem bereitsteht, zeigt der Button **„↻ Updates • NEU“ oben rechts** die Aktualisierung an – auch während du ein Passwort erstellst. Unter **Updates** kannst du jederzeit **„Auf Updates prüfen“** wählen. Ohne Internet bleibt die Passworterstellung nutzbar; Updates werden **nie ohne deinen Klick installiert**.
 
 ### Changelog und frühere Versionen
 
@@ -160,16 +161,16 @@ Die App prüft optional auf Updates, **installiert sie aber nur nach deinem Klic
 
 ## Oberfläche und Hintergrundbilder
 
-Die Navigation befindet sich **oben rechts**. Drei Schaltflächen wechseln den Bereich; die vierte öffnet **Info**:
+Die **kleineren, platzsparenden Buttons** befinden sich **oben rechts**. Drei wechseln den Bereich, der vierte öffnet **Info**. Bei einem neuen Update wird „NEU“ angezeigt:
 
 | Reiter | Inhalt |
 | --- | --- |
 | **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen und Verlauf |
 | **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
 | **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
-| **Info** | „Made by Jon Bovi“ und eine integrierte Schritt-für-Schritt-Anleitung |
+| **Info** | „Made by Jon Bovi“, Textanleitung und „Bildliche Anleitung“ mit drei echten Bildschirmansichten |
 
-Wechsle über die **Schaltflächen oben rechts** zwischen den Seiten. Über **Info** erreichst du die Anleitung. In **Einstellungen** liegen getrennte Kacheln für Farbschemas und Hintergrundbild, in **Updates** für Aktualisierung und Versionsverlauf. Bei kleinen Fenstern passen sich die Zeichenoptionen automatisch an.
+Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. Die kompakte Passwortansicht passt vollständig ins unterstützte Fenster, sodass du **nicht scrollen musst**; längere Einstellungs- und Versionsseiten können weiterhin scrollen. Über **Info → Bildliche Anleitung** öffnest du eine grafische Anleitung mit drei echten, zur Laufzeit aufgenommenen Ansichten von **Passwort**, **Design** und **Updates**. Die Bildschirmbilder werden nur im Arbeitsspeicher angezeigt und nicht gespeichert. Das funktioniert unter **Windows und Linux**.
 
 Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt eine **automatisch gut lesbare Textfarbe**, die nicht mehr manuell eingestellt werden muss. Die **Akzentfarbe übernimmt den Farbton des gewählten Hintergrunds** und wird auf einen gut sichtbaren Kontrast abgestimmt. Bei eigenen Hintergrundbildern fließt ein repräsentativer Bildfarbton in die Akzentwahl ein. Das aktualisiert Rahmen, Buttons und Regler; das dekorative Schaltkreismuster bleibt aus Stabilitätsgründen unverändert. Bei manueller Hintergrundfarbwahl schaltet die App auf **„Eigene Farben“**. Die transparenten Glas-Kacheln haben eine feste, reduzierte Deckkraft ohne zusätzlichen Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 

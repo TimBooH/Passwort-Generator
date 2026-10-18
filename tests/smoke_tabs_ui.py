@@ -124,7 +124,7 @@ for width in (460, 720, 1600, 530, 990, 470):
         )
         assert window.nav_container.y() < tabs.y()
         assert window.nav_buttons[index].isChecked()
-        if width < 650:
+        if width < 720:
             assert window.nav_buttons[1].text().endswith('Design')
         else:
             assert window.nav_buttons[1].text().endswith('Einstellungen')

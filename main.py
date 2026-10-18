@@ -13,8 +13,8 @@ from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
     QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
-    QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTextBrowser,
-    QVBoxLayout, QWidget,
+    QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTabWidget,
+    QTextBrowser, QVBoxLayout, QWidget,
 )
 
 from diagnostics import CrashReporter
@@ -34,6 +34,7 @@ LATEST_RELEASE_API = f'https://api.github.com/repos/{REPO}/releases/latest'
 RELEASE_HISTORY_API = f'https://api.github.com/repos/{REPO}/releases?per_page=100'
 RELEASE_DOWNLOAD_PREFIX = f'https://github.com/{REPO}/releases/download/'
 RELEASES_URL = f'{REPO_URL}/releases'
+UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000  # Every two hours while open.
 APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
 
@@ -71,6 +72,7 @@ class PasswordWindow(QMainWindow):
         self.download_installed = False
         self.latest_version = None
         self.latest_asset = None
+        self._available_update = None
         self.history_reply = None
         self._release_history_loaded = False
         self._history_releases = {}
@@ -79,17 +81,19 @@ class PasswordWindow(QMainWindow):
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}')
-        self.resize(850, 865)
+        self.resize(850, 760)
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
             icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
             if icon_path.is_file():
                 self.setWindowIcon(QIcon(str(icon_path)))
-        self.setMinimumSize(460, 540)
+        self.setMinimumSize(510, 680)
 
         scroll = QScrollArea(self)
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.scroll_area = scroll
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setCentralWidget(scroll)
         root = GlassBackground()
         root.setObjectName('appRoot')
@@ -105,8 +109,8 @@ class PasswordWindow(QMainWindow):
         content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         outer_layout.addWidget(content, 1)
         content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(8)
-        content_layout.setContentsMargins(16, 15, 16, 14)
+        content_layout.setSpacing(5)
+        content_layout.setContentsMargins(12, 8, 12, 7)
         self.glass_cards = []
         self.secondary_cards = []
         self._compact_options = None
@@ -118,7 +122,7 @@ class PasswordWindow(QMainWindow):
         header.setSpacing(12)
         lock = QLabel('🔒')
         lock.setObjectName('brandLock')
-        lock.setFixedSize(67, 67)
+        lock.setFixedSize(53, 53)
         lock.setAlignment(Qt.AlignmentFlag.AlignCenter)
         header.addWidget(lock)
         heading = QVBoxLayout()
@@ -138,7 +142,7 @@ class PasswordWindow(QMainWindow):
         self.nav_container.setObjectName('topNav')
         nav_layout = QHBoxLayout(self.nav_container)
         nav_layout.setContentsMargins(0, 0, 0, 0)
-        nav_layout.setSpacing(6)
+        nav_layout.setSpacing(4)
         nav_layout.addStretch(1)
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
@@ -150,7 +154,7 @@ class PasswordWindow(QMainWindow):
             button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
             button.setCheckable(True)
-            button.setMinimumHeight(37)
+            button.setMinimumHeight(25)
             button.setToolTip(label)
             button.setAccessibleName(label)
             self.nav_group.addButton(button)
@@ -164,7 +168,7 @@ class PasswordWindow(QMainWindow):
         self.info_nav_button.setObjectName('infoNavButton')
         self.info_nav_button.setToolTip('Über das Programm und Anleitung')
         self.info_nav_button.setAccessibleName('Info')
-        self.info_nav_button.setMinimumHeight(37)
+        self.info_nav_button.setMinimumHeight(25)
         self.info_nav_button.clicked.connect(self.show_info)
         nav_layout.addWidget(self.info_nav_button)
         content_layout.addWidget(self.nav_container)
@@ -177,8 +181,8 @@ class PasswordWindow(QMainWindow):
         self.password_page = QWidget()
         self.password_page.setObjectName('passwordPage')
         layout = QVBoxLayout(self.password_page)
-        layout.setSpacing(8)
-        layout.setContentsMargins(4, 10, 4, 8)
+        layout.setSpacing(4)
+        layout.setContentsMargins(2, 4, 2, 3)
 
         group = GlossyGlassCard('PASSWORT ERSTELLEN')
         group.header.hide()  # The reference uses its own prominent mode toggle.
@@ -186,7 +190,9 @@ class PasswordWindow(QMainWindow):
         self.glass_cards.append(group)
         group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         group_layout = group.body
-        group_layout.setSpacing(12)
+        group_layout.setSpacing(6)
+        group.layout().setContentsMargins(16, 11, 16, 12)
+        group.layout().setSpacing(3)
 
         mode_row = QHBoxLayout()
         mode_row.setSpacing(6)
@@ -197,7 +203,7 @@ class PasswordWindow(QMainWindow):
         for button in (self.password_mode_button, self.passphrase_mode_button):
             button.setObjectName('modeButton')
             button.setCheckable(True)
-            button.setMinimumHeight(35)
+            button.setMinimumHeight(29)
             self.mode_group.addButton(button)
             mode_row.addWidget(button, 1)
         self.password_mode_button.setChecked(True)
@@ -212,19 +218,19 @@ class PasswordWindow(QMainWindow):
         self.output.setReadOnly(True)
         self.output.setEchoMode(QLineEdit.EchoMode.Password)
         self.output.setPlaceholderText('Generiertes Passwort')
-        self.output.setMinimumHeight(47)
+        self.output.setMinimumHeight(37)
         self.output.setFont(QFont('Monospace', 12))
         password_row.addWidget(self.output, 1)
         copy_top = QPushButton('⧉')
         copy_top.setObjectName('squareAction')
         copy_top.setToolTip('Passwort kopieren')
-        copy_top.setMinimumSize(43, 47)
+        copy_top.setMinimumSize(36, 38)
         copy_top.clicked.connect(self.copy)
         password_row.addWidget(copy_top)
         regenerate = QPushButton('↻')
         regenerate.setObjectName('squareAction')
         regenerate.setToolTip('Neues Passwort erzeugen')
-        regenerate.setMinimumSize(43, 47)
+        regenerate.setMinimumSize(36, 38)
         regenerate.clicked.connect(self.generate)
         password_row.addWidget(regenerate)
         group_layout.addLayout(password_row)
@@ -241,7 +247,7 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
         group_layout.addWidget(self.strength_bar)
-        group_layout.addSpacing(5)
+        group_layout.addSpacing(2)
 
         length_row = QHBoxLayout()
         length_row.setSpacing(5)
@@ -275,7 +281,7 @@ class PasswordWindow(QMainWindow):
         self.check_layout = check_layout
         check_layout.setContentsMargins(0, 0, 0, 0)
         check_layout.setHorizontalSpacing(9)
-        check_layout.setVerticalSpacing(3)
+        check_layout.setVerticalSpacing(1)
         self.upper = QCheckBox('Großbuchstaben (A–Z)')
         self.lower = QCheckBox('Kleinbuchstaben (a–z)')
         self.digits = QCheckBox('Zahlen (0–9)')
@@ -290,16 +296,16 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.symbols, 0, 1)
         check_layout.addWidget(self.exclude, 1, 1)
         group_layout.addWidget(self.options_widget)
-        group_layout.addStretch(1)
+        group_layout.addStretch(0)
 
         self.generate_button = QPushButton('🔑  Passwort generieren')
         self.generate_button.setObjectName('primaryButton')
-        self.generate_button.setMinimumHeight(58)
+        self.generate_button.setMinimumHeight(45)
         self.generate_button.clicked.connect(self.generate)
         group_layout.addWidget(self.generate_button)
 
         footer = QHBoxLayout()
-        footer.setSpacing(7)
+        footer.setSpacing(5)
         self.show_button = QPushButton('◉  Anzeigen')
         self.show_button.setObjectName('bottomAction')
         self.show_button.setCheckable(True)
@@ -487,8 +493,17 @@ class PasswordWindow(QMainWindow):
         self.restore_colors()
         self.restore_background_image()
         self.tabs.currentChanged.connect(self.on_tab_changed)
+        # The startup check and repeating 2-hour timer are both disabled in
+        # CI/screenshot modes, so these runs never contact GitHub.
+        self.update_timer = QTimer(self)
+        self.update_timer.setObjectName('periodicUpdateTimer')
+        self.update_timer.setInterval(UPDATE_CHECK_INTERVAL_MS)
+        self.update_timer.timeout.connect(self.check_for_updates)
         if auto_check:
+            self.update_timer.start()
             QTimer.singleShot(800, self.check_for_updates)
+        self.on_tab_changed(self.tabs.currentIndex())
+        self.update_navigation_labels()
         if self.reporter is not None:
             self.reporter.note('UI_STARTED', 'neon interface ready', force=True)
 
@@ -628,15 +643,37 @@ class PasswordWindow(QMainWindow):
             'der Systemzwischenablage zugreifen können.'
         )
         layout.addWidget(guide, 1)
+
+        info_actions = QHBoxLayout()
+        self.visual_guide_button = QPushButton('▣  Bildliche Anleitung')
+        self.visual_guide_button.setObjectName('visualGuideButton')
+        self.visual_guide_button.setToolTip('Drei Bildschirmbilder mit Erklärungen ansehen')
+        self.visual_guide_button.clicked.connect(
+            lambda: self.build_visual_guide_dialog(dialog).exec()
+        )
+        info_actions.addWidget(self.visual_guide_button, 1)
         close = QPushButton('Schließen')
         close.clicked.connect(dialog.accept)
-        layout.addWidget(close)
+        info_actions.addWidget(close)
+        layout.addLayout(info_actions)
         return dialog
+
+    def build_visual_guide_dialog(self, parent=None):
+        # This imports only reusable Qt widgets; never changes files or settings.
+        from visual_help import create_visual_guide
+        return create_visual_guide(self, parent=parent)
 
     def show_info(self):
         self.build_info_dialog().exec()
 
     def on_tab_changed(self, index):
+        # The generator fits the supported minimum height without scrolling.
+        # Settings and release history may scroll independently as needed.
+        self.scroll_area.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff if index == 0
+            else Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.scroll_area.verticalScrollBar().setValue(0)
         for position, button in enumerate(self.nav_buttons):
             button.setChecked(position == index)
         if (index == 2 and self._auto_check and not self._release_history_loaded
@@ -714,18 +751,39 @@ class PasswordWindow(QMainWindow):
         if selected.isValid():
             self.select_color(combo, selected.name(), '#101827')
 
+    def update_navigation_labels(self):
+        """Compact top-right text without hiding an available-update marker."""
+        compact = self.width() < 720
+        labels = (('⌑ Passwort', '⚙ Design', '↻ Updates')
+                  if compact else
+                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Updates'))
+        for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
+            if index == 2 and self._available_update:
+                label += ' • NEU'
+            if button.text() != label:
+                button.setText(label)
+
+    def set_update_indicator(self, version=None):
+        """Show a persistent, contrast-rich update hint on the Updates button."""
+        self._available_update = version
+        button = self.nav_buttons[2]
+        button.setProperty('updateAvailable', bool(version))
+        button.setToolTip(
+            f'Neue Version {version} verfügbar – zum Installieren öffnen'
+            if version else 'Nach neuen Versionen suchen'
+        )
+        self.update_navigation_labels()
+        # Qt stylesheet dynamic properties need the affected widget re-polished.
+        button.style().unpolish(button)
+        button.style().polish(button)
+        button.update()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         if hasattr(self, 'nav_buttons'):
-            compact = self.width() < 650
-            labels = (('⌑  Passwort', '⚙  Design', '↻  Update')
-                      if compact else
-                      ('⌑  Passwort', '⚙  Einstellungen', '↻  Updates'))
-            for button, label in zip(self.nav_buttons, labels):
-                if button.text() != label:
-                    button.setText(label)
+            self.update_navigation_labels()
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
-            compact = self.width() < 730
+            compact = self.width() < 680
             if compact != self._compact_options:
                 self._compact_options = compact
                 boxes = (self.upper, self.lower, self.digits, self.symbols, self.exclude)
@@ -908,6 +966,8 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Ungültige Versionsnummer bei GitHub.')
             if not is_newer_release(latest_version, APP_VERSION):
                 self.latest_asset = None
+                self.latest_version = None
+                self.set_update_indicator()
                 self.update_status.setText(f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
                 return
             assets = response.get('assets', [])
@@ -923,6 +983,7 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Der GitHub-Downloadlink ist ungültig.')
             self.latest_asset = asset
             self.latest_version = latest_version
+            self.set_update_indicator(latest_version)
             self.update_status.setText(f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
             self.download_button.show()
         except (ValueError, TypeError, KeyError, UnicodeDecodeError) as error:
@@ -1090,6 +1151,7 @@ class PasswordWindow(QMainWindow):
                         f'version={self.latest_version}', force=True,
                     )
                 installed_successfully = True
+                self.set_update_indicator()
                 self.progress_bar.setRange(0, 100)
                 self.progress_bar.setValue(100)
                 self.update_status.setText(
@@ -1115,6 +1177,7 @@ class PasswordWindow(QMainWindow):
                         force=True,
                     )
             installed_successfully = True
+            self.set_update_indicator()
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(100)
             self.update_status.setText(

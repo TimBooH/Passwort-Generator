@@ -74,17 +74,17 @@ def neon_stylesheet(background, foreground, accent=None):
     return f"""
 QMainWindow {{ background-color: {background}; }}
 QLabel#brandTitle {{
-    color: {fg}; font-size: 26px; font-weight: 850;
+    color: {fg}; font-size: 23px; font-weight: 850;
 }}
 QLabel#brandSubtitle {{
-    color: {bright}; font-size: 12px;
+    color: {bright}; font-size: 11px;
 }}
 QLabel#brandLock {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
         stop:0 {tab_selected}, stop:1 {background});
-    color: #FFE28C; font-size: 29px;
+    color: #FFE28C; font-size: 24px;
     border: 1px solid {accent};
-    border-radius: 14px; padding: 9px;
+    border-radius: 12px; padding: 5px;
 }}
 QLabel#neonHint {{ color: {muted}; font-size: 11px; }}
 QLabel#strengthCaption {{ color: {fg}; font-size: 12px; font-weight: 700; }}
@@ -105,11 +105,22 @@ QPushButton#navButton {{
     color: {fg};
     background: {panel};
     border: 1px solid {border};
-    border-radius: 10px;
-    min-height: 29px;
-    padding: 7px 10px;
-    font-size: 12px;
+    border-radius: 8px;
+    min-height: 22px;
+    padding: 4px 7px;
+    font-size: 11px;
     font-weight: 700;
+}}
+QPushButton#navButton[updateAvailable="true"] {{
+    border: 2px solid {bright};
+    color: {accent_text};
+    background: {accent};
+    font-weight: 850;
+}}
+QPushButton#navButton[updateAvailable="true"]:hover {{
+    border-color: {accent};
+    background: {bright};
+    color: {accent_text};
 }}
 QPushButton#navButton:hover:!checked {{
     color: {bright};
@@ -125,10 +136,10 @@ QPushButton#infoNavButton {{
     color: {fg};
     background: {panel};
     border: 1px solid {border};
-    border-radius: 10px;
-    min-height: 29px;
-    padding: 7px 10px;
-    font-size: 12px;
+    border-radius: 8px;
+    min-height: 22px;
+    padding: 4px 7px;
+    font-size: 11px;
     font-weight: 700;
 }}
 QPushButton#infoNavButton:hover {{
@@ -140,15 +151,15 @@ QPushButton {{
     background: {panel};
     border: 1px solid {border};
     border-radius: 10px;
-    min-height: 29px;
-    padding: 7px 13px;
+    min-height: 23px;
+    padding: 5px 10px;
     font-weight: 650;
 }}
 QPushButton:hover {{ border: 1px solid {bright}; background: {panel_hover}; }}
 QPushButton:pressed {{ background: {tab_selected}; }}
 QPushButton#modeButton {{
     background: {field}; border: 1px solid {border}; border-radius: 8px;
-    font-size: 13px; font-weight: 700; padding: 8px 5px;
+    font-size: 12px; font-weight: 700; padding: 5px 5px;
 }}
 QPushButton#modeButton:checked {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
@@ -156,7 +167,7 @@ QPushButton#modeButton:checked {{
     border: 2px solid {bright}; color: {accent_text};
 }}
 QPushButton#squareAction {{
-    font-size: 19px; color: {bright}; padding: 5px; min-width: 42px;
+    font-size: 18px; color: {bright}; padding: 4px; min-width: 33px;
 }}
 QPushButton#primaryButton {{
     color: {accent_text};
@@ -164,7 +175,7 @@ QPushButton#primaryButton {{
         stop:0 {primary_top}, stop:0.25 {accent},
         stop:0.65 {color.darker(130).name()}, stop:1 {primary_bottom});
     border: 2px solid {bright}; border-radius: 12px;
-    min-height: 43px; font-size: 15px; font-weight: 850;
+    min-height: 37px; font-size: 14px; font-weight: 850;
 }}
 QPushButton#primaryButton:hover {{
     background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
@@ -173,25 +184,25 @@ QPushButton#primaryButton:hover {{
 }}
 QPushButton#bottomAction {{
     border: 1px solid {border}; background: {field};
-    min-height: 29px; font-size: 12px;
+    min-height: 23px; font-size: 11px;
 }}
 QLineEdit, QSpinBox, QComboBox {{
     color: {fg};
     background: {field};
     border: 1px solid {border}; border-radius: 10px;
-    min-height: 25px; padding: 7px 10px;
+    min-height: 23px; padding: 5px 8px;
     selection-background-color: {accent};
 }}
 QLineEdit#passwordOutput {{
     font-size: 14px;
-    padding: 9px 15px;
-    min-height: 39px;
+    padding: 7px 12px;
+    min-height: 32px;
     border: 1px solid {border};
 }}
 QLineEdit#passwordOutput:focus {{ border: 1px solid {bright}; }}
 QCheckBox {{
     color: {fg}; background: transparent;
-    spacing: 9px; padding: 5px 2px;
+    spacing: 7px; padding: 2px 1px;
     font-size: 12px;
 }}
 QCheckBox::indicator {{
@@ -258,6 +269,21 @@ QListWidget#releaseList::item {{
 QListWidget#releaseList::item:selected {{
     color: {accent_text};
     background: {accent};
+}}
+QPushButton#visualGuideButton {{
+    background: {accent};
+    color: {accent_text};
+    border: 1px solid {bright};
+    font-weight: 750;
+}}
+QLabel#visualGuideTitle {{
+    color: {bright};
+    font-size: 14px;
+    font-weight: 800;
+}}
+QLabel#visualGuideDescription {{
+    color: {fg};
+    font-size: 12px;
 }}
 QLabel#globalStatus {{
     color: {muted}; font-size: 11px; padding: 0 5px;

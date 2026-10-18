@@ -1,12 +1,11 @@
-# PasswortGenerator v0.07.0 – Navigation, Glas & Farben
+# PasswortGenerator v0.08.0 – Kleineres Menü und Update-Hinweis
 
-**Schritt 7 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 8 von 100** bis zur Vollversion 1.0.0.
 
-- Navigation **Passwort · Einstellungen · Updates · Info** nach oben rechts verschoben.
-- Den unteren Info-Button und den Crash-Log-Button entfernt; automatische Crash-Protokollierung bleibt aktiv.
-- Manuelle Textfarbauswahl entfernt – Schriftfarbe wird automatisch kontrastreich gewählt.
-- Glaskacheln deutlich **transparenter**; Farbton folgt dem ausgewählten Hintergrund.
-- Akzentfarbe mit Helligkeits-/Kontrastprüfung; reagiert auch auf eigene Hintergrundbilder.
-- **Echter App-Screenshot** wird während des Linux-Builds für die README aufgenommen.
+- **„Updates • NEU“** oben rechts, sobald eine neue Windows- oder Linux-Version bereitsteht.
+- Updateprüfung beim Start und danach **alle 2 Stunden**, solange die App geöffnet ist.
+- Kleinere Navigationsbuttons oben rechts und kompaktere Passwortseite **ohne Scrollen**.
+- **Info → Bildliche Anleitung** zeigt drei echte Anwendungsansichten und Erklärungen.
+- Alle Neuerungen für **Windows 10/11 x64** und **Linux x86_64**.
 
-Passwort-, Passphrase-, Update- und Versionshistorie bleiben unverändert nutzbar.
+Die Passworterzeugung ist weiterhin offline möglich. Updates werden nur nach Bestätigung installiert.

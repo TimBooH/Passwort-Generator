@@ -61,7 +61,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt "pyinstaller==6.22.3" pillow
           if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
-          python -m py_compile main.py glass_ui.py neon_style.py theme_colors.py release_history.py password_core.py version.py updater.py diagnostics.py windows_support.py
+          python -m py_compile main.py glass_ui.py neon_style.py theme_colors.py release_history.py password_core.py version.py updater.py diagnostics.py windows_support.py visual_help.py
           if ($LASTEXITCODE -ne 0) { throw 'Syntax check failed' }
           foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_windows_installer.py')) {
             python -m unittest discover -s tests -p $test -v
@@ -71,6 +71,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows GUI navigation smoke failed' }
           python tests/smoke_theme_history_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows theme/history smoke failed' }
+          python tests/smoke_update_navigation_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows update badge / 2-hour timer / visual help smoke failed' }
 
       - name: Build Windows exe and run packaged smoke test
         if: steps.version.outputs.build == 'true'

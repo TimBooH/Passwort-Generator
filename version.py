@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.08.0 adds two-hour update checks, visible badge, compact pages,
+and an in-memory illustrated guide for Linux and Windows.
 Version 0.07.0 chooses accessible automatic text even on medium-tone backgrounds
 and preserves the accent hue rather than reusing the exact accent brightness.
 Version 0.07.0 verifies adaptive accent contrast across violet and muted themes.
@@ -15,7 +17,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.07.0"
+APP_VERSION = "0.08.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
