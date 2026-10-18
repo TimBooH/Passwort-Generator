@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-bit) | Linux (x86_64, e.g. CachyOS) |
 | --- | --- |
-| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.18.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.18.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.19.0/PasswortGenerator-x86_64.AppImage) |
 
 [All releases and installation scripts](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -22,12 +22,13 @@
 
 ## Features
 
-- **Passwords:** 8–128 characters, selectable character groups, and a strength indicator.
+- **Passwords:** 8–128 characters, strength indicator and profiles (Standard, Very secure, Simple and a custom profile).
 - **Passphrases:** 4–10 words, configurable separators, and an optional random two-digit number.
-- **Glass design:** multiple color themes, automatic accent colors, and custom background images.
+- **Glass design:** refined glossy highlights, focus states, color themes and custom wallpapers.
 - **Language:** One setting for the entire app, including release notes and update messages. Choose German or English under **Settings → Appearance**; your preference is saved.
-- **Updates:** checks at startup and every 2 hours; release history and changes in the Changelog.
-- **Usability:** session-only password history, visual walkthrough, and saved window size/position.
+- **Updates:** automatic checking with version comparison and a short changes preview, plus the full Changelog below.
+- **Security:** optional clipboard clearing after 30, 60 or 120 seconds, only if the copied secret is still there.
+- **Usability:** session-only password history, guided tour and saved window size/position. Navigation: Password → Update → Settings → Info.
 
 Passwords are generated locally using Python `secrets`. They are not sent to a server or saved permanently.
 
@@ -62,7 +63,7 @@ python -m unittest discover -s tests -v
 
 Windows installers and Linux AppImages are built using [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions).
 
-**Version 0.18.0 · Step 18 of 100 toward the 1.0.0 release.**
+**Version 0.19.0 · Step 19 of 100 toward the 1.0.0 release.**
 [Release notes](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
