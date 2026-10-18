@@ -1,9 +1,9 @@
-# PasswortGenerator v0.13.0 – Changelog
+# PasswortGenerator v0.14.0 – Vereinfachte Oberfläche
 
-**Entwicklungsschritt 13 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 14 von 100** bis zur Vollversion 1.0.0.
 
-- Der bisherige Reiter **„Updates“** heißt jetzt **„Changelog“**.
-- Die Kachel für Änderungen und Versionen heißt ebenfalls **„Changelog“**.
-- Automatische Updateprüfung, Installation, Versions-Dropdown und Änderungsübersicht bleiben erhalten.
-- Die grafische Hilfe, die Erststart-Tour und die Tests wurden an die neue Beschriftung angepasst.
-- Verfügbar für **Windows und Linux**.
+- Der Navigationsbutton heißt wieder **„Update“** (mit **„NEU“** bei verfügbarem Update).
+- **Update:** Die bisherigen Versionen und **„Änderungen & Versionen“** stehen zusammen in **einer Glaskachel „Changelog“**.
+- **Einstellungen/Design:** Farbschema, Akzentfarbe und Hintergrundbild befinden sich jetzt in **einer einzigen Kachel „Erscheinungsbild“**.
+- Die automatische Updateprüfung, das Versions-Dropdown, die grafische Erklärung und die gespeicherte Fensterposition bleiben erhalten.
+- Anpassungen und Regressionstests für **Linux und Windows**.
