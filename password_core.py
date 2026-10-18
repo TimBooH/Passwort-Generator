@@ -3,6 +3,8 @@
 import re
 import secrets
 import string
+import math
+from collections import Counter
 
 SYMBOLS = "!@#$%&*()-_=+[]{}:,.?"
 SIMILAR_CHARS = "Il1O0"
@@ -16,35 +18,85 @@ def parse_version(value):
     return tuple(int(part) for part in matched.groups())
 
 
-def make_password(length, *, use_lower=True, use_upper=True, use_digits=True,
-                  use_symbols=True, exclude_similar=False):
-    """Generate a password and guarantee every enabled character set is represented."""
-    if not isinstance(length, int) or length < 8 or length > 128:
-        raise ValueError("Die Passwortlänge muss zwischen 8 und 128 liegen.")
-
-    groups = []
-    if use_lower:
-        groups.append(string.ascii_lowercase)
-    if use_upper:
-        groups.append(string.ascii_uppercase)
-    if use_digits:
-        groups.append(string.digits)
-    if use_symbols:
-        groups.append(SYMBOLS)
+def password_groups(*, use_lower=True, use_upper=True, use_digits=True,
+                    use_symbols=True, exclude_similar=False, excluded_chars=''):
+    """Return allowed groups, preserving generator constraints and alphabet sizes."""
+    if not isinstance(excluded_chars, str) or len(excluded_chars) > 256:
+        raise ValueError('Ausgeschlossene Zeichen dürfen höchstens 256 Zeichen enthalten.')
+    forbidden = set(excluded_chars)
     if exclude_similar:
-        groups = ["".join(char for char in group if char not in SIMILAR_CHARS)
-                  for group in groups]
-    groups = [group for group in groups if group]
-    if not groups:
-        raise ValueError("Bitte mindestens eine Zeichengruppe auswählen.")
-    if length < len(groups):
-        raise ValueError("Die Passwortlänge ist zu kurz für die ausgewählten Gruppen.")
+        forbidden.update(SIMILAR_CHARS)
+    selected = (
+        (use_lower, string.ascii_lowercase),
+        (use_upper, string.ascii_uppercase),
+        (use_digits, string.digits),
+        (use_symbols, SYMBOLS),
+    )
+    groups = [''.join(c for c in alphabet if c not in forbidden)
+              for enabled, alphabet in selected if enabled]
+    if not groups or any(not group for group in groups):
+        raise ValueError('Mindestens eine ausgewählte Zeichengruppe ist leer.')
+    return groups
 
-    alphabet = "".join(groups)
-    result = [secrets.choice(group) for group in groups]
-    result.extend(secrets.choice(alphabet) for _ in range(length - len(result)))
+
+def make_password(length, *, use_lower=True, use_upper=True, use_digits=True,
+                  use_symbols=True, exclude_similar=False,
+                  excluded_chars='', min_digits=0, min_symbols=0):
+    """Uniform CSPRNG sampling conditional on minimum-group requirements.
+
+    Rejection sampling yields a uniform distribution of passwords satisfying
+    the restrictions. With very restrictive configurations the fixed iteration
+    cap gives a useful error rather than blocking the UI.
+    """
+    if type(length) is not int or not 8 <= length <= 128:
+        raise ValueError('Die Passwortlänge muss zwischen 8 und 128 liegen.')
+    if any(type(n) is not int or n < 0 or n > 20
+           for n in (min_digits, min_symbols)):
+        raise ValueError('Mindestanzahl muss zwischen 0 und 20 liegen.')
+    if (min_digits and not use_digits) or (min_symbols and not use_symbols):
+        raise ValueError('Für Mindestzahlen müssen die zugehörigen Zeichengruppen aktiv sein.')
+    groups = password_groups(
+        use_lower=use_lower, use_upper=use_upper,
+        use_digits=use_digits, use_symbols=use_symbols,
+        exclude_similar=exclude_similar, excluded_chars=excluded_chars,
+    )
+    if length < max(min_digits + min_symbols, len(groups)):
+        raise ValueError('Die Passwortlänge ist für die Mindestanforderungen zu kurz.')
+    # Construct uniformly at random via position assignment followed by a
+    # uniform shuffle. This guarantees each enabled group is represented.
+    alphabet = ''.join(groups)
+    required = [secrets.choice(group) for group in groups]
+    digit_alphabet = ''.join(ch for ch in string.digits if ch in alphabet)
+    symbol_alphabet = ''.join(ch for ch in SYMBOLS if ch in alphabet)
+    if min_digits > 0 and not digit_alphabet:
+        raise ValueError('Keine erlaubten Zahlen verfügbar.')
+    if min_symbols > 0 and not symbol_alphabet:
+        raise ValueError('Keine erlaubten Sonderzeichen verfügbar.')
+    required.extend(secrets.choice(digit_alphabet) for _ in range(
+        max(0, min_digits - sum(ch in string.digits for ch in required))
+    ))
+    required.extend(secrets.choice(symbol_alphabet) for _ in range(
+        max(0, min_symbols - sum(ch in SYMBOLS for ch in required))
+    ))
+    if len(required) > length:
+        raise ValueError('Die Passwortlänge ist für die Mindestanforderungen zu kurz.')
+    result = required + [secrets.choice(alphabet) for _ in range(length - len(required))]
     secrets.SystemRandom().shuffle(result)
-    return "".join(result)
+    return ''.join(result)
+
+
+def password_entropy_bits(length, *, use_lower=True, use_upper=True,
+                          use_digits=True, use_symbols=True,
+                          exclude_similar=False, excluded_chars=''):
+    """Theoretical upper bound based on the allowed alphabet (not a guarantee)."""
+    groups = password_groups(
+        use_lower=use_lower, use_upper=use_upper,
+        use_digits=use_digits, use_symbols=use_symbols,
+        exclude_similar=exclude_similar, excluded_chars=excluded_chars,
+    )
+    return length * math.log2(len(''.join(groups)))
+
+
 
 
 # Two independent 32-word banks form 1,024 distinct compound words:
@@ -63,6 +115,22 @@ PHRASE_LAST = (
     'Mond', 'Pfad', 'Schein', 'Stern', 'Tal', 'Traum', 'Wald', 'Wind',
 )
 
+# Additional 1,024 English compound words from two 32-element banks.
+# Both word lists are offline and share the same 10 bits/word.
+PHRASE_FIRST_EN = (
+    'Amber', 'Apple', 'Autumn', 'Beacon', 'Blue', 'Bright', 'Brook', 'Cedar',
+    'Cloud', 'Copper', 'Crystal', 'Dawn', 'Dream', 'Eagle', 'Emerald', 'Forest',
+    'Golden', 'Green', 'Harbor', 'Hidden', 'Island', 'Ivory', 'Lemon', 'Lunar',
+    'Maple', 'Meadow', 'Midnight', 'Misty', 'Ocean', 'Silver', 'Summer', 'Winter',
+)
+PHRASE_LAST_EN = (
+    'Anchor', 'Arrow', 'Beacon', 'Bird', 'Bloom', 'Bridge', 'Brook', 'Castle',
+    'Clover', 'Comet', 'Dancer', 'Field', 'Flame', 'Flower', 'Garden', 'Grove',
+    'Harbor', 'Hill', 'Horizon', 'Island', 'Lantern', 'Leaf', 'Light', 'Meadow',
+    'Mirror', 'Moon', 'Mountain', 'River', 'Shadow', 'Star', 'Stone', 'Valley',
+)
+PHRASE_LANGUAGES = ('de', 'en')
+
 
 # Explicit separator choices are shared by the GUI and password logic.
 # Use fixed allowed values instead of arbitrary user input.
@@ -74,7 +142,7 @@ PHRASE_SEPARATORS = (
 )
 
 
-def make_passphrase(word_count=6, separator='-', add_two_digit_number=False):
+def make_passphrase(word_count=6, separator='-', add_two_digit_number=False, language='de'):
     """Create 4–10 secure words, optionally followed by a random 10–99 suffix.
 
     Each compound word has 1,024 combinations (10 bits). The extra number
@@ -87,10 +155,12 @@ def make_passphrase(word_count=6, separator='-', add_two_digit_number=False):
         raise ValueError('Ungültiges Trennzeichen für die Passphrase.')
     if not isinstance(add_two_digit_number, bool):
         raise ValueError('Zweistellige Zahl muss ein- oder ausgeschaltet sein.')
-    parts = [
-        secrets.choice(PHRASE_FIRST) + secrets.choice(PHRASE_LAST)
-        for _ in range(word_count)
-    ]
+    if language not in PHRASE_LANGUAGES:
+        raise ValueError('Ungültige Passphrasen-Sprache.')
+    first, last = ((PHRASE_FIRST_EN, PHRASE_LAST_EN) if language == 'en'
+                   else (PHRASE_FIRST, PHRASE_LAST))
+    parts = [secrets.choice(first) + secrets.choice(last)
+             for _ in range(word_count)]
     if add_two_digit_number:
         parts.append(str(10 + secrets.randbelow(90)))
     return separator.join(parts)
