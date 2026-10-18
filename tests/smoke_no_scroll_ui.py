@@ -28,9 +28,11 @@ assert window.changelog_card.body.spacing() == 3
 assert window.changelog_card.layout().contentsMargins().top() == 5
 
 controls = (
-    (window.generate_button, window.history_button, window.length_slider),
+    (window.generate_button, window.history_button, window.length_slider,
+     window.preset_combo, window.save_preset_button),
     (window.scheme_combo, window.bg_combo, window.choose_background_button,
-     window.clear_background_button, window.image_mode_combo),
+     window.clear_background_button, window.image_mode_combo,
+     window.clear_clipboard_checkbox, window.clipboard_timeout_combo),
     (window.check_button, window.changelog_view, window.release_combo,
      window.release_history_status),
     (window.info_credit, window.info_version, window.visual_guide_button,
