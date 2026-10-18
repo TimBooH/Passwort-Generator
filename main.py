@@ -55,6 +55,27 @@ def field_color(hex_color):
     return color.lighter(135).name() if contrast_color(hex_color) == '#FFFFFF' else color.darker(105).name()
 
 
+class CurrentPageStack(QStackedWidget):
+    """Advertise only the active page's height to the parent scroll area.
+
+    Qt's default QStackedWidget calculates a maximum across all pages. The
+    tall Update/history page otherwise forces an unnecessary scrollbar even
+    while the much shorter password page is visible.
+    """
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.currentChanged.connect(lambda _index: self.updateGeometry())
+
+    def sizeHint(self):
+        page = self.currentWidget()
+        return page.sizeHint() if page is not None else super().sizeHint()
+
+    def minimumSizeHint(self):
+        page = self.currentWidget()
+        return page.minimumSizeHint() if page is not None else super().minimumSizeHint()
+
+
 class PasswordWindow(QMainWindow):
     def __init__(self, auto_check=True, reporter=None):
         super().__init__()
@@ -173,7 +194,7 @@ class PasswordWindow(QMainWindow):
         nav_layout.addWidget(self.info_nav_button)
         content_layout.addWidget(self.nav_container)
 
-        self.tabs = QStackedWidget(content)
+        self.tabs = CurrentPageStack(content)
         self.tabs.setObjectName('mainPages')
         self.tabs.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         content_layout.addWidget(self.tabs, 1)
@@ -674,6 +695,7 @@ class PasswordWindow(QMainWindow):
             else Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
         self.scroll_area.verticalScrollBar().setValue(0)
+        self.tabs.updateGeometry()
         for position, button in enumerate(self.nav_buttons):
             button.setChecked(position == index)
         if (index == 2 and self._auto_check and not self._release_history_loaded
