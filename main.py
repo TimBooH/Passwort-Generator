@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtGui import QColor, QFont, QIcon
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
@@ -24,6 +24,7 @@ from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_
                           accessible_text_color, preset_colors)
 from release_history import normalized_releases, compact_changelog
 from updater import install_staged_appimage, restart_updated_app, staging_path
+from windows_support import WINDOWS_INSTALLER_NAME, start_verified_windows_installer
 from password_core import make_password, make_passphrase, estimate_strength, parse_version
 from version import APP_VERSION, is_newer_release, version_status
 
@@ -79,6 +80,11 @@ class PasswordWindow(QMainWindow):
 
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}')
         self.resize(850, 865)
+        if os.name == 'nt':
+            icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+            icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
+            if icon_path.is_file():
+                self.setWindowIcon(QIcon(str(icon_path)))
         self.setMinimumSize(460, 540)
 
         scroll = QScrollArea(self)
@@ -905,11 +911,15 @@ class PasswordWindow(QMainWindow):
                 self.update_status.setText(f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
                 return
             assets = response.get('assets', [])
-            asset = next((item for item in assets if item.get('name') == APPIMAGE_NAME), None)
+            artifact_name = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
+            asset = next((item for item in assets if item.get('name') == artifact_name), None)
             if asset is None:
-                raise ValueError('Im neuesten Release ist noch kein Linux-AppImage vorhanden.')
+                raise ValueError(
+                    'Im neuesten Release ist noch kein '
+                    + ('Windows-Installer.' if os.name == 'nt' else 'Linux-AppImage.')
+                )
             url = asset.get('browser_download_url', '')
-            if not url.startswith(RELEASE_DOWNLOAD_PREFIX) or not url.endswith('/' + APPIMAGE_NAME):
+            if not url.startswith(RELEASE_DOWNLOAD_PREFIX) or not url.endswith('/' + artifact_name):
                 raise ValueError('Der GitHub-Downloadlink ist ungültig.')
             self.latest_asset = asset
             self.latest_version = latest_version
@@ -985,12 +995,20 @@ class PasswordWindow(QMainWindow):
             return
         if self.reporter is not None:
             self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self.latest_version}', force=True)
-        self.download_installed = INSTALLED_APPIMAGE.is_file() and os.access(INSTALLED_APPIMAGE.parent, os.W_OK)
-        if self.download_installed:
+        self.download_installed = (
+            os.name != 'nt'
+            and INSTALLED_APPIMAGE.is_file()
+            and os.access(INSTALLED_APPIMAGE.parent, os.W_OK)
+        )
+        download_location = QStandardPaths.writableLocation(
+            QStandardPaths.StandardLocation.DownloadLocation
+        )
+        download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
+        if os.name == 'nt':
+            target = download_dir / f'PasswortGenerator-{self.latest_version}-Setup-x64.exe'
+        elif self.download_installed:
             target = INSTALLED_APPIMAGE
         else:
-            download_location = QStandardPaths.writableLocation(QStandardPaths.StandardLocation.DownloadLocation)
-            download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
             target = download_dir / f'PasswortGenerator-{self.latest_version}-x86_64.AppImage'
         stage = staging_path(target) if self.download_installed else target
         try:
@@ -1062,6 +1080,24 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Die SHA-256-Prüfsumme stimmt nicht überein!')
             if not self.save_file.commit():
                 raise OSError(self.save_file.errorString())
+            if os.name == 'nt':
+                # The Inno installer closes old files and restarts the updated
+                # application after successful installation.
+                start_verified_windows_installer(self.download_target)
+                if self.reporter is not None:
+                    self.reporter.note(
+                        'WINDOWS_UPDATE_SETUP_STARTED',
+                        f'version={self.latest_version}', force=True,
+                    )
+                installed_successfully = True
+                self.progress_bar.setRange(0, 100)
+                self.progress_bar.setValue(100)
+                self.update_status.setText(
+                    'Windows-Installer gestartet. Die App wird für das Update geschlossen …'
+                )
+                self.download_button.hide()
+                QTimer.singleShot(200, QApplication.instance().quit)
+                return
             os.chmod(self.download_stage, 0o755)
             if self.download_installed:
                 previous = install_staged_appimage(self.download_stage, self.download_target)
@@ -1127,6 +1163,24 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
     reporter.log('QT_ENVIRONMENT', f'Qt platform={app.platformName()}')
+    if '--verify-bundle' in sys.argv:
+        # Release CI calls the packaged executable on Windows. This validates
+        # Qt plugins, asset paths, icons and top-level navigation without
+        # making network requests or exposing generated passwords.
+        window = PasswordWindow(auto_check=False, reporter=reporter)
+        window.resize(920, 770)
+        window.show()
+        for _ in range(3):
+            app.processEvents()
+        healthy = (
+            window.tabs.count() == 3
+            and window.info_nav_button.isVisible()
+            and len(window.glass_cards) == 3
+            and window.length.value() == 20
+        )
+        window.close()
+        reporter.close()
+        sys.exit(0 if healthy else 3)
     window = PasswordWindow(reporter=reporter)
     app.aboutToQuit.connect(reporter.close)
     heartbeat = QTimer()

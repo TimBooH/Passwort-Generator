@@ -1,12 +1,12 @@
 # PasswortGenerator
 
-**Ein moderner Passwortgenerator für Linux mit anpassbarer Glasoberfläche, lokalen Hintergrundbildern und integrierter Updatefunktion.**
+**Ein moderner Passwortgenerator für Linux und Windows mit anpassbarer Glasoberfläche, lokalen Hintergrundbildern und integrierter Updatefunktion.**
 
 [![Latest Release](https://img.shields.io/github/v/release/TimBooH/Passwort-Generator?label=Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 [![Linux](https://img.shields.io/badge/Plattform-Linux%20x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white)](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 [![Build & Release](https://img.shields.io/github/actions/workflow/status/TimBooH/Passwort-Generator/build-and-release.yml?branch=main&label=Build%20%26%20Release&style=flat-square)](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)
 
-PasswortGenerator ist eine Desktop-Anwendung für Linux, entwickelt mit **Python und Qt 6 (PySide6)**. Die Passworterzeugung erfolgt lokal mit dem kryptografisch sicheren Python-Modul `secrets`. Eine Internetverbindung ist dafür nicht erforderlich; sie wird lediglich für die optionale Updateprüfung und den Download neuer Versionen benötigt.
+PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt mit **Python und Qt 6 (PySide6)**. Die Passworterzeugung erfolgt lokal mit dem kryptografisch sicheren Python-Modul `secrets`. Eine Internetverbindung ist dafür nicht erforderlich; sie wird lediglich für die optionale Updateprüfung und den Download neuer Versionen benötigt.
 
 **[Neueste Version herunterladen](https://github.com/TimBooH/Passwort-Generator/releases/latest)** · [Installationsanleitung](#installation) · [Updates](#updates) · [Fehlerdiagnose](#fehlerdiagnose)
 
@@ -59,20 +59,33 @@ Die dritte Stelle ist für kleine Korrekturen innerhalb eines Schritts reservier
 
 ## Download
 
-Die aktuelle Linux-Version findest du unter **[GitHub Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest)**.
+Aktuelle Installationsdateien für **Linux x86_64 und Windows x64** findest du unter **[GitHub Releases](https://github.com/TimBooH/Passwort-Generator/releases/latest)**.
 
 | Datei | Zweck |
 | --- | --- |
 | `PasswortGenerator-x86_64.AppImage` | Portable Linux-Anwendung |
+| `PasswortGenerator-Setup-x64.exe` | Windows-Installer mit Startmenü-Verknüpfung und Deinstallation |
+| `SHA256SUMS-windows.txt` | Prüfsumme des Windows-Installers |
 | `install.sh` | Benutzerinstallation mit Anwendungsmenü-Eintrag |
 | `uninstall.sh` | Entfernt die installierte Anwendung und den Menüeintrag |
 | `SHA256SUMS` | SHA-256-Prüfsumme des AppImages |
 
-**Systemanforderungen:** Linux auf x86_64-Basis, beispielsweise CachyOS mit KDE Plasma. Für die Ausführung von AppImages kann je nach Distribution eine kompatible FUSE-Laufzeit erforderlich sein.
+**Systemanforderungen:** Linux x86_64 (z. B. CachyOS/KDE) oder Windows 10/11 x64. Für AppImages kann eine kompatible FUSE-Laufzeit erforderlich sein. Der Windows-Installer ist noch nicht digital signiert; Microsoft SmartScreen kann deshalb eine Warnung anzeigen.
 
 ## Installation
 
-### Empfohlen: Installation mit Menüeintrag
+### Windows 10/11 (64 Bit)
+
+1. Lade **[PasswortGenerator-Setup-x64.exe](https://github.com/TimBooH/Passwort-Generator/releases/latest)** aus dem aktuellen GitHub-Release herunter.
+2. Öffne die EXE-Datei und folge dem deutschsprachigen Installationsassistenten.
+3. Der Installer legt einen **Startmenü-Eintrag** an. Eine Desktop-Verknüpfung kannst du optional aktivieren.
+4. Unter **Windows-Einstellungen → Apps → Installierte Apps** kannst du PasswortGenerator später deinstallieren.
+
+Die Installation erfolgt standardmäßig pro Benutzer unter `%LOCALAPPDATA%\Programs\PasswortGenerator` und benötigt keine Administratorrechte. Eine neuere Version kann über die bestehende installiert werden; die Einstellungen bleiben dabei erhalten. Der Update-Reiter verwendet unter Windows den passenden Installer und unter Linux das AppImage.
+
+**Hinweis:** Die EXE ist nicht mit einem kostenpflichtigen Code-Signing-Zertifikat signiert. Windows SmartScreen kann beim ersten Start eine Warnung zeigen. Lade sie ausschließlich aus dem offiziellen GitHub-Release herunter und prüfe bei Bedarf `SHA256SUMS-windows.txt`.
+
+### Linux: Installation mit Menüeintrag
 
 1. Lade `install.sh` von der [Release-Seite](https://github.com/TimBooH/Passwort-Generator/releases/latest) herunter.
 2. Öffne ein Terminal im Downloadordner.
@@ -226,17 +239,21 @@ QT_QPA_PLATFORM=offscreen PYTHONPATH=. python tests/smoke_update_gui.py
 
 ### Build und Release
 
-Das Repository verwendet [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml) mit einem gemeinsamen Job für Tests, AppImage-Build und Veröffentlichung.
+Das Repository verwendet zwei GitHub-Workflows: **[Linux AppImage](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-and-release.yml)** und **[Windows Installer](https://github.com/TimBooH/Passwort-Generator/actions/workflows/build-windows.yml)**. Windows wird auf einem echten Windows-Runner mit PyInstaller und Inno Setup kompiliert. Beide Installationsdateien gehören zum selben Versions-Release.
 
 Ein automatischer Release-Lauf startet bei einer Änderung von `version.py` auf `main`. Änderungen am Workflow lösen ebenfalls einen Versionscheck aus; ein bereits existierendes Release wird übersprungen. Manuelle Ausführung ist über **Run workflow** möglich.
 
-**Für ein neues Release:** Programmänderungen und Tests abschließen, `APP_VERSION` in `version.py` erhöhen, `RELEASE_NOTES.md` aktualisieren und alles gemeinsam committen. Nach bestandenen Tests werden das AppImage, Installationsskripte und `SHA256SUMS` veröffentlicht. Reine README-Änderungen lösen keinen Release-Build aus.
+**Für ein neues Release:** Programmänderungen und Tests abschließen, `APP_VERSION` in `version.py` erhöhen, `RELEASE_NOTES.md` aktualisieren und alles gemeinsam committen. Nach bestandenen Tests werden das AppImage, Installationsskripte und `SHA256SUMS` veröffentlicht. Reine README-Änderungen lösen keinen Release-Build aus. Der Windows-Workflow wird bei einer neuen Versionsnummer oder nach einer Workflow-Änderung ausgeführt und überspringt bereits vorhandene Windows-Installer.
 
 ### Projektstruktur
 
 ```text
 Passwort-Generator/
 ├── .github/workflows/build-and-release.yml
+├── .github/workflows/build-windows.yml
+├── windows/PasswortGenerator.iss # Inno Setup: Windows-Installation
+├── windows_support.py        # Windows-Update-Übergabe
+├── tools/make_windows_icon.py # Generiert das .ico aus dem SVG
 ├── assets/
 ├── tests/
 │   ├── smoke_glossy_ui.py

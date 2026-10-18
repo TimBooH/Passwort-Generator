@@ -1,0 +1,128 @@
+name: Build Windows Installer (x64)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - version.py
+      - .github/workflows/build-windows.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: passwortgenerator-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: "1"
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check version and existing Windows installer
+        id: version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (python -c "from version import APP_VERSION; print(APP_VERSION)").Trim()
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            throw "Invalid application version: $version"
+          }
+          $tag = "v$version"
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          $assets = gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name' 2>$null
+          if ($LASTEXITCODE -eq 0 -and $assets -contains 'PasswortGenerator-Setup-x64.exe') {
+            "build=false" >> $env:GITHUB_OUTPUT
+            Write-Host "Windows installer already exists for $tag."
+          } else {
+            "build=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Building a new Windows x64 installer for $tag."
+          }
+
+      - uses: actions/setup-python@v6
+        if: steps.version.outputs.build == 'true'
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies and run Windows tests
+        if: steps.version.outputs.build == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt "pyinstaller==6.22.3" pillow
+          if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
+          python -m py_compile main.py glass_ui.py neon_style.py theme_colors.py release_history.py password_core.py version.py updater.py diagnostics.py windows_support.py
+          if ($LASTEXITCODE -ne 0) { throw 'Syntax check failed' }
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_windows_installer.py')) {
+            python -m unittest discover -s tests -p $test -v
+            if ($LASTEXITCODE -ne 0) { throw "Failed test file: $test" }
+          }
+          python tests/smoke_tabs_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows GUI navigation smoke failed' }
+          python tests/smoke_theme_history_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows theme/history smoke failed' }
+
+      - name: Build Windows exe and run packaged smoke test
+        if: steps.version.outputs.build == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/make_windows_icon.py
+          if ($LASTEXITCODE -ne 0) { throw 'Icon generation failed' }
+          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" main.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows PyInstaller failed' }
+          $executable = Join-Path $PWD 'dist\PasswortGenerator\PasswortGenerator.exe'
+          if (!(Test-Path $executable)) { throw 'Compiled Windows executable missing' }
+          $smoke = Start-Process -FilePath $executable -ArgumentList '--verify-bundle' -Wait -PassThru
+          if ($smoke.ExitCode -ne 0) {
+            throw "Bundled Windows application failed startup test: exit $($smoke.ExitCode)"
+          }
+
+      - name: Create installer using Inno Setup
+        if: steps.version.outputs.build == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+          }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler is missing' }
+          $version = (python -c "from version import APP_VERSION; print(APP_VERSION)").Trim()
+          & $iscc "/DMyAppVersion=$version" ".\windows\PasswortGenerator.iss"
+          if ($LASTEXITCODE -ne 0) { throw 'Windows setup compiler failed' }
+          $setup = 'release-windows\PasswortGenerator-Setup-x64.exe'
+          if (!(Test-Path $setup)) { throw 'Installer was not created' }
+          if ((Get-Item $setup).Length -lt 10MB) { throw 'Installer is unexpectedly small' }
+          $hash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  PasswortGenerator-Setup-x64.exe" | Set-Content -Path 'release-windows\SHA256SUMS-windows.txt' -Encoding ascii
+
+      - name: Publish installer to existing Linux/Windows release
+        if: steps.version.outputs.build == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "${{ steps.version.outputs.tag }}"
+          $found = $false
+          for ($i = 0; $i -lt 36; $i++) {
+            gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+            if ($LASTEXITCODE -eq 0) {
+              $found = $true
+              break
+            }
+            Start-Sleep -Seconds 8
+          }
+          if (!$found) { throw "Release $tag not found; refusing to publish unlinked Windows files" }
+          gh release upload $tag "release-windows\PasswortGenerator-Setup-x64.exe" "release-windows\SHA256SUMS-windows.txt" --repo $env:GITHUB_REPOSITORY --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Windows installer upload failed' }
+          gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name'
