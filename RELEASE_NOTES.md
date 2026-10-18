@@ -1,12 +1,9 @@
-# PasswortGenerator v0.12.0 – Übersichtlichere Kacheln
+# PasswortGenerator v0.13.0 – Changelog
 
-**Entwicklungsschritt 12 von 100** bis zur Vollversion 1.0.0.
+**Entwicklungsschritt 13 von 100** bis zur Vollversion 1.0.0.
 
-- **Updates:** „Bisherige Versionen“ jetzt als **Dropdown**, neueste Veröffentlichung zuerst.
-- **Updates:** Die Kachel **„Änderungen & Versionen“** erscheint separat **unter** der Versionsauswahl; der Changelog folgt der Auswahl.
-- **Updates:** Kleiner Button **„↻ Prüfen“**, links ausgerichtet.
-- **Info:** „Made by Jon Bovi“ und **„Anleitung & Hilfe“** haben jeweils eine eigene Glaskachel. Die grafische Erklärung bleibt erhalten.
-- **Fenster:** **Position und Größe beim Schließen speichern** und beim nächsten Öffnen wiederherstellen – auch maximierte Fenster.
-- Alle Änderungen für **Windows und Linux**; keine Seiten-Scrollleisten und keine gespeicherten Passwörter.
-
-Automatische Updateprüfung beim Start und alle zwei Stunden, Update-Popup sowie die Windows- und Linux-Installer bleiben erhalten.
+- Der bisherige Reiter **„Updates“** heißt jetzt **„Changelog“**.
+- Die Kachel für Änderungen und Versionen heißt ebenfalls **„Changelog“**.
+- Automatische Updateprüfung, Installation, Versions-Dropdown und Änderungsübersicht bleiben erhalten.
+- Die grafische Hilfe, die Erststart-Tour und die Tests wurden an die neue Beschriftung angepasst.
+- Verfügbar für **Windows und Linux**.
