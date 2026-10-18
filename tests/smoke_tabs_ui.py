@@ -22,7 +22,7 @@ assert tabs.currentIndex() == 0
 assert tabs.count() == 4
 assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Updates', 'Info')
 assert len(window.nav_buttons) == 3
-assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names)
+assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names[:3])
 assert all(button.isVisible() for button in window.nav_buttons)
 assert window.info_nav_button.isVisible()
 assert window.info_nav_button.accessibleName() == 'Info'
