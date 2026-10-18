@@ -170,9 +170,9 @@ class PasswordWindow(QMainWindow):
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
         self.nav_buttons = []
-        self.tab_names = ('Passwort', 'Einstellungen', 'Updates', 'Info')
+        self.tab_names = ('Passwort', 'Einstellungen', 'Changelog', 'Info')
         for index, (label, symbol) in enumerate((
-            ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Updates', '↻'),
+            ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Changelog', '↻'),
         )):
             button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
@@ -511,7 +511,7 @@ class PasswordWindow(QMainWindow):
         updates_page_layout.addWidget(versions_card, 0)
 
         # A second, separate glass tile below the version dropdown.
-        changelog_card = GlossyGlassCard('ÄNDERUNGEN & VERSIONEN')
+        changelog_card = GlossyGlassCard('CHANGELOG')
         changelog_card.setObjectName('changelogCard')
         self.secondary_cards.append(changelog_card)
         changelog_card.setSizePolicy(QSizePolicy.Policy.Expanding,
@@ -789,7 +789,7 @@ class PasswordWindow(QMainWindow):
             'jetzt im Update-Bereich ansehen? Es wird nichts automatisch installiert.'
         )
         show_button = popup.addButton(
-            'Updates öffnen', QMessageBox.ButtonRole.AcceptRole
+            'Changelog öffnen', QMessageBox.ButtonRole.AcceptRole
         )
         popup.addButton('Später', QMessageBox.ButtonRole.RejectRole)
         popup.buttonClicked.connect(
@@ -893,9 +893,9 @@ class PasswordWindow(QMainWindow):
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
-        labels = (('⌑ Passwort', '⚙ Design', '↻ Updates')
+        labels = (('⌑ Passwort', '⚙ Design', '↻ Changelog')
                   if compact else
-                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Updates'))
+                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Changelog'))
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
