@@ -1021,12 +1021,81 @@ class PasswordWindow(QMainWindow):
                 clipboard.clear()
                 self._set_ui(self.status, 'Kopiertes Passwort aus der Zwischenablage entfernt.')
 
+    def show_advanced_rules(self):
+        """Compact modal keeps the password page free from vertical scrolling."""
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self._t('Erweiterte Passwort-Regeln'))
+        dialog.setMinimumWidth(345)
+        form = QVBoxLayout(dialog)
+        rows = QGridLayout()
+        minimum_digits = QSpinBox()
+        minimum_digits.setRange(0, 20)
+        minimum_digits.setObjectName('minDigitsRule')
+        minimum_digits.setValue(self._advanced_rules['min_digits'])
+        minimum_symbols = QSpinBox()
+        minimum_symbols.setRange(0, 20)
+        minimum_symbols.setObjectName('minSymbolsRule')
+        minimum_symbols.setValue(self._advanced_rules['min_symbols'])
+        excluded_chars = QLineEdit(self._advanced_rules['excluded_chars'])
+        excluded_chars.setObjectName('excludedCharactersRule')
+        excluded_chars.setMaxLength(256)
+        rows.addWidget(QLabel(self._t('Mindestens Zahlen:')), 0, 0)
+        rows.addWidget(minimum_digits, 0, 1)
+        rows.addWidget(QLabel(self._t('Mindestens Sonderzeichen:')), 1, 0)
+        rows.addWidget(minimum_symbols, 1, 1)
+        rows.addWidget(QLabel(self._t('Zeichen ausschließen:')), 2, 0)
+        rows.addWidget(excluded_chars, 2, 1)
+        form.addLayout(rows)
+        form.addWidget(QLabel(self._t(
+            'Die Einstellungen werden lokal gespeichert, keine Passwörter.'
+        )))
+        buttons = QHBoxLayout()
+        cancel = QPushButton(self._t('Abbrechen'))
+        apply = QPushButton(self._t('Übernehmen'))
+        cancel.clicked.connect(dialog.reject)
+        apply.clicked.connect(dialog.accept)
+        buttons.addWidget(cancel)
+        buttons.addWidget(apply)
+        form.addLayout(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        values = {'min_digits': minimum_digits.value(),
+                  'min_symbols': minimum_symbols.value(),
+                  'excluded_chars': excluded_chars.text()}
+        self._advanced_rules = values
+        for name, value in values.items():
+            self.settings.setValue('password/' + name, value)
+        self.mark_password_preset_manual()
+        self._set_ui(self.status, 'Erweiterte Passwort-Regeln gespeichert.')
+
+    def show_security_analysis(self):
+        if not self.output.text():
+            QMessageBox.information(self, self._t('Sicherheitsanalyse'),
+                                    self._t('Bitte zuerst ein Passwort generieren.'))
+            return
+        text = (
+            f'{self._t("Geschätzte Entropie:")} {self._last_entropy_bits:.1f} Bit\n'
+            f'{self._t("Passwortstärke:")} {self.strength_label.text()}\n\n'
+            + self._t('Eine Schätzung, keine Garantie gegen Passwortdiebstahl.')
+        )
+        QMessageBox.information(self, self._t('Sicherheitsanalyse'), text)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if (event.type() == QEvent.Type.WindowDeactivate
+                and hasattr(self, 'privacy_focus_checkbox')
+                and self.privacy_focus_checkbox.isChecked()
+                and hasattr(self, 'show_button')
+                and self.show_button.isChecked()):
+            self.show_button.setChecked(False)
+
     def switch_mode(self, use_passphrase):
         """Switch between a random-character password and a word passphrase."""
         self._phrase_mode = bool(use_passphrase)
         self.password_mode_button.setChecked(not self._phrase_mode)
         self.passphrase_mode_button.setChecked(self._phrase_mode)
         self.options_widget.setVisible(not self._phrase_mode)
+        self.rules_button.setVisible(not self._phrase_mode)
         self.phrase_options_widget.setVisible(self._phrase_mode)
         self.preset_combo.setEnabled(not self._phrase_mode)
         self.save_preset_button.setEnabled(not self._phrase_mode)
@@ -1059,6 +1128,15 @@ class PasswordWindow(QMainWindow):
 
     def show_history(self):
         """Show only passwords from this session; never persist history."""
+        if self.history_confirm_checkbox.isChecked():
+            answer = QMessageBox.question(
+                self, self._t('Privatsphäre'),
+                self._t('Den Passwortverlauf dieser Sitzung anzeigen?'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
         dialog = QDialog(self)
         dialog.setWindowTitle(self._t('Verlauf – nur diese Sitzung'))
         dialog.resize(560, 360)
@@ -1426,11 +1504,16 @@ class PasswordWindow(QMainWindow):
                     self.length.value(),
                     separator=self.phrase_separator.currentData(),
                     add_two_digit_number=self.phrase_two_digits.isChecked(),
+                    language=self.phrase_language.currentData(),
                 )
                 label, score = estimate_strength(
                     generated,
                     phrase_words=self.length.value(),
                     extra_entropy_bits=(math.log2(90) if self.phrase_two_digits.isChecked() else 0),
+                )
+                self._last_entropy_bits = (
+                    self.length.value() * 10.0
+                    + (math.log2(90) if self.phrase_two_digits.isChecked() else 0)
                 )
                 kind = 'Passphrase'
             else:
@@ -1439,16 +1522,23 @@ class PasswordWindow(QMainWindow):
                     use_upper=self.upper.isChecked(), use_digits=self.digits.isChecked(),
                     use_symbols=self.symbols.isChecked(),
                     exclude_similar=self.exclude.isChecked(),
+                    **self._advanced_rules,
                 )
-                alphabet_size = (
-                    (26 if self.lower.isChecked() else 0)
-                    + (26 if self.upper.isChecked() else 0)
-                    + (10 if self.digits.isChecked() else 0)
-                    + (23 if self.symbols.isChecked() else 0)
-                    - (5 if self.exclude.isChecked() else 0)
+                self._last_entropy_bits = password_entropy_bits(
+                    self.length.value(), use_lower=self.lower.isChecked(),
+                    use_upper=self.upper.isChecked(),
+                    use_digits=self.digits.isChecked(),
+                    use_symbols=self.symbols.isChecked(),
+                    exclude_similar=self.exclude.isChecked(),
+                    excluded_chars=self._advanced_rules['excluded_chars'],
                 )
+                # Upper-bound estimate; constrained generation reduces the
+                # effective search space, so never claim a crack-time guarantee.
                 label, score = estimate_strength(
-                    generated, pool_size=max(2, alphabet_size)
+                    generated,
+                    pool_size=max(2, round(2 ** (
+                        self._last_entropy_bits / self.length.value()
+                    )))
                 )
                 kind = 'Passwort'
         except ValueError as error:
