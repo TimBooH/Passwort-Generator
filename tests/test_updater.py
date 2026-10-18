@@ -85,6 +85,38 @@ class UpdaterTests(unittest.TestCase):
         updater.install_staged_appimage(stage, self.current)
         self.assertTrue(other.exists())
 
+    def test_verified_rollback_swaps_current_and_previous(self):
+        fake_image(self.current, 'v2')
+        fake_image(self.previous, 'v1')
+        self.assertEqual(updater.restore_previous_appimage(self.current), self.current)
+        self.assertEqual(self.current.read_bytes(), b'\\x7fELFv1')
+        self.assertEqual(self.previous.read_bytes(), b'\\x7fELFv2')
+
+    def test_rollback_requires_real_verified_previous(self):
+        fake_image(self.current, 'v2')
+        with self.assertRaises(ValueError):
+            updater.restore_previous_appimage(self.current)
+        fake_image(self.previous, 'v1')
+        self.current.write_bytes(b'invalid')
+        with self.assertRaises(ValueError):
+            updater.restore_previous_appimage(self.current)
+
+    def test_failed_rollback_restores_current(self):
+        fake_image(self.current, 'v2')
+        fake_image(self.previous, 'v1')
+        original_replace = updater.os.replace
+
+        def fail_on_previous(src, dst):
+            if Path(dst) == self.previous:
+                raise OSError('rollback second rename failed')
+            return original_replace(src, dst)
+
+        with mock.patch('updater.os.replace', side_effect=fail_on_previous):
+            with self.assertRaises(OSError):
+                updater.restore_previous_appimage(self.current)
+        self.assertEqual(self.current.read_bytes(), b'\\x7fELFv2')
+        self.assertEqual(self.previous.read_bytes(), b'\\x7fELFv1')
+
     def test_restart_cleans_appimage_environment(self):
         fake_image(self.current, 'v2')
         self.current.chmod(0o755)
