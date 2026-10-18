@@ -37,6 +37,18 @@ class LocalizationTests(unittest.TestCase):
             '●  Automatic (Image): #123ABC',
         )
 
+    def test_bundled_features_and_update_comparison(self):
+        self.assertEqual(translate('SICHERHEIT', 'en'), 'SECURITY')
+        self.assertEqual(translate('Eigenes Profil', 'en'), 'My profile')
+        self.assertEqual(
+            translate('Zwischenablage automatisch leeren', 'en'),
+            'Clear clipboard automatically',
+        )
+        self.assertEqual(
+            translate('Installiert: v0.19.0  →  Neu: v0.20.0', 'en'),
+            'Installed: v0.19.0  →  New: v0.20.0',
+        )
+
     def test_does_not_change_password_or_unrecognized_release_notes(self):
         secret = 'Xb#vA7_Se!reT97'
         self.assertEqual(translate(secret, 'en'), secret)
