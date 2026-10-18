@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.11.0 keeps three navigation action labels with a separate fourth
+Info action and validates that page without legacy modal assumptions.
 Version 0.11.0 precisely targets real widgets with the arrow tour, embeds
 Info and graphical guidance as a fourth page, and replaces scrolling with
 compact layouts and paginated release history on Windows and Linux.
