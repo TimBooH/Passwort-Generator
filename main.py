@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from localization import LANGUAGES, translate
+from password_presets import PRESETS, FIELDS, decode_profile, encode_profile, validate_profile
 from diagnostics import CrashReporter
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
 from neon_style import neon_stylesheet
@@ -111,6 +112,8 @@ class PasswordWindow(QMainWindow):
         self._update_popup_dialog = None
         self._first_run_tour = None
         self._phrase_mode = False
+        self._applying_preset = False
+        self._clipboard_secret = None
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}')
@@ -192,6 +195,10 @@ class PasswordWindow(QMainWindow):
                 lambda checked=False, i=index: self.tabs.setCurrentIndex(i)
             )
             self.nav_buttons.append(button)
+        # Visual order: Passwort → Update → Einstellungen → Info.
+        # Keep original QStackedWidget indices so internal update links work.
+        nav_layout.removeWidget(self.nav_buttons[1])
+        nav_layout.addWidget(self.nav_buttons[1])
         self.nav_buttons[0].setChecked(True)
         self.info_nav_button = QPushButton('ⓘ  Info')
         self.info_nav_button.setObjectName('infoNavButton')
@@ -304,7 +311,31 @@ class PasswordWindow(QMainWindow):
         self.length_slider.valueChanged.connect(self.length.setValue)
         self.length.valueChanged.connect(lambda value: self.length_value.setText(str(value)))
         group_layout.addWidget(self.length_slider)
-        group_layout.addSpacing(4)
+        group_layout.addSpacing(1)
+
+        # Compact password profiles: settings only, never generated secrets.
+        preset_row = QHBoxLayout()
+        preset_row.setSpacing(5)
+        preset_title = QLabel('Profil:')
+        preset_row.addWidget(preset_title)
+        self.preset_combo = QComboBox()
+        self.preset_combo.setObjectName('passwordPresetCombo')
+        for label, key in (('Standard', 'standard'),
+                           ('Sehr sicher', 'strong'),
+                           ('Einfach', 'simple'),
+                           ('Eigenes Profil', 'custom'),
+                           ('Manuell', 'manual')):
+            self.preset_combo.addItem(label, key)
+        self.preset_combo.setCurrentIndex(0)
+        preset_row.addWidget(self.preset_combo, 1)
+        self.save_preset_button = QPushButton('Profil speichern')
+        self.save_preset_button.setObjectName('savePresetButton')
+        self.save_preset_button.setToolTip(
+            'Aktuelle Passwort-Einstellungen als eigenes Profil speichern'
+        )
+        self.save_preset_button.clicked.connect(self.save_password_preset)
+        preset_row.addWidget(self.save_preset_button)
+        group_layout.addLayout(preset_row)
 
         self.options_widget = QWidget()
         self.options_widget.setObjectName('passwordOptions')
@@ -372,6 +403,10 @@ class PasswordWindow(QMainWindow):
         footer.addWidget(self.history_button, 1)
         group_layout.addLayout(footer)
         layout.addWidget(group, 1)
+        self.preset_combo.currentIndexChanged.connect(self.apply_password_preset)
+        self.length.valueChanged.connect(self.mark_password_preset_manual)
+        for checkbox in (self.upper, self.lower, self.digits, self.symbols, self.exclude):
+            checkbox.toggled.connect(self.mark_password_preset_manual)
 
         self.settings_page = QWidget()
         self.settings_page.setObjectName('settingsPage')
@@ -461,6 +496,46 @@ class PasswordWindow(QMainWindow):
         colors_layout.addStretch(1)
 
         settings_page_layout.addWidget(colors, 1)
+
+        security_card = GlossyGlassCard('SICHERHEIT')
+        self.security_card = security_card
+        self.secondary_cards.append(security_card)
+        security_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        security_card.layout().setContentsMargins(13, 5, 13, 6)
+        security_card.layout().setSpacing(1)
+        security_card.body.setSpacing(3)
+        clipboard_row = QHBoxLayout()
+        clipboard_row.setSpacing(6)
+        self.clear_clipboard_checkbox = QCheckBox('Zwischenablage automatisch leeren')
+        self.clear_clipboard_checkbox.setObjectName('autoClearClipboard')
+        self.clear_clipboard_checkbox.setChecked(
+            self.settings.value('security/clipboard_auto_clear', True, type=bool)
+        )
+        clipboard_row.addWidget(self.clear_clipboard_checkbox, 1)
+        self.clipboard_timeout_combo = QComboBox()
+        self.clipboard_timeout_combo.setObjectName('clipboardTimeoutCombo')
+        for caption, seconds in (('30 Sekunden', 30), ('60 Sekunden', 60),
+                                 ('2 Minuten', 120)):
+            self.clipboard_timeout_combo.addItem(caption, seconds)
+        saved_seconds = self.settings.value(
+            'security/clipboard_seconds', 60, type=int
+        )
+        timeout_index = self.clipboard_timeout_combo.findData(saved_seconds)
+        self.clipboard_timeout_combo.setCurrentIndex(max(0, timeout_index))
+        self.clipboard_timeout_combo.setEnabled(self.clear_clipboard_checkbox.isChecked())
+        clipboard_row.addWidget(self.clipboard_timeout_combo)
+        security_card.body.addLayout(clipboard_row)
+        security_hint = QLabel('Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.')
+        security_hint.setObjectName('supportText')
+        security_hint.setWordWrap(True)
+        security_card.body.addWidget(security_hint)
+        settings_page_layout.addWidget(security_card, 0)
+
+        self.clipboard_timer = QTimer(self)
+        self.clipboard_timer.setSingleShot(True)
+        self.clipboard_timer.timeout.connect(self.clear_copied_password)
+        self.clear_clipboard_checkbox.toggled.connect(self.configure_clipboard_clear)
+        self.clipboard_timeout_combo.currentIndexChanged.connect(self.configure_clipboard_clear)
 
         self.updates_page = QWidget()
         self.updates_page.setObjectName('updatesPage')
