@@ -41,6 +41,14 @@ assert window.accent_preview.text().startswith('●  Automatic')
 assert 'Development' in window.info_version.text()
 assert window.background_file_label.text() == 'No background image selected'
 assert window.info_help_card.header.text() == 'GUIDE & HELP'
+# Changelog local loading and failure texts also obey the one global setting.
+window._set_changelog_ui('Keine veröffentlichten Versionen gefunden.')
+assert window.changelog_view.toPlainText() == 'No published releases found.'
+window._set_changelog_ui(
+    'Die Versionshistorie konnte nicht geladen werden. '
+    'Bitte die Internetverbindung prüfen und erneut versuchen.'
+)
+assert window.changelog_view.toPlainText().startswith('Could not load release history.')
 assert window.appearance_card.isAncestorOf(window.language_combo)
 assert window.updates_page.findChild(type(window.language_combo), 'languageCombo') is None
 
