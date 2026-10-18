@@ -152,6 +152,8 @@ EN = {
     'Windows-Installer gestartet. Die App wird für das Update geschlossen …': 'Windows installer started. The app will close for the update …',
     'Manueller Neustart erforderlich': 'Manual restart required',
     'Update fehlgeschlagen': 'Update failed',
+    'GitHub hat keine gültige Release-Liste geliefert.': 'GitHub returned an invalid release list.',
+    'Für diese Version sind keine Änderungen dokumentiert.': 'No changes documented for this version.',
     '← Zurück': '← Back',
     'Überspringen': 'Skip',
     'Weiter →': 'Next →',
@@ -222,5 +224,11 @@ def translate(text, language='de'):
         if pattern.startswith('^🛡'):
             for de in ('Sehr stark', 'Stark', 'Mittel', 'Schwach'):
                 out = out.replace(de, EN[de])
+        if pattern.startswith(('^Updateprüfung fehlgeschlagen:',
+                                '^Versionshistorie nicht verfügbar:',
+                                '^Download/Installation fehlgeschlagen:')):
+            # Translate known application errors inside the dynamic status too.
+            reason = match.group(1)
+            out = out.replace(reason, translate(reason, language))
         return out
     return text
