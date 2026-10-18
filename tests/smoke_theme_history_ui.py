@@ -8,7 +8,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import Qt
 from PySide6.QtNetwork import QNetworkReply
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTextBrowser
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTextBrowser, QTabWidget
 
 from main import PasswordWindow, REPO_URL
 from theme_colors import (
@@ -87,17 +87,23 @@ assert window.scheme_combo.currentData() == 'custom'
 assert window.settings.value('color_scheme') == 'custom'
 assert window.accent_preview.text().endswith(accent_for_background('#351A23'))
 
-# Info stays compact: author and version only, without any tutorial.
+# Info remains concise but restores the graphical, on-demand explanation.
 info = window.build_info_dialog()
 credit = info.findChild(QLabel, 'infoCredit')
 assert credit is not None
 assert credit.text() == 'Made by Jon Bovi'
 assert info.layout().itemAt(0).widget() is credit
 assert f'v{window.windowTitle().split("v")[-1]}' in info.findChildren(QLabel)[1].text()
-assert not info.findChildren(QTextBrowser)
-assert not info.findChild(QPushButton, 'visualGuideButton')
-assert not hasattr(window, 'build_visual_guide_dialog')
-assert 'Anleitung' not in info.windowTitle()
+assert not info.findChildren(QTextBrowser), 'The long written manual stays removed'
+graphic_button = info.findChild(QPushButton, 'visualGuideButton')
+assert graphic_button is not None and 'Grafische Erklärung' in graphic_button.text()
+graphic = window.build_visual_guide_dialog(info)
+tabs = graphic.findChild(QTabWidget, 'visualGuideTabs')
+assert tabs is not None and tabs.count() == 3
+for i in range(3):
+    label = graphic.findChild(QLabel, f'visualGuideImage{i}')
+    assert label is not None and label.pixmap() is not None and not label.pixmap().isNull()
+graphic.close()
 info.close()
 
 # No network calls: feed a deterministic GitHub response to the real GUI.

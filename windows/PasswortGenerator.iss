@@ -1,4 +1,5 @@
-; PasswordGenerator: ordinary 64-bit Windows installer (per-user).
+; PasswordGenerator: x64 machine-wide installation in Program Files.
+; Requires UAC approval, keeping the installed app in the normal 64-bit folder.
 #ifndef MyAppVersion
   #define MyAppVersion "0.07.0"
 #endif
@@ -14,9 +15,10 @@ AppPublisher=Jon Bovi
 AppPublisherURL=https://github.com/TimBooH/Passwort-Generator
 AppSupportURL=https://github.com/TimBooH/Passwort-Generator/issues
 AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/releases/latest
-DefaultDirName={localappdata}\Programs\PasswortGenerator
+DefaultDirName={autopf}\PasswortGenerator
 DefaultGroupName=PasswortGenerator
-PrivilegesRequired=lowest
+PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=none
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 UninstallDisplayIcon={app}\{#MyAppExeName}
@@ -48,8 +50,8 @@ Name: "{autoprograms}\PasswortGenerator"; Filename: "{app}\{#MyAppExeName}"
 Name: "{autodesktop}\PasswortGenerator"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "PasswortGenerator starten"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\{#MyAppExeName}"; Flags: nowait; Check: IsSilentInstall
+Filename: "{app}\{#MyAppExeName}"; Description: "PasswortGenerator starten"; Flags: nowait postinstall skipifsilent runasoriginaluser
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser; Check: IsSilentInstall
 
 [Code]
 function IsSilentInstall(): Boolean;

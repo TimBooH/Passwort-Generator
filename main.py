@@ -1,6 +1,7 @@
 """PasswortGenerator: lokale Passworterzeugung mit Update-Download von GitHub."""
 
 import hashlib
+import math
 import json
 import os
 import sys
@@ -25,7 +26,8 @@ from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_
 from release_history import normalized_releases, compact_changelog
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from windows_support import WINDOWS_INSTALLER_NAME, start_verified_windows_installer
-from password_core import make_password, make_passphrase, estimate_strength, parse_version
+from password_core import (PHRASE_SEPARATORS, make_password, make_passphrase,
+                           estimate_strength, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
 
 REPO = 'TimBooH/Passwort-Generator'
@@ -317,6 +319,30 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.symbols, 0, 1)
         check_layout.addWidget(self.exclude, 1, 1)
         group_layout.addWidget(self.options_widget)
+
+        # These controls only appear in Passphrase mode. The checkbox adds
+        # one cryptographically random 10–99 number, separated as selected.
+        self.phrase_options_widget = QWidget()
+        self.phrase_options_widget.setObjectName('passphraseOptions')
+        phrase_layout = QGridLayout(self.phrase_options_widget)
+        phrase_layout.setContentsMargins(0, 0, 0, 0)
+        phrase_layout.setHorizontalSpacing(9)
+        phrase_layout.setVerticalSpacing(2)
+        self.phrase_two_digits = QCheckBox('Zweistellige Zufallszahl anhängen')
+        self.phrase_two_digits.setObjectName('phraseTwoDigitNumber')
+        self.phrase_two_digits.setToolTip('Fügt am Ende eine zufällige Zahl von 10 bis 99 hinzu.')
+        phrase_layout.addWidget(self.phrase_two_digits, 0, 0, 1, 2)
+        phrase_layout.addWidget(QLabel('Trennzeichen:'), 1, 0)
+        self.phrase_separator = QComboBox()
+        self.phrase_separator.setObjectName('phraseSeparator')
+        self.phrase_separator.setAccessibleName('Trennzeichen der Passphrase')
+        for label, separator in PHRASE_SEPARATORS:
+            self.phrase_separator.addItem(label, separator)
+        self.phrase_separator.setMinimumWidth(125)
+        phrase_layout.addWidget(self.phrase_separator, 1, 1)
+        phrase_layout.setColumnStretch(1, 1)
+        self.phrase_options_widget.hide()
+        group_layout.addWidget(self.phrase_options_widget)
         group_layout.addStretch(0)
 
         self.generate_button = QPushButton('🔑  Passwort generieren')
@@ -534,6 +560,7 @@ class PasswordWindow(QMainWindow):
         self.password_mode_button.setChecked(not self._phrase_mode)
         self.passphrase_mode_button.setChecked(self._phrase_mode)
         self.options_widget.setVisible(not self._phrase_mode)
+        self.phrase_options_widget.setVisible(self._phrase_mode)
         if self._phrase_mode:
             self.length_label.setText('Wörter:')
             self.length.setRange(4, 10)
@@ -641,10 +668,24 @@ class PasswordWindow(QMainWindow):
         layout.addWidget(about)
         layout.addStretch()
 
+        actions = QHBoxLayout()
+        self.visual_guide_button = QPushButton('▣  Grafische Erklärung')
+        self.visual_guide_button.setObjectName('visualGuideButton')
+        self.visual_guide_button.setToolTip('Drei bebilderte Ansichten von Passwort, Design und Updates')
+        self.visual_guide_button.clicked.connect(
+            lambda: self.build_visual_guide_dialog(dialog).exec()
+        )
+        actions.addWidget(self.visual_guide_button, 1)
         close = QPushButton('Schließen')
         close.clicked.connect(dialog.accept)
-        layout.addWidget(close)
+        actions.addWidget(close)
+        layout.addLayout(actions)
         return dialog
+
+    def build_visual_guide_dialog(self, parent=None):
+        # Runtime screenshots stay in memory and include a masked password.
+        from visual_help import create_visual_guide
+        return create_visual_guide(self, parent=parent)
 
     def show_info(self):
         self.build_info_dialog().exec()
@@ -866,9 +907,15 @@ class PasswordWindow(QMainWindow):
     def generate(self):
         try:
             if self._phrase_mode:
-                generated = make_passphrase(self.length.value())
+                generated = make_passphrase(
+                    self.length.value(),
+                    separator=self.phrase_separator.currentData(),
+                    add_two_digit_number=self.phrase_two_digits.isChecked(),
+                )
                 label, score = estimate_strength(
-                    generated, phrase_words=self.length.value()
+                    generated,
+                    phrase_words=self.length.value(),
+                    extra_entropy_bits=(math.log2(90) if self.phrase_two_digits.isChecked() else 0),
                 )
                 kind = 'Passphrase'
             else:

@@ -11,7 +11,7 @@ os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtNetwork import QNetworkReply
-from PySide6.QtWidgets import QApplication, QLabel, QPushButton
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton, QTabWidget
 
 from main import (
     APPIMAGE_NAME, APP_VERSION, REPO, UPDATE_CHECK_INTERVAL_MS,
@@ -154,14 +154,21 @@ assert window.nav_buttons[2].property('updateAvailable') is False
 assert 'NEU' not in window.nav_buttons[2].text()
 window.update_timer.stop()
 
-# Info contains no written or illustrated instructions.
+# Info keeps the on-demand graphical guide (without a long written manual).
 info = window.build_info_dialog()
 assert info.windowTitle().startswith('Info')
 assert info.findChild(QLabel, 'infoCredit').text() == 'Made by Jon Bovi'
-assert not info.findChild(QPushButton, 'visualGuideButton')
-assert not hasattr(window, 'build_visual_guide_dialog')
-assert not info.findChild(QLabel, 'visualGuideTitle')
+button = info.findChild(QPushButton, 'visualGuideButton')
+assert button is not None and 'Grafische Erklärung' in button.text()
+guide = window.build_visual_guide_dialog(info)
+screens = guide.findChild(QTabWidget, 'visualGuideTabs')
+assert screens is not None and screens.count() == 3
+for i in range(3):
+    screenshot = guide.findChild(QLabel, f'visualGuideImage{i}')
+    assert screenshot is not None and screenshot.pixmap() is not None
+    assert not screenshot.pixmap().isNull()
+guide.close()
 info.close()
 window.close()
 app.processEvents()
-print('UI update-badge / 2h timer / compact navigation / no-scroll password / minimal Info OK')
+print('UI update-badge / 2h timer / compact navigation / graphical Info guide OK')

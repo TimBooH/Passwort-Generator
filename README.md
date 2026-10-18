@@ -15,10 +15,10 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | <img src="https://img.shields.io/badge/Windows-64--Bit-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows"> | <img src="https://img.shields.io/badge/Linux-x86__64-3B82F6?style=flat-square&logo=linux&logoColor=white" alt="Linux"> |
 | :--- | :--- |
 | **Windows 10 / 11** | **Linux (z. B. CachyOS / KDE)** |
-| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.1/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.08.1/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer herunterladen (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.09.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage herunterladen**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.09.0/PasswortGenerator-x86_64.AppImage) |
 | Installationsassistent, Startmenü-Eintrag und Deinstallation | Direkt ausführbar oder mit `install.sh` integrierbar |
 
-**Aktuelle Version: v0.08.1** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
+**Aktuelle Version: v0.09.0** · [Alle Downloads](https://github.com/TimBooH/Passwort-Generator/releases/latest) · [Installationsanleitung](#installation) · [Updates](#updates)
 
 ## Vorschau
 
@@ -33,7 +33,7 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | Bereich | Möglichkeiten |
 | --- | --- |
 | **Passwörter** | 8–128 Zeichen; Klein- und Großbuchstaben, Zahlen und Sonderzeichen |
-| **Passphrasen** | 4–10 lokal zufällig erzeugte zusammengesetzte Wörter, jeweils 1.024 Möglichkeiten |
+| **Passphrasen** | 4–10 zufällige zusammengesetzte Wörter; optional zweistellige Zufallszahl (10–99), Trennzeichen per Dropdown (-, Leerzeichen, _, .) |
 | **Zeichenauswahl** | Ähnliche Zeichen optional ausschließen; jede aktivierte Zeichengruppe berücksichtigen |
 | **Bedienung** | Längenregler, anzeigen/verbergen, kopieren und erneut erzeugen – ohne Scrollen in der Passwortansicht |
 | **Verlauf** | Letzte 20 Ergebnisse nur während der Sitzung; kopieren oder löschen |
@@ -42,7 +42,7 @@ PasswortGenerator ist eine Desktop-Anwendung für Linux und Windows, entwickelt 
 | **Hintergrundbilder** | Eigene PNG-, JPG-, WEBP- oder BMP-Dateien mit sechs Darstellungsmodi |
 | **Updates** | Beim Start und alle 2 Stunden prüfen, „Updates • NEU“-Hinweis, Changelog und sicherer Neustart |
 | **Diagnose** | Lokales Crash-Protokoll mit Zeitstempel, Versionsnummer und verfügbaren Fehlerdetails |
-| **Info** | Nur „Made by Jon Bovi“, Versionsstand und kurze Programminformationen – ohne Anleitung |
+| **Info** | „Made by Jon Bovi“, Versionsstand und ein Button für die **grafische Erklärung** (keine lange Textanleitung) |
 
 Die Oberfläche hat eine futuristische Glasoptik mit Schloss-Symbol, Akzentrahmen, Passwort/Passphrase-Umschalter, Stärkeanzeige und großem Generieren-Button. **Passwort, Einstellungen, Updates und Info** befinden sich gemeinsam **oben rechts**. Es gibt keine linke Seitenleiste und keinen zusätzlichen Info-Button am unteren Fensterrand.
 
@@ -59,7 +59,8 @@ Das Projekt verwendet ab sofort ein Entwicklungsschema mit **100 Meilensteinen b
 | **5 von 100** | `0.05.0` | Farbschemas, Changelog und Anleitung |
 | **6 von 100** | `0.06.0` | Linke Navigation und kompakte Versionshistorie |
 | **7 von 100** | `0.07.0` | Navigation oben rechts, transparenteres Glas und adaptive Farben |
-| **8 von 100** | **`0.08.1`** | **Aktueller Stand: Update-Hinweis, 2-Stunden-Prüfung und kompakter Info-Bereich** |
+| **8 von 100** | `0.08.1` | Update-Hinweis, 2-Stunden-Prüfung und Info vereinfacht |
+| **9 von 100** | **`0.09.0`** | **Aktueller Stand: grafische Erklärung, Passphrase-Optionen und Windows-Installation in Programme** |
 | **50 von 100** | `0.50.0` | Halbzeit |
 | **99 von 100** | `0.99.0` | Letzter Entwicklungsschritt |
 | **100 von 100** | **`1.0.0`** | **Erste Vollversion** |
@@ -88,11 +89,15 @@ Aktuelle Installationsdateien für **Linux x86_64 und Windows x64** findest du u
 ### Windows 10/11 (64 Bit)
 
 1. Lade **[PasswortGenerator-Setup-x64.exe](https://github.com/TimBooH/Passwort-Generator/releases/latest)** aus dem aktuellen GitHub-Release herunter.
-2. Öffne die EXE-Datei und folge dem deutschsprachigen Installationsassistenten.
-3. Der Installer legt einen **Startmenü-Eintrag** an. Eine Desktop-Verknüpfung kannst du optional aktivieren.
+2. Öffne die EXE-Datei und bestätige die **Windows-Administratorabfrage**; folge dem deutschsprachigen Installationsassistenten.
+3. Der Installer installiert unter **`C:\Program Files\PasswortGenerator`** und legt einen **Startmenü-Eintrag** an. Eine Desktop-Verknüpfung kannst du optional aktivieren.
 4. Unter **Windows-Einstellungen → Apps → Installierte Apps** kannst du PasswortGenerator später deinstallieren.
 
-Die Installation erfolgt standardmäßig pro Benutzer unter `%LOCALAPPDATA%\Programs\PasswortGenerator` und benötigt keine Administratorrechte. Eine neuere Version kann über die bestehende installiert werden; die Einstellungen bleiben dabei erhalten. Der Update-Reiter verwendet unter Windows den passenden Installer und unter Linux das AppImage.
+**Neuer Installationsort ab v0.09.0:** Der Windows-Installer installiert für alle Benutzer standardmäßig unter **`C:\Program Files\PasswortGenerator`** (im Explorer: `C:\Programme`). Der Installer benötigt deshalb eine **Administratorbestätigung (Windows-UAC)**, auch beim Update innerhalb der App. Bei der 64-Bit-Version wird der normale Ordner **„Programme“**, nicht „Programme (x86)“, verwendet. Die Benutzereinstellungen bleiben erhalten.
+
+**Umstieg von v0.08.1 oder älter:** Diese Versionen wurden unter `%LOCALAPPDATA%\Programs\PasswortGenerator` installiert. Da eine bestehende Benutzerinstallation nicht automatisch in eine systemweite Installation umgewandelt werden kann, **kann sie nach dem neuen Setup zusätzlich bestehen bleiben**. Entferne den alten Eintrag anschließend über **Windows-Einstellungen → Installierte Apps**, damit keine zwei Installationen/Startmenü-Verknüpfungen vorhanden sind. Die neue Version startet über den neuen Startmenü-Eintrag. Alternativ kannst du die alte Installation vor dem ersten neuen Setup manuell deinstallieren. Unter Linux ändert sich kein Installationspfad.
+
+Der Update-Reiter lädt auf Windows ausschließlich den Windows-Installer und auf Linux das AppImage. Bei Windows-Updates fragt die App vor dem Start des neuen Installers nach Administratorrechten, sofern erforderlich.
 
 **Hinweis:** Die EXE ist nicht mit einem kostenpflichtigen Code-Signing-Zertifikat signiert. Windows SmartScreen kann beim ersten Start eine Warnung zeigen. Lade sie ausschließlich aus dem offiziellen GitHub-Release herunter und prüfe bei Bedarf `SHA256SUMS-windows.txt`.
 
@@ -168,9 +173,11 @@ Die **kleineren, platzsparenden Buttons** befinden sich **oben rechts**. Drei we
 | **Passwort** | Passwort/Passphrase, Stärkebalken, Längenregler, Zeichengruppen, Anzeigen und Verlauf |
 | **Einstellungen** | Zwei Kacheln: Design & Farben sowie Hintergrundbild und Bilddarstellung |
 | **Updates** | Zwei Kacheln: Update & Version sowie kurze Änderungen und chronologische Versionsliste |
-| **Info** | Nur „Made by Jon Bovi“, Versionsstand und kurze Programminformationen – ohne Anleitung |
+| **Info** | „Made by Jon Bovi“, Versionsstand und ein Button für die **grafische Erklärung** (keine lange Textanleitung) |
 
-Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. Die kompakte Passwortansicht passt vollständig ins unterstützte Fenster, sodass du **nicht scrollen musst**; längere Einstellungs- und Versionsseiten können weiterhin scrollen. **Info** zeigt nur den Urheber, die Version und eine kurze Programmbeschreibung. Die bisherige Text- und Bildanleitung wurde entfernt. Das funktioniert unter **Windows und Linux**.
+Wechsle über die **kleinen Schaltflächen oben rechts** zwischen den Bereichen. Die kompakte Passwortansicht passt vollständig ins unterstützte Fenster, sodass du **nicht scrollen musst**; längere Einstellungs- und Versionsseiten können weiterhin scrollen. Bei **Passphrase** kannst du mit einem Kontrollkästchen eine **zufällige zweistellige Zahl (10–99) anhängen**. Das **Trennzeichen** wählst du im Dropdown (Bindestrich, Leerzeichen, Unterstrich oder Punkt); es trennt sowohl die Wörter als auch die angehängte Zahl. Die Zufallszahl wird mit `secrets` kryptografisch sicher erzeugt.
+
+Unter **Info** bleiben Urheber, Version und eine kurze Programmbeschreibung. Der Button **„Grafische Erklärung“** öffnet drei bebilderte Ansichten der echten App; die lange Textanleitung bleibt entfernt. Die Bilder werden nur im Arbeitsspeicher erzeugt. Das funktioniert unter **Windows und Linux**.
 
 Im Reiter **„Einstellungen“** unter **„Design & Farben“** wählst du ein **Farbschema**: **Neon Blue**, **Glass Dark**, **Glass Light**, **Violet Glass** oder **Forest Glass**. Die App wählt eine **automatisch gut lesbare Textfarbe**, die nicht mehr manuell eingestellt werden muss. Die **Akzentfarbe übernimmt den Farbton des gewählten Hintergrunds** und wird auf einen gut sichtbaren Kontrast abgestimmt. Bei eigenen Hintergrundbildern fließt ein repräsentativer Bildfarbton in die Akzentwahl ein. Das aktualisiert Rahmen, Buttons und Regler; das dekorative Schaltkreismuster bleibt aus Stabilitätsgründen unverändert. Bei manueller Hintergrundfarbwahl schaltet die App auf **„Eigene Farben“**. Die transparenten Glas-Kacheln haben eine feste, reduzierte Deckkraft ohne zusätzlichen Regler. Die Glasoptik wird innerhalb des Programmfensters dargestellt; eine tatsächliche Unschärfe des Desktops hinter dem Fenster ist nicht erforderlich.
 

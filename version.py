@@ -1,6 +1,8 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
-Version 0.08.1 removes the tutorial from Info while retaining author and version.
+Version 0.09.0 restores the graphical explanation, adds passphrase number/separator
+options, and moves Windows setup to protected 64-bit Program Files with UAC.
+Version 0.08.1 removed the written tutorial while retaining author and version.
 Version 0.08.0 sizes each page independently so the Updates screen cannot
 force a scrollbar onto the Password screen.
 Version 0.08.0 adds two-hour update checks, visible badge, compact pages,
@@ -20,7 +22,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.08.1"
+APP_VERSION = "0.09.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

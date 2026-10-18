@@ -101,14 +101,33 @@ assert window.length.minimum() == 4
 assert window.length.maximum() == 10
 assert window.length_slider.value() == 6
 assert not window.options_widget.isVisible()
+assert window.phrase_options_widget.isVisible()
+assert not window.phrase_two_digits.isChecked()
+assert window.phrase_separator.count() == 4
+assert window.phrase_separator.currentData() == '-'
 window.generate()
 phrase = window.output.text()
 assert len(phrase.split('-')) == 6
 assert window._history[-1] == ('Passphrase', phrase)
+base_strength = window.strength_bar.value()
+window.phrase_two_digits.setChecked(True)
+window.phrase_separator.setCurrentIndex(window.phrase_separator.findData('_'))
+window.generate()
+with_digits = window.output.text()
+parts = with_digits.split('_')
+assert len(parts) == 7
+assert parts[-1].isdigit() and 10 <= int(parts[-1]) <= 99
+assert window.strength_bar.value() > base_strength
+assert window._history[-1] == ('Passphrase', with_digits)
+for separator in (' ', '.', '-'):
+    window.phrase_separator.setCurrentIndex(window.phrase_separator.findData(separator))
+    window.generate()
+    assert len(window.output.text().split(separator)) == 7
 window.password_mode_button.click()
 app.processEvents()
 assert not window._phrase_mode
 assert window.options_widget.isVisible()
+assert not window.phrase_options_widget.isVisible()
 assert window.length.maximum() == 128
 assert not window.output.text()
 

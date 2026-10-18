@@ -64,30 +64,47 @@ PHRASE_LAST = (
 )
 
 
-def make_passphrase(word_count=6, separator='-'):
-    """Generate a locally random 4–10-word phrase (10 entropy bits/word).
+# Explicit separator choices are shared by the GUI and password logic.
+# Use fixed allowed values instead of arbitrary user input.
+PHRASE_SEPARATORS = (
+    ('Bindestrich (-)', '-'),
+    ('Leerzeichen', ' '),
+    ('Unterstrich (_)', '_'),
+    ('Punkt (.)', '.'),
+)
 
-    Compound words are built from two independently uniform 32-word banks.
-    Passwords/passphrases are never written to files by this function.
+
+def make_passphrase(word_count=6, separator='-', add_two_digit_number=False):
+    """Create 4–10 secure words, optionally followed by a random 10–99 suffix.
+
+    Each compound word has 1,024 combinations (10 bits). The extra number
+    adds log2(90) ≈ 6.49 bits; it uses the same selected separator.
+    No network calls or persistent storage.
     """
-    if not isinstance(word_count, int) or not 4 <= word_count <= 10:
+    if not isinstance(word_count, int) or isinstance(word_count, bool) or not 4 <= word_count <= 10:
         raise ValueError('Die Passphrase muss zwischen 4 und 10 Wörter enthalten.')
-    if separator not in ('-', ' '):
+    if separator not in tuple(value for _label, value in PHRASE_SEPARATORS):
         raise ValueError('Ungültiges Trennzeichen für die Passphrase.')
-    return separator.join(
+    if not isinstance(add_two_digit_number, bool):
+        raise ValueError('Zweistellige Zahl muss ein- oder ausgeschaltet sein.')
+    parts = [
         secrets.choice(PHRASE_FIRST) + secrets.choice(PHRASE_LAST)
         for _ in range(word_count)
-    )
+    ]
+    if add_two_digit_number:
+        parts.append(str(10 + secrets.randbelow(90)))
+    return separator.join(parts)
 
 
-def estimate_strength(secret, *, phrase_words=None, pool_size=0):
+def estimate_strength(secret, *, phrase_words=None, pool_size=0,
+                      extra_entropy_bits=0):
     """Return a coarse entropy-based label and progress; not a security audit."""
     import math
 
     if not secret:
         return '--', 0
     if phrase_words is not None:
-        bits = max(0, phrase_words) * 10
+        bits = max(0, phrase_words) * 10 + max(0, extra_entropy_bits)
     else:
         bits = len(secret) * math.log2(max(2, pool_size))
     if bits < 35:

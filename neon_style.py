@@ -270,6 +270,22 @@ QListWidget#releaseList::item:selected {{
     color: {accent_text};
     background: {accent};
 }}
+QPushButton#visualGuideButton {{
+    background: {accent};
+    color: {accent_text};
+    border: 1px solid {bright};
+    border-radius: 8px;
+    font-weight: 750;
+}}
+QLabel#visualGuideTitle {{
+    color: {bright};
+    font-size: 14px;
+    font-weight: 800;
+}}
+QLabel#visualGuideDescription {{
+    color: {fg};
+    font-size: 12px;
+}}
 QLabel#globalStatus {{
     color: {muted}; font-size: 11px; padding: 0 5px;
 }}
