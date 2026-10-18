@@ -83,6 +83,7 @@ jobs:
           python tests/smoke_no_scroll_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows four-page scroll-free UI smoke failed' }
 
+      # Verify the bundled application has four tabs: Passwort, Design, Updates, Info.
       - name: Build Windows exe and run packaged smoke test
         if: steps.version.outputs.build == 'true'
         shell: pwsh

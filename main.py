@@ -1404,7 +1404,8 @@ if __name__ == '__main__':
         for _ in range(3):
             app.processEvents()
         healthy = (
-            window.tabs.count() == 3
+            window.tabs.count() == 4
+            and window.info_page is window.tabs.widget(3)
             and window.info_nav_button.isVisible()
             and len(window.glass_cards) == 3
             and window.length.value() == 20
