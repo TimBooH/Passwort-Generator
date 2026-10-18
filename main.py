@@ -603,6 +603,7 @@ if __name__ == '__main__':
     reporter = CrashReporter()
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
+    reporter.log('QT_ENVIRONMENT', f'Qt platform={app.platformName()}')
     window = PasswordWindow(reporter=reporter)
     app.aboutToQuit.connect(reporter.close)
     heartbeat = QTimer()
