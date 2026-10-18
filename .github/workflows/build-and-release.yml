@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - version.py
+      - .github/workflows/build-and-release.yml
   workflow_dispatch:
 
 permissions:
@@ -26,7 +27,7 @@ jobs:
       APPIMAGE_EXTRACT_AND_RUN: "1"
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Check version before installing dependencies
         id: version
@@ -60,6 +61,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Minimal Qt graphics runtime. Use cached apt indexes first.
+          if ! sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+              --no-install-recommends libegl1 libopengl0; then
+            sudo apt-get update -qq
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+              --no-install-recommends libegl1 libopengl0
+          fi
           python -m pip install --disable-pip-version-check --prefer-binary \
             -r requirements.txt pyinstaller==6.22.3
           python -m unittest discover -s tests -v
