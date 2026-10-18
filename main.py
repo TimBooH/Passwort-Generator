@@ -24,7 +24,8 @@ from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, I
 from neon_style import neon_stylesheet
 from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background,
                           accessible_text_color, preset_colors)
-from release_history import normalized_releases, compact_changelog
+from release_history import normalized_releases
+from release_notes_i18n import release_changelog
 from updater import install_staged_appimage, restart_updated_app, staging_path
 from windows_support import WINDOWS_INSTALLER_NAME, start_verified_windows_installer
 from password_core import (PHRASE_SEPARATORS, make_password, make_passphrase,
@@ -103,6 +104,7 @@ class PasswordWindow(QMainWindow):
         self.history_reply = None
         self._release_history_loaded = False
         self._history_releases = {}
+        self._latest_release_note = None  # (tag, raw GitHub Markdown)
         self._auto_check = auto_check
         self._startup_update_check_pending = bool(auto_check)
         self._pending_update_popup = None
@@ -738,6 +740,17 @@ class PasswordWindow(QMainWindow):
         self._translate_interface()
         self.apply_colors()
         self.set_update_indicator(self._available_update)
+        # Changelog is a remote QTextBrowser, not a QLabel. Re-render it
+        # immediately in the global UI language, even when already loaded.
+        tag = self.release_combo.currentData()
+        if tag in self._history_releases:
+            self.select_release_history(self.release_combo.currentIndex())
+        elif self._latest_release_note is not None:
+            latest_tag, body = self._latest_release_note
+            self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_tag}')
+            self.changelog_view.setPlainText(
+                release_changelog(body, latest_tag, self.language)
+            )
         # Recreate cached screenshots in the newly selected language.
         if self._info_visual_loaded:
             from visual_help import create_visual_guide_panel
@@ -1076,9 +1089,9 @@ class PasswordWindow(QMainWindow):
             card.set_glass_mode(glass_mode)
         source = 'Bild' if image_color else 'Hintergrund'
         self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
-        self.accent_preview.setToolTip(
+        self.accent_preview.setToolTip(self._t(
             'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
-        )
+        ))
         palette_key = (base_background, actual_background, fg, accent, glass_mode)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
@@ -1232,8 +1245,11 @@ class PasswordWindow(QMainWindow):
             if not self._release_history_loaded and not self._history_releases:
                 note = response.get('body', '')
                 if isinstance(note, str) and note.strip():
+                    self._latest_release_note = (latest_version, note)
                     self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_version}')
-                    self.changelog_view.setPlainText(compact_changelog(note))
+                    self.changelog_view.setPlainText(
+                        release_changelog(note, latest_version, self.language)
+                    )
             current_number = parse_version(APP_VERSION)
             newest_number = parse_version(latest_version)
             if newest_number is None or current_number is None:
@@ -1328,7 +1344,9 @@ class PasswordWindow(QMainWindow):
         if entry is None:
             return
         self._set_ui(self.changelog_title, f'Kurzüberblick · {entry["tag"]}')
-        self.changelog_view.setPlainText(compact_changelog(entry['body']))
+        self.changelog_view.setPlainText(
+            release_changelog(entry['body'], entry['tag'], self.language)
+        )
 
     def download_update(self):
         if self.download_reply is not None or not self.latest_asset:
