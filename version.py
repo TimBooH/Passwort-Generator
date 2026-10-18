@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.19.1 moves the global language choice to its own glass card
+immediately below Appearance while keeping milestone 19 and all features.
 Version 0.19.0 bundles the approved secure clipboard timer, password
 profiles, polished Glass UI, clearer updates and Settings button order.
 Version 0.18.0 unifies the language choice across every page, translates
@@ -57,7 +59,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.19.0"
+APP_VERSION = "0.19.1"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
