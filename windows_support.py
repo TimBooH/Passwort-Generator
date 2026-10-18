@@ -22,7 +22,7 @@ def verify_windows_installer(path):
     return binary
 
 
-def start_verified_windows_installer(path, platform=None, shell_execute=None):
+def start_verified_windows_installer(path, platform=None, shell_execute=None, rollback=False):
     """Prompt for admin rights via UAC; never bypass Windows security controls.
 
     The installer goes into Program Files and therefore needs elevation.
@@ -39,8 +39,11 @@ def start_verified_windows_installer(path, platform=None, shell_execute=None):
             ctypes.c_wchar_p, ctypes.c_wchar_p, ctypes.c_int,
         ]
         shell_execute.restype = ctypes.c_void_p
+    # A downgrade must be visible and interactive; never silently override
+    # the user's installation. Inno Setup may decline old versions.
+    parameters = '/NORESTART /CLOSEAPPLICATIONS' if rollback else SETUP_PARAMETERS
     result = shell_execute(
-        None, 'runas', str(binary), SETUP_PARAMETERS, str(binary.parent), 1
+        None, 'runas', str(binary), parameters, str(binary.parent), 1
     )
     code = int(result or 0)
     if code <= 32:
