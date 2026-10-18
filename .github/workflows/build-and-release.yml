@@ -103,7 +103,10 @@ jobs:
             # Rebase once instead of failing an otherwise passing release.
             if ! git push origin HEAD:main; then
               git fetch origin main
-              git rebase origin/main
+              # Rebase needs a committer identity in clean Actions runners.
+              git -c user.name='github-actions[bot]' \
+                  -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                  rebase origin/main
               git push origin HEAD:main
             fi
           fi
