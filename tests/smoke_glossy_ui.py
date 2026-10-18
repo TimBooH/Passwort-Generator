@@ -22,6 +22,8 @@ window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
+assert window.appearance_card.objectName() == 'glossyCard'
+assert window.changelog_card.objectName() == 'glossyCard'
 assert window.appearance_card.isAncestorOf(window.choose_background_button)
 assert window.changelog_card.isAncestorOf(window.release_combo)
 assert window.changelog_card.isAncestorOf(window.changelog_view)
