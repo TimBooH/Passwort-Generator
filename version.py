@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.07.0 chooses accessible automatic text even on medium-tone backgrounds
+and preserves the accent hue rather than reusing the exact accent brightness.
 Version 0.07.0 verifies adaptive accent contrast across violet and muted themes.
 Version 0.07.0 returns navigation to the top-right, lowers glass opacity,
 and uses readable auto-contrasting accents, including wallpaper previews.

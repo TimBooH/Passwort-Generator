@@ -50,7 +50,7 @@ def is_light_background(background):
 def accessible_text_color(background):
     """Use legible text automatically; a separate text-color control isn't needed."""
     background = _as_color(background)
-    light, dark = '#F5FAFF', '#101B29'
+    light, dark = '#FFFFFF', '#070D15'
     return (light if contrast_ratio(light, background) >=
             contrast_ratio(dark, background) else dark)
 
