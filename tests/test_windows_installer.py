@@ -51,6 +51,19 @@ class WindowsInstallerTests(unittest.TestCase):
             self.assertIn('/NORESTART', args[3])
             self.assertEqual(args[4], str(exe.parent))
 
+    def test_rollback_uses_interactive_uac_installer(self):
+        with tempfile.TemporaryDirectory() as temp:
+            exe = Path(temp) / WINDOWS_INSTALLER_NAME
+            exe.write_bytes(b'MZ' + bytes(100))
+            executor = mock.Mock(return_value=33)
+            start_verified_windows_installer(
+                exe, platform='nt', shell_execute=executor, rollback=True
+            )
+            args = executor.call_args.args
+            self.assertEqual(args[1], 'runas')
+            self.assertIn('/NORESTART', args[3])
+            self.assertNotIn('/SILENT', args[3])
+
     def test_cancelled_uac_keeps_app_running(self):
         with tempfile.TemporaryDirectory() as temp:
             exe = Path(temp) / WINDOWS_INSTALLER_NAME
