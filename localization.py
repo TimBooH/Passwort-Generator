@@ -58,6 +58,25 @@ EN = {
     '◉  Anzeigen': '◉  Show',
     '◉  Verbergen': '◉  Hide',
     '☷  Verlauf': '☷  History',
+    'Profil:': 'Profile:',
+    'Standard': 'Standard',
+    'Sehr sicher': 'Very secure',
+    'Einfach': 'Simple',
+    'Eigenes Profil': 'My profile',
+    'Manuell': 'Manual',
+    'Profil speichern': 'Save profile',
+    'Aktuelle Passwort-Einstellungen als eigenes Profil speichern': 'Save current password settings as a personal profile',
+    'Noch kein eigenes Profil gespeichert.': 'No custom profile saved yet.',
+    'Passwort-Profil geladen.': 'Password profile loaded.',
+    'Bitte gültige Zeichengruppen auswählen.': 'Please select valid character groups.',
+    'Eigenes Passwort-Profil gespeichert.': 'Custom password profile saved.',
+    'SICHERHEIT': 'SECURITY',
+    'Zwischenablage automatisch leeren': 'Clear clipboard automatically',
+    '30 Sekunden': '30 seconds',
+    '60 Sekunden': '60 seconds',
+    '2 Minuten': '2 minutes',
+    'Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.': 'Clear only if the copied password is still in the clipboard.',
+    'Kopiertes Passwort aus der Zwischenablage entfernt.': 'Copied password cleared from clipboard.',
     'Sprache:': 'Language:',
     'Sprache auswählen': 'Select interface language',
     'Farbschema:': 'Color theme:',
@@ -185,7 +204,102 @@ EN = {
 # Messages with variable version numbers, counts, colors and errors.
 DYNAMIC = (
     (r'^Passwort-Generator v(.+) · Entwicklung ([0-9]+)/100$', r'Passwort-Generator v\1 · Development \2/100'),
-    (r'^Installiert: v(.+) · Noch nicht geprüft$', r'Installed: v\1 · Not checked yet'),
+    (r'^Installiert: v(.+)  →  Neu: (.+)
+    (r'^Installiert: v(.+) · Prüfe GitHub …$', r'Installed: v\1 · Checking GitHub …'),
+    (r'^v(.+) ist aktuell\. Kein Update verfügbar\.$', r'v\1 is up to date. No update available.'),
+    (r'^Neue Version (.+) verfügbar! Installiert: v(.+)$', r'New version \1 available! Installed: v\2'),
+    (r'^Eine neue Version (.+) ist verfügbar!$', r'A new version \1 is available!'),
+    (r'^Du verwendest v(.+)\. Möchtest du die Aktualisierung jetzt im Update-Bereich ansehen\? Es wird nichts automatisch installiert\.$', r'You are using v\1. Open the Update page now? Nothing is installed automatically.'),
+    (r'^Neue Version (.+) verfügbar – zum Installieren öffnen$', r'New version \1 available – open to install'),
+    (r'^●  Automatisch \((Bild|Hintergrund)\): (.+)$', r'●  Automatic (\1): \2'),
+    (r'^🛡  Stärke: (.+)$', r'🛡  Strength: \1'),
+    (r'^Kurzüberblick · (.+)$', r'Summary · \1'),
+    (r'^(.+) Version\(en\) · neueste zuerst$', r'\1 version(s) · newest first'),
+    (r'^Updateprüfung fehlgeschlagen: (.+)$', r'Update check failed: \1'),
+    (r'^Versionshistorie nicht verfügbar: (.+)$', r'Release history unavailable: \1'),
+    (r'^Lade (.+) von GitHub herunter …$', r'Downloading \1 from GitHub …'),
+    (r'^(.+) installiert\. Die aktualisierte App wird neu gestartet …$', r'\1 installed. Restarting the updated app …'),
+    (r'^Download/Installation fehlgeschlagen: (.+)$', r'Download/installation failed: \1'),
+    (r'^Update (.+) installiert, aber der automatische Neustart ist fehlgeschlagen: ([\s\S]+)\nBitte die App über das KDE-Menü erneut öffnen\.$', r'Update \1 installed, but automatic restart failed: \2\nPlease reopen the app using the KDE menu.'),
+    (r'^Eigene Farbe \((#[0-9A-Fa-f]{6})\)$', r'Custom color (\1)'),
+)
+
+def translate(text, language='de'):
+    """Return a translated interface message. User and release data are untouched."""
+    if language != 'en' or not isinstance(text, str):
+        return text
+    if text.endswith(' • NEU'):
+        return translate(text[:-6], language) + ' • NEW'
+    found = EN.get(text)
+    if found is not None:
+        return found
+    for pattern, target in DYNAMIC:
+        match = re.fullmatch(pattern, text)
+        if match is None:
+            continue
+        out = match.expand(target)
+        if pattern.startswith('^●'):
+            out = out.replace('(Bild)', '(Image)').replace('(Hintergrund)', '(Background)')
+        if pattern.startswith('^🛡'):
+            for de in ('Sehr stark', 'Stark', 'Mittel', 'Schwach'):
+                out = out.replace(de, EN[de])
+        if pattern.startswith(('^Updateprüfung fehlgeschlagen:',
+                                '^Versionshistorie nicht verfügbar:',
+                                '^Download/Installation fehlgeschlagen:')):
+            # Translate known application errors inside the dynamic status too.
+            reason = match.group(1)
+            out = out.replace(reason, translate(reason, language))
+        return out
+    return text
+, r'Installed: v\1  →  New: \2'),
+    (r'^Installiert: v(.+) · Noch nicht geprüft
+    (r'^Installiert: v(.+) · Prüfe GitHub …$', r'Installed: v\1 · Checking GitHub …'),
+    (r'^v(.+) ist aktuell\. Kein Update verfügbar\.$', r'v\1 is up to date. No update available.'),
+    (r'^Neue Version (.+) verfügbar! Installiert: v(.+)$', r'New version \1 available! Installed: v\2'),
+    (r'^Eine neue Version (.+) ist verfügbar!$', r'A new version \1 is available!'),
+    (r'^Du verwendest v(.+)\. Möchtest du die Aktualisierung jetzt im Update-Bereich ansehen\? Es wird nichts automatisch installiert\.$', r'You are using v\1. Open the Update page now? Nothing is installed automatically.'),
+    (r'^Neue Version (.+) verfügbar – zum Installieren öffnen$', r'New version \1 available – open to install'),
+    (r'^●  Automatisch \((Bild|Hintergrund)\): (.+)$', r'●  Automatic (\1): \2'),
+    (r'^🛡  Stärke: (.+)$', r'🛡  Strength: \1'),
+    (r'^Kurzüberblick · (.+)$', r'Summary · \1'),
+    (r'^(.+) Version\(en\) · neueste zuerst$', r'\1 version(s) · newest first'),
+    (r'^Updateprüfung fehlgeschlagen: (.+)$', r'Update check failed: \1'),
+    (r'^Versionshistorie nicht verfügbar: (.+)$', r'Release history unavailable: \1'),
+    (r'^Lade (.+) von GitHub herunter …$', r'Downloading \1 from GitHub …'),
+    (r'^(.+) installiert\. Die aktualisierte App wird neu gestartet …$', r'\1 installed. Restarting the updated app …'),
+    (r'^Download/Installation fehlgeschlagen: (.+)$', r'Download/installation failed: \1'),
+    (r'^Update (.+) installiert, aber der automatische Neustart ist fehlgeschlagen: ([\s\S]+)\nBitte die App über das KDE-Menü erneut öffnen\.$', r'Update \1 installed, but automatic restart failed: \2\nPlease reopen the app using the KDE menu.'),
+    (r'^Eigene Farbe \((#[0-9A-Fa-f]{6})\)$', r'Custom color (\1)'),
+)
+
+def translate(text, language='de'):
+    """Return a translated interface message. User and release data are untouched."""
+    if language != 'en' or not isinstance(text, str):
+        return text
+    if text.endswith(' • NEU'):
+        return translate(text[:-6], language) + ' • NEW'
+    found = EN.get(text)
+    if found is not None:
+        return found
+    for pattern, target in DYNAMIC:
+        match = re.fullmatch(pattern, text)
+        if match is None:
+            continue
+        out = match.expand(target)
+        if pattern.startswith('^●'):
+            out = out.replace('(Bild)', '(Image)').replace('(Hintergrund)', '(Background)')
+        if pattern.startswith('^🛡'):
+            for de in ('Sehr stark', 'Stark', 'Mittel', 'Schwach'):
+                out = out.replace(de, EN[de])
+        if pattern.startswith(('^Updateprüfung fehlgeschlagen:',
+                                '^Versionshistorie nicht verfügbar:',
+                                '^Download/Installation fehlgeschlagen:')):
+            # Translate known application errors inside the dynamic status too.
+            reason = match.group(1)
+            out = out.replace(reason, translate(reason, language))
+        return out
+    return text
+, r'Installed: v\1 · Not checked yet'),
     (r'^Installiert: v(.+) · Prüfe GitHub …$', r'Installed: v\1 · Checking GitHub …'),
     (r'^v(.+) ist aktuell\. Kein Update verfügbar\.$', r'v\1 is up to date. No update available.'),
     (r'^Neue Version (.+) verfügbar! Installiert: v(.+)$', r'New version \1 available! Installed: v\2'),
