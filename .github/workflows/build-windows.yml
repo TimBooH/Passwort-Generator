@@ -69,7 +69,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Syntax check failed' }
           python -m compileall -q tests
           if ($LASTEXITCODE -ne 0) { throw 'Test syntax check failed' }
-          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py')) {
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py')) {
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test file: $test" }
           }
@@ -87,6 +87,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Windows bilingual language smoke failed' }
           python tests/smoke_profile_clipboard_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows profiles and clipboard smoke failed' }
+          python tests/smoke_v020_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows v0.20 feature smoke failed' }
           python tests/smoke_window_geometry_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows window-position and size persistence smoke failed' }
 
