@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-bit) | Linux (x86_64, e.g. CachyOS) |
 | --- | --- |
-| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.17.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.17.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.18.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.18.0/PasswortGenerator-x86_64.AppImage) |
 
 [All releases and installation scripts](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -25,7 +25,7 @@
 - **Passwords:** 8–128 characters, selectable character groups, and a strength indicator.
 - **Passphrases:** 4–10 words, configurable separators, and an optional random two-digit number.
 - **Glass design:** multiple color themes, automatic accent colors, and custom background images.
-- **Language:** German or English under **Settings → Appearance**; the selected language is saved.
+- **Language:** One setting for the entire app, including release notes and update messages. Choose German or English under **Settings → Appearance**; your preference is saved.
 - **Updates:** checks at startup and every 2 hours; release history and changes in the Changelog.
 - **Usability:** session-only password history, visual walkthrough, and saved window size/position.
 
@@ -62,7 +62,7 @@ python -m unittest discover -s tests -v
 
 Windows installers and Linux AppImages are built using [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions).
 
-**Version 0.17.0 · Step 17 of 100 toward the 1.0.0 release.**
+**Version 0.18.0 · Step 18 of 100 toward the 1.0.0 release.**
 [Release notes](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
