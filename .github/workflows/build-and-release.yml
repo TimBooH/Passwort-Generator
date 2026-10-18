@@ -82,6 +82,7 @@ jobs:
           PYTHONPATH=. python tests/smoke_no_scroll_ui.py
           PYTHONPATH=. python tests/smoke_language_ui.py
           PYTHONPATH=. python tests/smoke_profile_clipboard_ui.py
+          PYTHONPATH=. python tests/smoke_v020_ui.py
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
 
