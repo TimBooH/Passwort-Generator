@@ -24,10 +24,10 @@ SCREENS = (
         'Hintergrundbilder oder andere Farbschemas auswählen.',
     ),
     (
-        '3 · Updates',
+        '3 · Changelog',
         'Updateprüfung und Versionen',
-        'Neue Versionen erscheinen oben als „Updates • NEU“. '
-        'Die Versionen sind ohne Scrollen über „Neuer“ und „Älter“ erreichbar.',
+        'Neue Versionen erscheinen oben als „Changelog • NEU“. '
+        'Wähle eine Version im Dropdown, um ihre Änderungen darunter zu lesen.',
     ),
 )
 
