@@ -194,6 +194,30 @@ QPushButton#primaryButton {{
     font-weight: 800;
 }}
 QPushButton#primaryButton:hover {{ background: {primary_start}; }}
+QPushButton#generatePasswordButton {{
+    color: {primary_text};
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+        stop:0 {primary_start}, stop:0.28 {primary_start},
+        stop:1 {primary_end});
+    border: 1px solid {focus};
+    border-radius: 13px;
+    min-height: 28px;
+    padding: 3px 15px;
+    font-size: 13px;
+    font-weight: 800;
+}}
+QPushButton#generatePasswordButton:hover {{
+    background: qlineargradient(x1:0,y1:0,x2:0,y2:1,
+        stop:0 {primary_start}, stop:1 {primary_end});
+    border: 2px solid {focus};
+}}
+QPushButton#generatePasswordButton:pressed {{
+    background: {primary_end};
+}}
+QPushButton#generatePasswordButton:focus {{
+    border: 2px solid {focus};
+}}
+
 QPushButton:disabled {{ color: {muted}; background: {button}; }}
 QProgressBar {{
     color: {foreground};
