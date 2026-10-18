@@ -170,9 +170,9 @@ class PasswordWindow(QMainWindow):
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
         self.nav_buttons = []
-        self.tab_names = ('Passwort', 'Einstellungen', 'Changelog', 'Info')
+        self.tab_names = ('Passwort', 'Einstellungen', 'Update', 'Info')
         for index, (label, symbol) in enumerate((
-            ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Changelog', '↻'),
+            ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Update', '↻'),
         )):
             button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
@@ -373,7 +373,9 @@ class PasswordWindow(QMainWindow):
         settings_page_layout.setSpacing(5)
         settings_page_layout.setContentsMargins(3, 4, 3, 3)
 
-        colors = GlossyGlassCard('DESIGN & FARBEN')
+        colors = GlossyGlassCard('ERSCHEINUNGSBILD')
+        colors.setObjectName('appearanceCard')
+        self.appearance_card = colors
         self.glass_cards.append(colors)
         colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         colors_layout = colors.body
@@ -410,17 +412,13 @@ class PasswordWindow(QMainWindow):
         colors_note = QLabel('Die Textfarbe wird automatisch lesbar gewählt; Akzent und Schema folgen dem Hintergrund.')
         colors_note.setWordWrap(True)
         colors_layout.addWidget(colors_note)
-        settings_page_layout.addWidget(colors, 0)
-        # Background image controls belong to their own glass tile.
-        image_card = GlossyGlassCard('HINTERGRUNDBILD')
-        self.secondary_cards.append(image_card)
-        image_card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-        image_layout = image_card.body
-        image_layout.setSpacing(5)
+        # Colors and wallpaper now share a single appearance tile.
+        image_heading = QLabel('HINTERGRUNDBILD')
+        image_heading.setObjectName('supportText')
+        image_heading.setStyleSheet('font-weight: 700;')
+        colors_layout.addWidget(image_heading)
+        image_layout = colors_layout
         # The chosen image stays on disk; only its path and display mode are stored.
-        picture_title = QLabel('Eigenes Hintergrundbild')
-        picture_title.setObjectName('supportText')
-        image_layout.addWidget(picture_title)
         # Vertical actions avoid cramped/overlapping buttons in narrow windows.
         picture_actions = QVBoxLayout()
         picture_actions.setSpacing(3)
@@ -444,8 +442,7 @@ class PasswordWindow(QMainWindow):
         image_layout.addLayout(mode_row)
 
 
-        settings_page_layout.addWidget(image_card, 0)
-        settings_page_layout.addStretch(1)
+        settings_page_layout.addWidget(colors, 1)
 
         self.updates_page = QWidget()
         self.updates_page.setObjectName('updatesPage')
@@ -489,30 +486,10 @@ class PasswordWindow(QMainWindow):
         )
 
         updates_page_layout.addWidget(updates, 0)
-        # Versions are chosen in a dropdown: newest first, no outer scrolling.
-        versions_card = GlossyGlassCard('BISHERIGE VERSIONEN')
-        self.secondary_cards.append(versions_card)
-        versions_card.setObjectName('versionsCard')
-        versions_card.setSizePolicy(QSizePolicy.Policy.Expanding,
-                                    QSizePolicy.Policy.Preferred)
-        versions_card.layout().setContentsMargins(13, 7, 13, 8)
-        versions_card.body.setSpacing(5)
-        self.release_combo = QComboBox()
-        self.release_combo.setObjectName('releaseVersionCombo')
-        self.release_combo.setAccessibleName('Bisherige Versionen auswählen')
-        self.release_combo.addItem('Versionen werden geladen …', None)
-        self.release_combo.setEnabled(False)
-        self.release_combo.currentIndexChanged.connect(self.select_release_history)
-        versions_card.body.addWidget(self.release_combo)
-        self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
-        self.release_history_status.setObjectName('supportText')
-        self.release_history_status.setWordWrap(True)
-        versions_card.body.addWidget(self.release_history_status)
-        updates_page_layout.addWidget(versions_card, 0)
-
-        # A second, separate glass tile below the version dropdown.
+        # One CHANGELOG tile includes both version selection and release notes.
         changelog_card = GlossyGlassCard('CHANGELOG')
         changelog_card.setObjectName('changelogCard')
+        self.changelog_card = changelog_card
         self.secondary_cards.append(changelog_card)
         changelog_card.setSizePolicy(QSizePolicy.Policy.Expanding,
                                      QSizePolicy.Policy.Expanding)
@@ -520,6 +497,25 @@ class PasswordWindow(QMainWindow):
         changelog_card.layout().setSpacing(2)
         changelog_layout = changelog_card.body
         changelog_layout.setSpacing(5)
+        versions_heading = QLabel('BISHERIGE VERSIONEN')
+        versions_heading.setObjectName('supportText')
+        versions_heading.setStyleSheet('font-weight: 700;')
+        changelog_layout.addWidget(versions_heading)
+        self.release_combo = QComboBox()
+        self.release_combo.setObjectName('releaseVersionCombo')
+        self.release_combo.setAccessibleName('Bisherige Versionen auswählen')
+        self.release_combo.addItem('Versionen werden geladen …', None)
+        self.release_combo.setEnabled(False)
+        self.release_combo.currentIndexChanged.connect(self.select_release_history)
+        changelog_layout.addWidget(self.release_combo)
+        self.release_history_status = QLabel('Versionshistorie noch nicht geladen.')
+        self.release_history_status.setObjectName('supportText')
+        self.release_history_status.setWordWrap(True)
+        changelog_layout.addWidget(self.release_history_status)
+        changes_heading = QLabel('ÄNDERUNGEN & VERSIONEN')
+        changes_heading.setObjectName('supportText')
+        changes_heading.setStyleSheet('font-weight: 700;')
+        changelog_layout.addWidget(changes_heading)
         self.changelog_title = QLabel('Änderungen der veröffentlichten Version')
         self.changelog_title.setObjectName('supportText')
         self.changelog_title.setWordWrap(True)
@@ -789,7 +785,7 @@ class PasswordWindow(QMainWindow):
             'jetzt im Update-Bereich ansehen? Es wird nichts automatisch installiert.'
         )
         show_button = popup.addButton(
-            'Changelog öffnen', QMessageBox.ButtonRole.AcceptRole
+            'Update öffnen', QMessageBox.ButtonRole.AcceptRole
         )
         popup.addButton('Später', QMessageBox.ButtonRole.RejectRole)
         popup.buttonClicked.connect(
@@ -893,9 +889,9 @@ class PasswordWindow(QMainWindow):
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
-        labels = (('⌑ Passwort', '⚙ Design', '↻ Changelog')
+        labels = (('⌑ Passwort', '⚙ Design', '↻ Update')
                   if compact else
-                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Changelog'))
+                  ('⌑ Passwort', '⚙ Einstellungen', '↻ Update'))
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
@@ -903,7 +899,7 @@ class PasswordWindow(QMainWindow):
                 button.setText(label)
 
     def set_update_indicator(self, version=None):
-        """Show a persistent, contrast-rich update hint on the Updates button."""
+        """Show a persistent, contrast-rich update hint on the Update button."""
         self._available_update = version
         button = self.nav_buttons[2]
         button.setProperty('updateAvailable', bool(version))
