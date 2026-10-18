@@ -296,11 +296,11 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
         group_layout.addWidget(self.strength_bar)
-        self.analysis_button = QPushButton('ⓘ Sicherheitsanalyse')
+        self.analysis_button = QPushButton('ⓘ Analyse')
         self.analysis_button.setObjectName('analysisButton')
         self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
         self.analysis_button.clicked.connect(self.show_security_analysis)
-        group_layout.addWidget(self.analysis_button, 0, Qt.AlignmentFlag.AlignRight)
+        strength_row.addWidget(self.analysis_button)
         group_layout.addSpacing(2)
 
         length_row = QHBoxLayout()
@@ -377,7 +377,7 @@ class PasswordWindow(QMainWindow):
         self.rules_button = QPushButton('⚙ Erweiterte Regeln')
         self.rules_button.setObjectName('advancedPasswordRulesButton')
         self.rules_button.clicked.connect(self.show_advanced_rules)
-        group_layout.addWidget(self.rules_button, 0, Qt.AlignmentFlag.AlignLeft)
+        check_layout.addWidget(self.rules_button, 2, 1)
 
         # These controls only appear in Passphrase mode. The checkbox adds
         # one cryptographically random 10–99 number, separated as selected.
