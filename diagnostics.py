@@ -63,6 +63,10 @@ class CrashReporter:
         self._last_write = 0.0
         self._last_category = None
         self._native_reporting = False
+        self._original_excepthook = None
+        self._original_thread_hook = None
+        self._python_hook = None
+        self._thread_hook = None
 
         try:
             self.directory.mkdir(parents=True, exist_ok=True)
@@ -138,9 +142,13 @@ class CrashReporter:
             self._original_stderr_fd = None
 
     def _install_exception_hooks(self):
+        self._original_excepthook = sys.excepthook
+        self._original_thread_hook = threading.excepthook
+
         def hook(etype, value, tb):
             self.exception('Uncaught Python exception', etype, value, tb)
 
+        self._python_hook = hook
         sys.excepthook = hook
 
         def thread_hook(args):
@@ -149,6 +157,7 @@ class CrashReporter:
                 args.exc_type, args.exc_value, args.exc_traceback,
             )
 
+        self._thread_hook = thread_hook
         threading.excepthook = thread_hook
 
     def log(self, category, reason):
@@ -204,6 +213,10 @@ class CrashReporter:
         except (OSError, ValueError, TypeError):
             pass
         self._closed = True
+        if self._python_hook is not None and sys.excepthook is self._python_hook:
+            sys.excepthook = self._original_excepthook
+        if self._thread_hook is not None and threading.excepthook is self._thread_hook:
+            threading.excepthook = self._original_thread_hook
         try:
             if self._native_reporting:
                 faulthandler.disable()
