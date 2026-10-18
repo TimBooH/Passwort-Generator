@@ -1,19 +1,19 @@
-# PasswortGenerator v0.17.0 – Deutsch & English
-
-**Entwicklungsschritt 17 von 100** bis zur Vollversion 1.0.0.
+# PasswortGenerator v0.18.0 – Einheitliche Sprache / Unified Language
 
 ## Deutsch
 
-- **Sprache:** Unter **Einstellungen → Erscheinungsbild** zwischen **Deutsch** und **English** wechseln.
-- Die gewählte Sprache bleibt nach einem Neustart gespeichert.
-- Navigation, Buttons, Meldungen, Passwortstärke, Einführungs-Tour und grafische Hilfe sind auf Englisch verfügbar.
-- [Deutsche README](README.md) und [englische README](README.en.md) mit Sprachwechsel oben.
-- Passworterzeugung, Changelog, Glass-Oberfläche und Updateinstallation bleiben unverändert.
+- **Eine zentrale Spracheinstellung** unter **Einstellungen → Erscheinungsbild → Sprache** für das gesamte Programm. Kein zusätzlicher Schalter im Update-Bereich.
+- **Changelog:** Bereits geladene GitHub-Versionsnotizen werden beim Sprachwechsel sofort auf Deutsch oder Englisch umgestellt.
+- Neue Releases enthalten **deutsche und englische Änderungsnotizen**, die automatisch passend zur gewählten Programmsprache angezeigt werden.
+- Für ältere ausschließlich deutsch veröffentlichte Versionen stehen **englische Kurzfassungen** zur Verfügung.
+- Auch Ladezustände, Fehlermeldungen und Versionsstatus im Update-Bereich folgen der globalen Sprache.
+- Die Sprachauswahl bleibt nach einem Neustart erhalten. Passwortgenerierung, Glass-Design und Updateinstallation sind unverändert.
 
 ## English
 
-- **Language:** Switch between **German** and **English** in **Settings → Appearance**.
-- Your language preference persists across restarts.
-- Navigation, buttons, messages, password strength, guided onboarding and visual help are available in English.
-- Both [German](README.md) and [English](README.en.md) README files include language links.
-- Password generation, Changelog, glass design and updates remain unchanged.
+- **One app-wide language setting** under **Settings → Appearance → Language**. No separate language switch on the Update page.
+- **Changelog:** Already loaded GitHub release notes switch immediately between German and English along with the entire app.
+- New releases include **German and English release notes**, automatically selected using the app language.
+- Older German-only versions now have **English summaries**.
+- Loading states, error messages and version status on the Update page follow the same global language.
+- The language preference persists across restarts. Password generation, the glass design and update installation are unchanged.
