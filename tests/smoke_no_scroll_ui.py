@@ -54,11 +54,13 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
         if page == 2:
             assert not window.changelog_view.verticalScrollBar().isVisible()
             assert window.release_combo.isVisible()
+            assert window.changelog_card.isAncestorOf(window.release_combo)
+            assert window.changelog_card.isAncestorOf(window.changelog_view)
             assert window.check_button.width() <= 125
             assert window.check_button.mapTo(window, QPoint(0, 0)).x() < window.width() // 2
 
 # All fifty release entries are in the dropdown; no page buttons or
-# external scrollbars are needed. Selection changes the separate changelog.
+# external scrollbars are needed. Selection updates the combined changelog tile.
 entries = [{
     'tag': f'v0.{i:02d}.0',
     'date': '2026-10-18',
