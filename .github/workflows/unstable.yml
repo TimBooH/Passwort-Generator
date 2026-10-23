@@ -243,6 +243,9 @@ jobs:
           windows="PasswortGenerator-UNSTABLE-${short}-Setup-x64.exe"
           test -s "preview-assets/$linux"
           test -s "preview-assets/$windows"
+          # PowerShell's ASCII output on Windows can contain CRLF endings.
+          # Normalize the checksum manifest, not the signed installer bytes.
+          sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
           (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
           title="PasswortGenerator Unstable $short"
           body="**UNSTABLE / TESTVERSION** – Nicht für den Produktiveinsatz!\n\nTest-Build vom Commit \`$GITHUB_SHA\`. Windows und Linux erfolgreich getestet.\n\nDie offizielle Stable-Version bleibt unter /releases/latest und wird davon nicht verändert."
