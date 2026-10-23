@@ -49,8 +49,10 @@ assert window.output.echoMode() == QLineEdit.EchoMode.Normal
 assert window.strength_bar.value() > 0
 assert window.generate_button.isVisible()
 assert window.generate_button.objectName() == 'generatePasswordButton'
-assert window.generate_button.width() <= 360
-assert window.generate_button.height() <= 40
+assert window.generate_button.width() >= 600
+assert 40 <= window.generate_button.height() <= 46
+assert window.ocean_options_panel.isVisible()
+assert window.ocean_length_panel.isVisible()
 assert window.ocean_page_title.isVisible()
 assert window.language == 'de'
 
