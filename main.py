@@ -8,14 +8,13 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
-from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
     QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
     QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTabWidget,
-    QStyle, QStyleOptionButton,
     QTextBrowser, QVBoxLayout, QWidget,
 )
 
@@ -82,39 +81,6 @@ class CurrentPageStack(QStackedWidget):
     def minimumSizeHint(self):
         page = self.currentWidget()
         return page.minimumSizeHint() if page is not None else super().minimumSizeHint()
-
-
-class GlassCheckBox(QCheckBox):
-    """Native checkbox with an explicit visible tick in the Ocean theme.
-
-    Qt platform themes can replace checked indicators with a solid accent box
-    when QSS customizes the indicator. Draw the tiny white check mark only:
-    the platform style still draws the checkbox itself and receives clicks.
-    """
-
-    def paintEvent(self, event):
-        super().paintEvent(event)
-        if not self.isChecked() or not self.property('oceanCheckmark'):
-            return
-        option = QStyleOptionButton()
-        self.initStyleOption(option)
-        rect = self.style().subElementRect(
-            QStyle.SubElement.SE_CheckBoxIndicator, option, self
-        )
-        if rect.width() < 8 or rect.height() < 8:
-            return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        pen = QPen(QColor('#FFFFFF'), 2.2)
-        pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-        painter.setPen(pen)
-        x, y, w, h = rect.x(), rect.y(), rect.width(), rect.height()
-        painter.drawLine(x + int(w * .19), y + int(h * .52),
-                         x + int(w * .42), y + int(h * .75))
-        painter.drawLine(x + int(w * .42), y + int(h * .75),
-                         x + int(w * .82), y + int(h * .24))
-        painter.end()
 
 
 class PasswordWindow(QMainWindow):
@@ -435,11 +401,11 @@ class PasswordWindow(QMainWindow):
         check_layout.setContentsMargins(0, 0, 0, 0)
         check_layout.setHorizontalSpacing(9)
         check_layout.setVerticalSpacing(1)
-        self.upper = GlassCheckBox('Großbuchstaben (A–Z)')
-        self.lower = GlassCheckBox('Kleinbuchstaben (a–z)')
-        self.digits = GlassCheckBox('Zahlen (0–9)')
-        self.symbols = GlassCheckBox('Sonderzeichen')
-        self.exclude = GlassCheckBox('Ähnliche Zeichen vermeiden')
+        self.upper = QCheckBox('Großbuchstaben (A–Z)')
+        self.lower = QCheckBox('Kleinbuchstaben (a–z)')
+        self.digits = QCheckBox('Zahlen (0–9)')
+        self.symbols = QCheckBox('Sonderzeichen')
+        self.exclude = QCheckBox('Ähnliche Zeichen vermeiden')
         self.exclude.setToolTip('I, l, 1, O und 0 ausschließen')
         for control in (self.upper, self.lower, self.digits, self.symbols, self.exclude):
             control.setChecked(True)
@@ -1544,10 +1510,6 @@ class PasswordWindow(QMainWindow):
         # forcing a scrollbar when the same app is resized narrowly.
         self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
         self.ocean_options_layout.setSpacing(11 if ocean and wide else 5)
-        for checkbox in (self.upper, self.lower, self.digits,
-                         self.symbols, self.exclude):
-            checkbox.setProperty('oceanCheckmark', ocean)
-            checkbox.update()
         self.brand_subtitle.setVisible(not ocean)
         self.brand_icon.setFixedSize(44 if ocean else 53, 44 if ocean else 53)
         self._set_ui(
