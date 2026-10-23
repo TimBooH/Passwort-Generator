@@ -34,6 +34,10 @@ assert window.background_surface._ocean.isVisible()
 assert not window.background_surface._circuit.isVisible()
 assert window.glass_cards[0]._ocean_enabled
 assert window.ocean_page_title.isVisible()
+assert window.ocean_hero_icon.isVisible()
+assert window.ocean_options_panel.x() < window.ocean_length_panel.x()
+assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
+assert all(c.property('oceanCheckmark') for c in (window.upper, window.lower, window.digits, window.symbols))
 assert window.ocean_page_title.text() == 'PASSWORT ERSTELLEN'
 assert window.ocean_page_subtitle.text() == 'Sichere Passwörter und Passphrasen'
 assert 'Ocean Glass' in window.styleSheet()
