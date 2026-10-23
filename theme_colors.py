@@ -8,6 +8,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
 
 COLOR_SCHEMES = (
+    # Inspired by the blue/cyan glass preview: the real, interactive default UI.
+    ('ocean_glass', 'Ocean Glass · Standard', '#091D3D', '#F7FBFF'),
     ('neon_blue', 'Neon Blue', '#071322', '#FFFFFF'),
     ('glass', 'Glass (durchsichtig)', '#142638', '#F6FAFF'),
     ('glass_dark', 'Glass Dark', '#171C26', '#F0F4FC'),
@@ -17,7 +19,7 @@ COLOR_SCHEMES = (
     ('custom', 'Eigene Farben', None, None),
 )
 SCHEME_MAP = {key: (label, bg, fg) for key, label, bg, fg in COLOR_SCHEMES}
-DEFAULT_SCHEME = 'neon_blue'
+DEFAULT_SCHEME = 'ocean_glass'
 
 
 def _as_color(value):
