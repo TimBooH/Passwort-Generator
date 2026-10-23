@@ -153,7 +153,7 @@ class PasswordWindow(QMainWindow):
         outer_layout.addWidget(content, 1)
         content_layout = QVBoxLayout(content)
         content_layout.setSpacing(5)
-        content_layout.setContentsMargins(12, 8, 12, 7)
+        content_layout.setContentsMargins(16, 10, 16, 8)
         self.glass_cards = []
         self.secondary_cards = []
         self._compact_options = None
@@ -163,7 +163,8 @@ class PasswordWindow(QMainWindow):
         # Header: compact branding, with four navigation actions at top right.
         header = QHBoxLayout()
         header.setSpacing(12)
-        lock = QLabel('🔒')
+        lock = QLabel('🔑')
+        self.brand_icon = lock
         lock.setObjectName('brandLock')
         lock.setFixedSize(53, 53)
         lock.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -171,10 +172,12 @@ class PasswordWindow(QMainWindow):
         heading = QVBoxLayout()
         heading.setSpacing(3)
         brand = QLabel('Passwort-Generator')
+        self.brand_title = brand
         brand.setObjectName('brandTitle')
         brand.setWordWrap(True)
         heading.addWidget(brand)
         subtitle = QLabel('Stark. Sicher. Einzigartig.')
+        self.brand_subtitle = subtitle
         subtitle.setObjectName('brandSubtitle')
         heading.addWidget(subtitle)
         header.addLayout(heading, 1)
@@ -184,9 +187,8 @@ class PasswordWindow(QMainWindow):
         self.nav_container = QFrame(content)
         self.nav_container.setObjectName('topNav')
         nav_layout = QHBoxLayout(self.nav_container)
-        nav_layout.setContentsMargins(0, 0, 0, 0)
-        nav_layout.setSpacing(4)
-        nav_layout.addStretch(1)
+        nav_layout.setContentsMargins(7, 5, 7, 5)
+        nav_layout.setSpacing(6)
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
         self.nav_buttons = []
@@ -197,11 +199,11 @@ class PasswordWindow(QMainWindow):
             button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
             button.setCheckable(True)
-            button.setMinimumHeight(25)
+            button.setMinimumHeight(36)
             button.setToolTip(label)
             button.setAccessibleName(label)
             self.nav_group.addButton(button)
-            nav_layout.addWidget(button)
+            nav_layout.addWidget(button, 1)
             button.clicked.connect(
                 lambda checked=False, i=index: self.tabs.setCurrentIndex(i)
             )
@@ -209,17 +211,17 @@ class PasswordWindow(QMainWindow):
         # Visual order: Passwort → Update → Einstellungen → Info.
         # Keep original QStackedWidget indices so internal update links work.
         nav_layout.removeWidget(self.nav_buttons[1])
-        nav_layout.addWidget(self.nav_buttons[1])
+        nav_layout.addWidget(self.nav_buttons[1], 1)
         self.nav_buttons[0].setChecked(True)
         self.info_nav_button = QPushButton('ⓘ  Info')
         self.info_nav_button.setObjectName('infoNavButton')
         self.info_nav_button.setToolTip('Über PasswortGenerator')
         self.info_nav_button.setAccessibleName('Info')
-        self.info_nav_button.setMinimumHeight(25)
+        self.info_nav_button.setMinimumHeight(36)
         self.info_nav_button.setCheckable(True)
         self.nav_group.addButton(self.info_nav_button)
         self.info_nav_button.clicked.connect(self.show_info)
-        nav_layout.addWidget(self.info_nav_button)
+        nav_layout.addWidget(self.info_nav_button, 1)
         content_layout.addWidget(self.nav_container)
 
         self.tabs = CurrentPageStack(content)
@@ -274,6 +276,11 @@ class PasswordWindow(QMainWindow):
         group_layout.addLayout(mode_row)
         self.ocean_heading.setVisible(False)
 
+        self.ocean_output_caption = QLabel('Generiertes Passwort')
+        self.ocean_output_caption.setObjectName('oceanOutputCaption')
+        group_layout.addWidget(self.ocean_output_caption)
+        self.ocean_output_caption.hide()
+
         password_row = QHBoxLayout()
         password_row.setSpacing(7)
         self.output = QLineEdit()
@@ -315,6 +322,16 @@ class PasswordWindow(QMainWindow):
         self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
         self.analysis_button.clicked.connect(self.show_security_analysis)
         strength_row.addWidget(self.analysis_button)
+        self.ocean_strength_caption = QLabel('Passwort-Stärke')
+        self.ocean_strength_caption.setObjectName('oceanStrengthCaption')
+        self.ocean_strength_value = QLabel('--')
+        self.ocean_strength_value.setObjectName('oceanStrengthValue')
+        strength_row.insertWidget(0, self.ocean_strength_caption)
+        strength_row.insertWidget(3, self.ocean_strength_value)
+        group_layout.removeWidget(self.strength_bar)
+        strength_row.insertWidget(2, self.strength_bar, 1)
+        self.ocean_strength_caption.hide()
+        self.ocean_strength_value.hide()
         group_layout.addSpacing(2)
 
         length_row = QHBoxLayout()
@@ -455,6 +472,79 @@ class PasswordWindow(QMainWindow):
         self.history_button.clicked.connect(self.show_history)
         footer.addWidget(self.history_button, 1)
         group_layout.addLayout(footer)
+
+        # Match the reference's real two-column layout: OPTIONS | LENGTH.
+        # Move existing, fully connected Qt controls; never use a screenshot
+        # as a background or replace the live security functionality.
+        group_layout.removeItem(length_row)
+        group_layout.removeWidget(self.length_slider)
+        group_layout.removeItem(preset_row)
+        group_layout.removeWidget(self.options_widget)
+        group_layout.removeWidget(self.phrase_options_widget)
+        group_layout.removeItem(footer)
+        for i in range(group_layout.count() - 1, -1, -1):
+            if group_layout.itemAt(i).spacerItem() is not None:
+                group_layout.takeAt(i)
+
+        self.ocean_sections = QWidget(group)
+        self.ocean_sections.setObjectName('oceanSections')
+        sections_row = QHBoxLayout(self.ocean_sections)
+        sections_row.setContentsMargins(0, 0, 0, 0)
+        sections_row.setSpacing(10)
+        self.ocean_options_panel = QFrame(self.ocean_sections)
+        self.ocean_options_panel.setObjectName('oceanOptionPanel')
+        self.ocean_options_panel.setMinimumWidth(250)
+        options_col = QVBoxLayout(self.ocean_options_panel)
+        options_col.setContentsMargins(13, 12, 13, 10)
+        options_col.setSpacing(7)
+        self.ocean_options_heading = QLabel('Optionen')
+        self.ocean_options_heading.setObjectName('oceanPanelHeading')
+        options_col.addWidget(self.ocean_options_heading)
+        options_col.addWidget(self.options_widget)
+        options_col.addWidget(self.phrase_options_widget)
+        self.ocean_preset_box = QWidget()
+        preset_box_layout = QVBoxLayout(self.ocean_preset_box)
+        preset_box_layout.setContentsMargins(0, 0, 0, 0)
+        preset_box_layout.addLayout(preset_row)
+        options_col.addWidget(self.ocean_preset_box)
+        options_col.addStretch(1)
+
+        self.ocean_length_panel = QFrame(self.ocean_sections)
+        self.ocean_length_panel.setObjectName('oceanLengthPanel')
+        self.ocean_length_panel.setMinimumWidth(150)
+        length_col = QVBoxLayout(self.ocean_length_panel)
+        length_col.setContentsMargins(13, 12, 13, 10)
+        length_col.setSpacing(8)
+        self.ocean_length_heading = QLabel('Passwort-Länge')
+        self.ocean_length_heading.setObjectName('oceanPanelHeading')
+        length_col.addWidget(self.ocean_length_heading)
+        length_row.addWidget(self.length_slider, 1)
+        length_col.addLayout(length_row)
+        self.ocean_length_range = QWidget()
+        range_layout = QHBoxLayout(self.ocean_length_range)
+        range_layout.setContentsMargins(2, 0, 2, 0)
+        self.ocean_min_label = QLabel('8')
+        self.ocean_max_label = QLabel('128')
+        range_layout.addWidget(self.ocean_min_label)
+        range_layout.addStretch()
+        range_layout.addWidget(self.ocean_max_label)
+        length_col.addWidget(self.ocean_length_range)
+        length_col.addStretch(1)
+
+        sections_row.addWidget(self.ocean_options_panel, 19)
+        sections_row.addWidget(self.ocean_length_panel, 11)
+        group_layout.insertWidget(
+            group_layout.indexOf(self.generate_button), self.ocean_sections, 1
+        )
+
+        # Keep privacy and session-history actions, but place them subtly
+        # above the main full-width Generate action.
+        footer.insertStretch(0, 1)
+        self.show_button.setMaximumWidth(130)
+        self.history_button.setMaximumWidth(130)
+        group_layout.insertLayout(
+            group_layout.indexOf(self.generate_button), footer
+        )
         layout.addWidget(group, 1)
         self.preset_combo.currentIndexChanged.connect(self.apply_password_preset)
         self.length.valueChanged.connect(self.mark_password_preset_manual)
