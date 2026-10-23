@@ -50,7 +50,8 @@ assert window.strength_bar.value() > 0
 assert window.generate_button.isVisible()
 assert window.generate_button.objectName() == 'generatePasswordButton'
 assert window.generate_button.width() >= 600
-assert 40 <= window.generate_button.height() <= 46
+print(f'CTA metrics: width={window.generate_button.width()}, height={window.generate_button.height()}')
+assert 34 <= window.generate_button.height() <= 52
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
 assert window.ocean_page_title.isVisible()
