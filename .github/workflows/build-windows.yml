@@ -65,7 +65,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt "pyinstaller==6.22.3" pillow
           if ($LASTEXITCODE -ne 0) { throw 'Dependencies failed' }
-          python -m py_compile main.py glass_ui.py neon_style.py theme_colors.py release_history.py password_core.py version.py updater.py diagnostics.py windows_support.py visual_help.py first_run_tour.py localization.py password_presets.py
+          python -m py_compile main.py glass_ui.py neon_style.py theme_colors.py release_history.py password_core.py version.py updater.py diagnostics.py windows_support.py visual_help.py first_run_tour.py localization.py password_presets.py ocean_wallpaper.py
           if ($LASTEXITCODE -ne 0) { throw 'Syntax check failed' }
           python -m compileall -q tests
           if ($LASTEXITCODE -ne 0) { throw 'Test syntax check failed' }
@@ -73,6 +73,8 @@ jobs:
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test file: $test" }
           }
+          python tests/smoke_default_ocean_ui.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows default Ocean Glass theme smoke failed' }
           python tests/smoke_tabs_ui.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows GUI navigation smoke failed' }
           python tests/smoke_theme_history_ui.py
