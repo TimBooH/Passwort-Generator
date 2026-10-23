@@ -39,7 +39,14 @@ assert window.ocean_page_subtitle.text() == 'Sichere Passwörter und Passphrasen
 assert 'Ocean Glass' in window.styleSheet()
 assert '#18B7F7' in window.styleSheet()
 assert not window.findChildren(QScrollArea)
-assert window.generate_button.width() <= 360
+assert window.generate_button.width() > 360
+assert window.ocean_options_panel.isVisible()
+assert window.ocean_length_panel.isVisible()
+assert window.ocean_output_caption.isVisible()
+assert window.ocean_strength_caption.isVisible()
+assert not window.strength_label.isVisible()
+assert window.ocean_options_heading.text() == 'Optionen'
+assert window.ocean_length_heading.text() == 'Passwort-Länge'
 
 # This is the real interactive program, including passwords, modes and settings.
 window.generate()
@@ -73,6 +80,8 @@ app.processEvents()
 window.tabs.setCurrentIndex(0)
 assert window.ocean_page_title.text() == 'CREATE PASSWORD'
 assert window.ocean_page_subtitle.text() == 'Secure passwords and passphrases'
+assert window.ocean_options_heading.text() == 'Options'
+assert window.ocean_length_heading.text() == 'Password length'
 for width, height in ((530, 700), (850, 760), (1100, 820)):
     window.resize(width, height)
     for index in (0, 1, 2, 3):
