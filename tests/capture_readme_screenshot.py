@@ -27,10 +27,11 @@ window.resize(1120, 790)
 window.show()
 window.tabs.setCurrentIndex(0)
 
-# Use an actual app appearance preset rather than digitally drawing a UI.
-theme_index = window.scheme_combo.findData('glass_dark')
-assert theme_index >= 0, 'Glass Dark must exist as a real application theme.'
+# Capture the actual default UI, now Ocean Glass (not a mockup).
+theme_index = window.scheme_combo.findData('ocean_glass')
+assert theme_index >= 0, 'Ocean Glass must exist as a real application theme.'
 window.scheme_combo.setCurrentIndex(theme_index)
+assert window.background_surface._ocean_enabled
 
 # Generate a one-use demonstration password through the application itself.
 # Showing it makes the real strength indicator and new compact button visible.
@@ -50,6 +51,7 @@ assert window.generate_button.isVisible()
 assert window.generate_button.objectName() == 'generatePasswordButton'
 assert window.generate_button.width() <= 360
 assert window.generate_button.height() <= 40
+assert window.ocean_page_title.isVisible()
 assert window.language == 'de'
 
 # Render actual Qt widgets directly; no image synthesis or image editing.
