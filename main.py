@@ -2085,25 +2085,36 @@ class PasswordWindow(QMainWindow):
             reply.deleteLater()
 
     def download_update(self):
-        if CHANNEL == 'unstable':
-            return  # Preview builds must not install public Stable releases.
         if self.download_reply is not None or not self.latest_asset:
             return
+        if self.update_channel == 'unstable':
+            answer = QMessageBox.question(
+                self, self._t('Unstable-Testversion'),
+                self._t('Unstable enthält unfertige Funktionen. Separat von Stable installieren?'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
         if self.reporter is not None:
             self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self.latest_version}', force=True)
+        install_path = (UNSTABLE_APPIMAGE if self.update_channel == 'unstable'
+                        else INSTALLED_APPIMAGE)
         self.download_installed = (
-            os.name != 'nt'
-            and INSTALLED_APPIMAGE.is_file()
-            and os.access(INSTALLED_APPIMAGE.parent, os.W_OK)
+            os.name != 'nt' and (
+                self.update_channel == 'unstable'
+                or (INSTALLED_APPIMAGE.is_file()
+                    and os.access(INSTALLED_APPIMAGE.parent, os.W_OK))
+            )
         )
         download_location = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DownloadLocation
         )
         download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
         if os.name == 'nt':
-            target = download_dir / f'PasswortGenerator-{self.latest_version}-Setup-x64.exe'
+            target = download_dir / self.latest_asset['name']
         elif self.download_installed:
-            target = INSTALLED_APPIMAGE
+            target = install_path
         else:
             target = download_dir / f'PasswortGenerator-{self.latest_version}-x86_64.AppImage'
         stage = staging_path(target) if self.download_installed else target
@@ -2169,7 +2180,7 @@ class PasswordWindow(QMainWindow):
             if self.download_bytes != int(self.latest_asset.get('size', -1)):
                 raise ValueError('Die Dateigröße stimmt nicht mit dem GitHub-Release überein.')
             expected_digest = self.latest_asset.get('digest', '')
-            if not expected_digest.startswith('sha256:'):
+            if not isinstance(expected_digest, str) or not expected_digest.startswith('sha256:'):
                 raise ValueError('GitHub hat keine SHA-256-Prüfsumme für dieses Release bereitgestellt.')
             actual_digest = self.download_hash.hexdigest()
             if actual_digest.lower() != expected_digest.split(':', 1)[1].lower():
