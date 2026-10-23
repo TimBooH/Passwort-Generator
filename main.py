@@ -34,7 +34,9 @@ from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
                             make_passphrase, estimate_strength,
                             password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
-from release_channel import CHANNEL
+from release_channel import CHANNEL, BUILD_SHA
+from update_channels import (channel_api, select_unstable_asset,
+                             has_channel_update, unstable_asset_name)
 
 REPO = 'TimBooH/Passwort-Generator'
 REPO_URL = f'https://github.com/{REPO}'
@@ -45,6 +47,7 @@ RELEASES_URL = f'{REPO_URL}/releases'
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000  # Every two hours while open.
 APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
+UNSTABLE_APPIMAGE = Path.home() / '.local/opt/passwort-generator-unstable/PasswortGenerator.AppImage'
 
 BACKGROUND_COLORS = [
     ('Nachtblau', '#101827'), ('Anthrazit', '#20242C'), ('Schwarz', '#111111'),
@@ -113,7 +116,11 @@ class PasswordWindow(QMainWindow):
         self._history_releases = {}
         self._latest_release_note = None  # (tag, raw GitHub Markdown)
         self._new_update_note = ''
-        self._auto_check = bool(auto_check) and CHANNEL != 'unstable'
+        self.update_channel = self.settings.value('updates/channel', CHANNEL, type=str)
+        if self.update_channel not in ('stable', 'unstable'):
+            self.update_channel = CHANNEL
+        self._checked_channel = self.update_channel
+        self._auto_check = bool(auto_check)
         self._startup_update_check_pending = self._auto_check
         self._pending_update_popup = None
         self._update_popup_dialog = None
@@ -712,6 +719,22 @@ class PasswordWindow(QMainWindow):
         updates_layout.setSpacing(4)
         updates.layout().setContentsMargins(13, 7, 13, 9)
         updates.layout().setSpacing(2)
+        channel_row = QHBoxLayout()
+        channel_row.setSpacing(8)
+        self.channel_label = QLabel('Update-Kanal:')
+        channel_row.addWidget(self.channel_label)
+        self.channel_combo = QComboBox()
+        self.channel_combo.setObjectName('updateChannelCombo')
+        self.channel_combo.setAccessibleName('Stable oder Unstable auswählen')
+        self.channel_combo.addItem('Stable', 'stable')
+        self.channel_combo.addItem('Unstable (Test)', 'unstable')
+        self.channel_combo.setCurrentIndex(
+            self.channel_combo.findData(self.update_channel)
+        )
+        self.channel_combo.currentIndexChanged.connect(self.change_update_channel)
+        channel_row.addWidget(self.channel_combo)
+        channel_row.addStretch(1)
+        updates_layout.addLayout(channel_row)
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
         updates_layout.addWidget(self.update_status)
@@ -903,7 +926,7 @@ class PasswordWindow(QMainWindow):
         self.update_timer.setObjectName('periodicUpdateTimer')
         self.update_timer.setInterval(UPDATE_CHECK_INTERVAL_MS)
         self.update_timer.timeout.connect(self.check_for_updates)
-        if auto_check:
+        if self._auto_check:
             self.update_timer.start()
             # Show the first-run introduction before any possible update popup.
             QTimer.singleShot(280, self.show_first_run_tour)
@@ -1739,14 +1762,39 @@ class PasswordWindow(QMainWindow):
         request.setTransferTimeout(30000)
         return request
 
+    def change_update_channel(self, *_):
+        """Switch feed only; never silently uninstall or replace an app."""
+        selected = self.channel_combo.currentData()
+        if selected not in ('stable', 'unstable') or selected == self.update_channel:
+            return
+        self.update_channel = selected
+        self.settings.setValue('updates/channel', selected)
+        self.latest_asset = None
+        self.latest_version = None
+        self._new_update_note = ''
+        self._available_update = None
+        self.set_update_indicator()
+        self.download_button.hide()
+        self.update_compare.hide()
+        self.update_preview.hide()
+        self._set_ui(self.update_status, 'Update-Kanal gewechselt · Prüfe GitHub …')
+        if self.check_reply is not None:
+            self.check_reply.abort()
+            # An older reply must never be interpreted as the new channel.
+            return
+        self.check_for_updates()
+
     def refresh_update_preview(self):
         """Refresh the bilingual version comparison and two-point summary."""
         if not self.latest_version:
             self.update_compare.hide()
             self.update_preview.hide()
             return
-        self._set_ui(self.update_compare,
-                     f'Installiert: v{APP_VERSION}  →  Neu: {self.latest_version}')
+        suffix = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
+        self._set_ui(
+            self.update_compare,
+            f'Installiert: v{APP_VERSION}{suffix}  →  Neu: {self.latest_version}',
+        )
         self.update_compare.show()
         summary = release_changelog(
             self._new_update_note, self.latest_version, self.language, max_items=2
@@ -1758,10 +1806,6 @@ class PasswordWindow(QMainWindow):
             self.update_preview.hide()
 
     def check_for_updates(self):
-        if CHANNEL == 'unstable':
-            self._set_ui(self.update_status,
-                         'UNSTABLE-Testversion · Stable-Updates sind deaktiviert.')
-            return
         if self.check_reply is not None or self.download_reply is not None:
             return
         # The existing update-check action also refreshes the list.
@@ -1769,11 +1813,12 @@ class PasswordWindow(QMainWindow):
         if self.tabs.currentIndex() == 2 and self.history_reply is None:
             self.load_release_history()
         self.check_button.setEnabled(False)
+        self._checked_channel = self.update_channel
         self.download_button.hide()
         self.update_compare.hide()
         self.update_preview.hide()
         self._set_ui(self.update_status, f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
-        self.check_reply = self.network.get(self.make_request(LATEST_RELEASE_API))
+        self.check_reply = self.network.get(self.make_request(channel_api(self._checked_channel)))
         self.check_reply.finished.connect(self.check_finished)
 
     def check_finished(self):
