@@ -1,23 +1,22 @@
 name: Unstable Preview - Linux & Windows
 
-# Test packages only. Absolutely no GitHub Releases, tags, or write token.
+# Preview is published ONLY as a GitHub prerelease (never latest Stable).
+# Linux and Windows must both pass before publishing.
 on:
   push:
     branches: [unstable]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: unstable-preview
+  group: unstable-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   linux-preview:
-    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    if: github.ref == 'refs/heads/unstable'
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     env:
@@ -57,11 +56,12 @@ jobs:
           PYTHONPATH=. python tests/smoke_v020_ui.py
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
+          PYTHONPATH=. python tests/smoke_update_channels_ui.py
       - name: Embed UNSTABLE build identity and verify isolation
         shell: bash
         run: |
           set -euo pipefail
-          printf "CHANNEL = 'unstable'\n" > release_channel.py
+          printf "CHANNEL = 'unstable'\nBUILD_SHA = '%s'\n" "${GITHUB_SHA:0:12}" > release_channel.py
           python - <<'PY'
           import os
           os.environ['QT_QPA_PLATFORM'] = 'offscreen'
@@ -72,10 +72,13 @@ jobs:
           window = PasswordWindow(auto_check=True)
           assert CHANNEL == 'unstable'
           assert window.settings.applicationName() == 'PasswortGenerator-Unstable'
-          assert not window._auto_check
+          assert window._auto_check
+          assert window.update_channel == 'unstable'
           assert '[UNSTABLE]' in window.windowTitle()
-          window.check_for_updates()
-          assert window.check_reply is None
+          from release_channel import BUILD_SHA
+          assert BUILD_SHA == os.environ['GITHUB_SHA'][:12]
+          from update_channels import channel_api
+          assert channel_api(window.update_channel).endswith('releases/tags/unstable')
           window.close()
           print('UNSTABLE isolated identity, settings, and updates verified')
           PY
@@ -105,21 +108,22 @@ jobs:
           DESKTOP
           curl --fail --location --silent --show-error --retry 3 -o appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
           chmod +x appimagetool.AppImage
-          ARCH=x86_64 ./appimagetool.AppImage AppDir PasswortGenerator-UNSTABLE-x86_64.AppImage
-          test -s PasswortGenerator-UNSTABLE-x86_64.AppImage
-          sha256sum PasswortGenerator-UNSTABLE-x86_64.AppImage > SHA256SUMS-unstable-linux.txt
+          short="${GITHUB_SHA:0:12}"
+          ARCH=x86_64 ./appimagetool.AppImage AppDir "PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage"
+          test -s "PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage"
+          sha256sum "PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage" > SHA256SUMS-unstable-linux.txt
       - name: Upload Linux preview, not a public release
         uses: actions/upload-artifact@v4
         with:
           name: PasswortGenerator-UNSTABLE-Linux
           path: |
-            PasswortGenerator-UNSTABLE-x86_64.AppImage
+            PasswortGenerator-UNSTABLE-*-x86_64.AppImage
             SHA256SUMS-unstable-linux.txt
           if-no-files-found: error
           retention-days: 14
 
   windows-preview:
-    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    if: github.ref == 'refs/heads/unstable'
     runs-on: windows-2022
     timeout-minutes: 35
     env:
@@ -145,18 +149,19 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m compileall -q .
           if ($LASTEXITCODE -ne 0) { throw 'Source syntax errors' }
-          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py')) {
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py', 'test_update_channels.py')) {
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test $test" }
           }
-          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py')) {
+          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py')) {
             python "tests/$test"
             if ($LASTEXITCODE -ne 0) { throw "Failed GUI smoke $test" }
           }
       - name: Embed UNSTABLE identity
         shell: pwsh
         run: |
-          "CHANNEL = 'unstable'" | Set-Content release_channel.py -Encoding ascii
+          $short = $env:GITHUB_SHA.Substring(0,12)
+          @("CHANNEL = 'unstable'", "BUILD_SHA = '$short'") | Set-Content release_channel.py -Encoding ascii
           python -c "from release_channel import CHANNEL; assert CHANNEL == 'unstable'"
           if ($LASTEXITCODE -ne 0) { throw 'Unstable build identity missing' }
       - name: Package isolated Windows UNSTABLE app
@@ -180,12 +185,13 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
           }
           if (!(Test-Path $iscc)) { throw 'Inno Setup not available' }
+          $short = $env:GITHUB_SHA.Substring(0,12)
           $source = Get-Content 'windows\PasswortGenerator.iss' -Raw
           $source = $source.Replace('#define MyAppName "PasswortGenerator"', '#define MyAppName "PasswortGenerator UNSTABLE"')
           $source = $source.Replace('AppId={{F06B418B-3DB8-42BA-95D1-BF5DDB0B775D}', 'AppId={{C1EB2C1F-55A6-44F6-B3AD-BED6CD63A3AF}')
           $source = $source.Replace('DefaultDirName={autopf}\PasswortGenerator', 'DefaultDirName={autopf}\PasswortGenerator-UNSTABLE')
           $source = $source.Replace('DefaultGroupName=PasswortGenerator', 'DefaultGroupName=PasswortGenerator UNSTABLE')
-          $source = $source.Replace('OutputBaseFilename=PasswortGenerator-Setup-x64', 'OutputBaseFilename=PasswortGenerator-UNSTABLE-Setup-x64')
+          $source = $source.Replace('OutputBaseFilename=PasswortGenerator-Setup-x64', "OutputBaseFilename=PasswortGenerator-UNSTABLE-$short-Setup-x64")
           $source = $source.Replace('Name: "{autoprograms}\PasswortGenerator"', 'Name: "{autoprograms}\PasswortGenerator UNSTABLE"')
           $source = $source.Replace('Name: "{autodesktop}\PasswortGenerator"', 'Name: "{autodesktop}\PasswortGenerator UNSTABLE"')
           $source = $source.Replace('AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/releases/latest', 'AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/actions')
@@ -195,16 +201,66 @@ jobs:
           $version = (python -c "from version import APP_VERSION; print(APP_VERSION)").Trim()
           & $iscc "/DMyAppVersion=$version" ".\windows\PasswortGenerator-UNSTABLE.iss"
           if ($LASTEXITCODE -ne 0) { throw 'Preview installer build failed' }
-          $installer = 'release-windows\PasswortGenerator-UNSTABLE-Setup-x64.exe'
+          $installer = "release-windows\PasswortGenerator-UNSTABLE-$short-Setup-x64.exe"
           if (!(Test-Path $installer) -or (Get-Item $installer).Length -lt 10MB) { throw 'Preview installer invalid' }
           $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  PasswortGenerator-UNSTABLE-Setup-x64.exe" | Set-Content release-windows\SHA256SUMS-unstable-windows.txt -Encoding ascii
+          "$hash  PasswortGenerator-UNSTABLE-$short-Setup-x64.exe" | Set-Content release-windows\SHA256SUMS-unstable-windows.txt -Encoding ascii
       - name: Upload Windows preview, not a public release
         uses: actions/upload-artifact@v4
         with:
           name: PasswortGenerator-UNSTABLE-Windows
           path: |
-            release-windows/PasswortGenerator-UNSTABLE-Setup-x64.exe
+            release-windows/PasswortGenerator-UNSTABLE-*-Setup-x64.exe
             release-windows/SHA256SUMS-unstable-windows.txt
           if-no-files-found: error
           retention-days: 14
+
+  publish-unstable-prerelease:
+    # This is a PUBLIC PRERELEASE, never /releases/latest (Stable). The
+    # GitHub API exposes its assets without a user token, unlike Actions ZIPs.
+    needs: [linux-preview, windows-preview]
+    if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: PasswortGenerator-UNSTABLE-*
+          path: preview-assets
+          merge-multiple: true
+      - name: Publish both verified builds only after both jobs succeed
+        shell: bash
+        run: |
+          set -euo pipefail
+          short="${GITHUB_SHA:0:12}"
+          linux="PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage"
+          windows="PasswortGenerator-UNSTABLE-${short}-Setup-x64.exe"
+          test -s "preview-assets/$linux"
+          test -s "preview-assets/$windows"
+          # PowerShell's ASCII output on Windows can contain CRLF endings.
+          # Normalize the checksum manifest, not the signed installer bytes.
+          sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
+          (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
+          title="PasswortGenerator Unstable $short"
+          body="**UNSTABLE / TESTVERSION** – Nicht für den Produktiveinsatz!\n\nTest-Build vom Commit \`$GITHUB_SHA\`. Windows und Linux erfolgreich getestet.\n\nDie offizielle Stable-Version bleibt unter /releases/latest und wird davon nicht verändert."
+          if gh release view unstable --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release edit unstable --repo "$GITHUB_REPOSITORY" --title "$title" --notes "$body" --prerelease --latest=false
+          else
+            gh release create unstable --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$title" --notes "$body" --prerelease --latest=false
+          fi
+          gh release upload unstable "preview-assets/$linux" "preview-assets/$windows" \
+            --repo "$GITHUB_REPOSITORY"
+          # Discard old preview assets only after both new files were published.
+          # Names contain the build SHA; clients only select the exact pair.
+          assets="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable" --jq '.assets[] | [.id, .name] | @tsv')"
+          while IFS=$'\t' read -r id filename; do
+            [[ -n "$id" ]] || continue
+            if [[ "$filename" != "$linux" && "$filename" != "$windows" ]]; then
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
+            fi
+          done <<< "$assets"
+          echo "Preview ready: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"

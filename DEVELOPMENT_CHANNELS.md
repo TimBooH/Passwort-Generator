@@ -1,32 +1,30 @@
-# PasswortGenerator – Stable / Unstable
+# PasswortGenerator – Stable und Unstable
 
-## Stable (main)
-- main bleibt der veröffentlichte, freigegebene Stand.
-- Öffentliches GitHub-Release und automatische Updates nutzen nur Stable.
-- Linux-AppImage und Windows-Installer erscheinen nur nach ausdrücklicher Stable-Freigabe.
-- Keine unfertigen Funktionen direkt auf main entwickeln.
-- Die nächste Versionsnummer wird nur für ein gemeinsam freigegebenes Release vergeben.
+## Zwei Update-Kanäle direkt im Programm
 
-## Unstable (unstable)
-- Jede neue Funktion, jedes neue Design und Fehlerkorrekturen zuerst hier entwickeln.
-- Auf jedem Push prüfen Linux und Windows die Änderungen.
-- Der Preview-Workflow erzeugt herunterladbare **GitHub-Actions-Artefakte**, ausdrücklich **keine Releases, Tags oder Änderungen auf main**.
-- Linux: PasswortGenerator-UNSTABLE-x86_64.AppImage direkt ausführen, nicht per Stable-install.sh installieren.
-- Windows: PasswortGenerator-UNSTABLE-Setup-x64.exe mit eigenem AppId, Program-Files-Ordner und eigenen Verknüpfungen, damit Stable erhalten bleibt.
-- Die Testanwendung zeigt [UNSTABLE] im Fenstertitel, nutzt separate lokale Einstellungen und lässt keine Stable-Updates oder -Rollbacks zu.
-- Die Datei release_channel.py bleibt im Git-Code bei CHANNEL = 'stable'. Nur das Unstable-CI ersetzt dies vorübergehend während des Test-Builds im Runner.
+Im Bereich **Update → Update-Kanal** kann man zwischen **Stable** und **Unstable (Test)** wechseln. Der gewählte Kanal wird gespeichert und beim Programmstart sowie alle zwei Stunden geprüft.
 
-## Unstable herunterladen
-1. GitHub > Actions > Unstable Preview – Linux & Windows.
-2. Einen erfolgreichen Lauf auf Branch unstable auswählen.
-3. Unter Artifacts die Linux- oder Windows-Testversion herunterladen.
-4. Testen und Feedback geben. Verbesserungen bleiben auf unstable.
+- **Stable**: Nur getestete, ausdrücklich freigegebene Versionen. Die GitHub-API `/releases/latest` liefert ausschließlich die regulären Releases. Aktuelle Stable-Version: v0.22.0.
+- **Unstable**: Jeder erfolgreiche Push nach `unstable` startet Linux- und Windows-Tests. Erst wenn **beide Builds** erfolgreich waren, werden die beiden fertigen Binärdateien in ein **öffentlich erreichbares GitHub-Prerelease** mit dem festen Tag `unstable` hochgeladen. Das ist **kein offizielles Stable-Release** und wird von `/releases/latest` ausdrücklich ausgeschlossen.
+- Die GitHub-Actions-Artefakte bleiben zusätzlich zur Diagnose erhalten. Nutzer müssen jedoch **kein ZIP mehr herunterladen oder entpacken**: Die App bezieht die Dateien direkt aus dem Unstable-Prerelease.
+- Jeder Unstable-Build trägt eine eindeutige zwölfstellige Commit-Kennung im Dateinamen. Für Unstable-Versionsvergleiche zählt diese Kennung, nicht die Stable-Versionsnummer.
+- Downloads werden anhand der in GitHub veröffentlichten SHA-256-Prüfsumme **und** Dateigröße verifiziert. Nicht verifizierbare/unvollständige Builds werden abgelehnt.
+- Kein automatisches Umschalten des Kanals. Für das Installieren von Unstable ist eine zusätzliche Bestätigung erforderlich.
 
-## Erst nach deiner Freigabe Stable veröffentlichen
-1. Alle vereinbarten Verbesserungen bündeln und auf beiden Plattformen testen.
-2. Erst nach ausdrücklicher Freigabe einen Pull Request von unstable nach main zusammenführen.
-3. Einmalig die nächste Stable-Version festlegen und die regulären Linux-/Windows-Releases erzeugen.
-4. Prüfen, dass AppImage, Windows-Installer und Prüfsummen im selben Release liegen.
-5. Unstable mit dem neuen Stable-Stand aktualisieren.
+## Stable wird nicht überschrieben
 
-**Wichtig:** Das Repository ist öffentlich, also ist auch Quellcode auf dem Branch unstable öffentlich lesbar. Nur die Auslieferung als Stable-Release wird zurückgehalten. Für tatsächlich nichtöffentlichen Quellcode wäre ein separates privates Repository erforderlich.
+**Linux:** Die Stable-Installation unter `~/.local/opt/passwort-generator/` bleibt erhalten. Unstable bekommt den eigenen Installationsordner `~/.local/opt/passwort-generator-unstable/` sowie eine separate vorherige AppImage-Sicherung. Der integrierte Updater startet die gewünschte Version direkt.
+
+**Windows:** Stable und Unstable haben unterschiedliche Inno-Setup-App-IDs, Program-Files-Ordner und Verknüpfungen. Windows zeigt weiterhin die Administratorbestätigung. Der Updater lädt automatisch den zur Auswahl passenden Installer und öffnet ihn nach der Integritätsprüfung.
+
+**Einstellungen:** Stable und Unstable verwenden unterschiedliche QSettings-Namen. Beide Fenster kennzeichnen ihren Build-Kanal; in Unstable steht `[UNSTABLE]` im Fenstertitel.
+
+## Entwicklung und Freigabe
+
+1. Neue Funktionen und Designänderungen zuerst auf den Git-Branch `unstable`.
+2. Automatische Test-Builds auf Linux und Windows. Nach zwei erfolgreichen Builds wird ein als **UNSTABLE / TESTVERSION** gekennzeichnetes öffentliches Prerelease aktualisiert. Das ist ausschließlich ein **Testkanal**, kein öffentlicher Stable-Rollout.
+3. Fehler in `unstable` beheben und erneut testen. Keine unfertigen Änderungen auf `main`.
+4. Erst nach **ausdrücklicher Stable-Freigabe** alle gemeinsam freigegebenen Änderungen über einen Pull Request in `main` übernehmen und **eine gemeinsame nächste Stable-Version** veröffentlichen.
+5. Erst dann erhalten alle Stable-Nutzer das reguläre, über `/releases/latest` angebotene Update.
+
+**Sichtbarkeit:** Sowohl der Unstable-Quellcode als auch das Unstable-Prerelease sind öffentlich einsehbar und herunterladbar. Sie sind als experimentelle Testversion gekennzeichnet und nicht die offizielle Stable-Version. Für geheime Vorabversionen wäre ein privates Repository nötig.

@@ -34,7 +34,9 @@ from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
                             make_passphrase, estimate_strength,
                             password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
-from release_channel import CHANNEL
+from release_channel import CHANNEL, BUILD_SHA
+from update_channels import (channel_api, select_unstable_asset,
+                             has_channel_update, unstable_asset_name)
 
 REPO = 'TimBooH/Passwort-Generator'
 REPO_URL = f'https://github.com/{REPO}'
@@ -45,6 +47,7 @@ RELEASES_URL = f'{REPO_URL}/releases'
 UPDATE_CHECK_INTERVAL_MS = 2 * 60 * 60 * 1000  # Every two hours while open.
 APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
+UNSTABLE_APPIMAGE = Path.home() / '.local/opt/passwort-generator-unstable/PasswortGenerator.AppImage'
 
 BACKGROUND_COLORS = [
     ('Nachtblau', '#101827'), ('Anthrazit', '#20242C'), ('Schwarz', '#111111'),
@@ -113,7 +116,11 @@ class PasswordWindow(QMainWindow):
         self._history_releases = {}
         self._latest_release_note = None  # (tag, raw GitHub Markdown)
         self._new_update_note = ''
-        self._auto_check = bool(auto_check) and CHANNEL != 'unstable'
+        self.update_channel = self.settings.value('updates/channel', CHANNEL, type=str)
+        if self.update_channel not in ('stable', 'unstable'):
+            self.update_channel = CHANNEL
+        self._checked_channel = self.update_channel
+        self._auto_check = bool(auto_check)
         self._startup_update_check_pending = self._auto_check
         self._pending_update_popup = None
         self._update_popup_dialog = None
@@ -712,6 +719,22 @@ class PasswordWindow(QMainWindow):
         updates_layout.setSpacing(4)
         updates.layout().setContentsMargins(13, 7, 13, 9)
         updates.layout().setSpacing(2)
+        channel_row = QHBoxLayout()
+        channel_row.setSpacing(8)
+        self.channel_label = QLabel('Update-Kanal:')
+        channel_row.addWidget(self.channel_label)
+        self.channel_combo = QComboBox()
+        self.channel_combo.setObjectName('updateChannelCombo')
+        self.channel_combo.setAccessibleName('Stable oder Unstable auswählen')
+        self.channel_combo.addItem('Stable', 'stable')
+        self.channel_combo.addItem('Unstable (Test)', 'unstable')
+        self.channel_combo.setCurrentIndex(
+            self.channel_combo.findData(self.update_channel)
+        )
+        self.channel_combo.currentIndexChanged.connect(self.change_update_channel)
+        channel_row.addWidget(self.channel_combo)
+        channel_row.addStretch(1)
+        updates_layout.addLayout(channel_row)
         self.update_status = QLabel(f'Installiert: v{APP_VERSION} · Noch nicht geprüft')
         self.update_status.setWordWrap(True)
         updates_layout.addWidget(self.update_status)
@@ -903,7 +926,7 @@ class PasswordWindow(QMainWindow):
         self.update_timer.setObjectName('periodicUpdateTimer')
         self.update_timer.setInterval(UPDATE_CHECK_INTERVAL_MS)
         self.update_timer.timeout.connect(self.check_for_updates)
-        if auto_check:
+        if self._auto_check:
             self.update_timer.start()
             # Show the first-run introduction before any possible update popup.
             QTimer.singleShot(280, self.show_first_run_tour)
@@ -991,7 +1014,8 @@ class PasswordWindow(QMainWindow):
             self._i18n_combo_sources = {}
         for combo in (self.scheme_combo, self.bg_combo,
                       self.image_mode_combo, self.phrase_separator,
-                      self.preset_combo, self.clipboard_timeout_combo):
+                      self.preset_combo, self.clipboard_timeout_combo,
+                      self.channel_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -1739,14 +1763,39 @@ class PasswordWindow(QMainWindow):
         request.setTransferTimeout(30000)
         return request
 
+    def change_update_channel(self, *_):
+        """Switch feed only; never silently uninstall or replace an app."""
+        selected = self.channel_combo.currentData()
+        if selected not in ('stable', 'unstable') or selected == self.update_channel:
+            return
+        self.update_channel = selected
+        self.settings.setValue('updates/channel', selected)
+        self.latest_asset = None
+        self.latest_version = None
+        self._new_update_note = ''
+        self._available_update = None
+        self.set_update_indicator()
+        self.download_button.hide()
+        self.update_compare.hide()
+        self.update_preview.hide()
+        self._set_ui(self.update_status, 'Update-Kanal gewechselt · Prüfe GitHub …')
+        if self.check_reply is not None:
+            self.check_reply.abort()
+            # An older reply must never be interpreted as the new channel.
+            return
+        self.check_for_updates()
+
     def refresh_update_preview(self):
         """Refresh the bilingual version comparison and two-point summary."""
         if not self.latest_version:
             self.update_compare.hide()
             self.update_preview.hide()
             return
-        self._set_ui(self.update_compare,
-                     f'Installiert: v{APP_VERSION}  →  Neu: {self.latest_version}')
+        suffix = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
+        self._set_ui(
+            self.update_compare,
+            f'Installiert: v{APP_VERSION}{suffix}  →  Neu: {self.latest_version}',
+        )
         self.update_compare.show()
         summary = release_changelog(
             self._new_update_note, self.latest_version, self.language, max_items=2
@@ -1758,10 +1807,6 @@ class PasswordWindow(QMainWindow):
             self.update_preview.hide()
 
     def check_for_updates(self):
-        if CHANNEL == 'unstable':
-            self._set_ui(self.update_status,
-                         'UNSTABLE-Testversion · Stable-Updates sind deaktiviert.')
-            return
         if self.check_reply is not None or self.download_reply is not None:
             return
         # The existing update-check action also refreshes the list.
@@ -1769,62 +1814,98 @@ class PasswordWindow(QMainWindow):
         if self.tabs.currentIndex() == 2 and self.history_reply is None:
             self.load_release_history()
         self.check_button.setEnabled(False)
+        self.channel_combo.setEnabled(False)
+        self._checked_channel = self.update_channel
         self.download_button.hide()
         self.update_compare.hide()
         self.update_preview.hide()
         self._set_ui(self.update_status, f'Installiert: v{APP_VERSION} · Prüfe GitHub …')
-        self.check_reply = self.network.get(self.make_request(LATEST_RELEASE_API))
+        self.check_reply = self.network.get(self.make_request(channel_api(self._checked_channel)))
         self.check_reply.finished.connect(self.check_finished)
 
     def check_finished(self):
         reply = self.check_reply
         self.check_reply = None
         self.check_button.setEnabled(True)
+        self.channel_combo.setEnabled(True)
         startup_check = self._startup_update_check_pending
         self._startup_update_check_pending = False
         if reply is None:
+            return
+        if self._checked_channel != self.update_channel:
+            reply.deleteLater()
+            self.check_for_updates()
             return
         try:
             if reply.error() != QNetworkReply.NetworkError.NoError:
                 raise ValueError(reply.errorString())
             response = json.loads(bytes(reply.readAll()).decode('utf-8'))
-            latest_version = response.get('tag_name', '')
-            if not self._release_history_loaded and not self._history_releases:
-                note = response.get('body', '')
-                if isinstance(note, str) and note.strip():
-                    self._latest_release_note = (latest_version, note)
-                    self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_version}')
-                    self._set_changelog_release(note, latest_version)
-            current_number = parse_version(APP_VERSION)
-            newest_number = parse_version(latest_version)
-            if newest_number is None or current_number is None:
-                raise ValueError('Ungültige Versionsnummer bei GitHub.')
-            if not is_newer_release(latest_version, APP_VERSION):
+            if not isinstance(response, dict):
+                raise ValueError('Ungültige GitHub-Antwort.')
+            if self.update_channel == 'unstable':
+                # GitHub prereleases are deliberately excluded from /latest.
+                # The prerelease asset is named with its own build SHA.
+                build_sha, asset = select_unstable_asset(response, os.name)
+                latest_version = 'UNSTABLE ' + build_sha
+                update_ready = has_channel_update(
+                    'unstable', CHANNEL, build_sha, APP_VERSION,
+                    APP_VERSION, BUILD_SHA, is_newer_release,
+                )
+            else:
+                latest_version = response.get('tag_name', '')
+                if parse_version(latest_version) is None:
+                    raise ValueError('Ungültige Versionsnummer bei GitHub.')
+                update_ready = has_channel_update(
+                    'stable', CHANNEL, latest_version, APP_VERSION,
+                    APP_VERSION, BUILD_SHA, is_newer_release,
+                )
+                assets = response.get('assets', [])
+                artifact_name = (WINDOWS_INSTALLER_NAME if os.name == 'nt'
+                                 else APPIMAGE_NAME)
+                asset = next(
+                    (item for item in assets if isinstance(item, dict)
+                     and item.get('name') == artifact_name), None
+                )
+                if asset is None:
+                    raise ValueError(
+                        'Im neuesten Release ist noch kein '
+                        + ('Windows-Installer.' if os.name == 'nt' else 'Linux-AppImage.')
+                    )
+                url = asset.get('browser_download_url', '')
+                if (url != RELEASE_DOWNLOAD_PREFIX + latest_version + '/'
+                        + artifact_name):
+                    raise ValueError('Der GitHub-Downloadlink ist ungültig.')
+            if not update_ready:
                 self.latest_asset = None
                 self.latest_version = None
                 self._new_update_note = ''
                 self.set_update_indicator()
                 self.refresh_update_preview()
-                self._set_ui(self.update_status, f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
+                self._set_ui(self.update_status,
+                             'Dieser Update-Kanal ist bereits aktuell.')
                 return
-            assets = response.get('assets', [])
-            artifact_name = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
-            asset = next((item for item in assets if item.get('name') == artifact_name), None)
-            if asset is None:
-                raise ValueError(
-                    'Im neuesten Release ist noch kein '
-                    + ('Windows-Installer.' if os.name == 'nt' else 'Linux-AppImage.')
-                )
-            url = asset.get('browser_download_url', '')
-            if not url.startswith(RELEASE_DOWNLOAD_PREFIX) or not url.endswith('/' + artifact_name):
-                raise ValueError('Der GitHub-Downloadlink ist ungültig.')
+            if self.update_channel == 'stable':
+                if not self._release_history_loaded and not self._history_releases:
+                    note = response.get('body', '')
+                    if isinstance(note, str) and note.strip():
+                        self._latest_release_note = (latest_version, note)
+                        self._set_ui(self.changelog_title,
+                                     f'Kurzüberblick · {latest_version}')
+                        self._set_changelog_release(note, latest_version)
             self.latest_asset = asset
             self.latest_version = latest_version
             note = response.get('body', '')
             self._new_update_note = note if isinstance(note, str) else ''
             self.set_update_indicator(latest_version)
             self.refresh_update_preview()
-            self._set_ui(self.update_status, f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
+            self._set_ui(self.update_status,
+                         f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
+            self._set_ui(
+                self.download_button,
+                ('Testversion installieren & starten'
+                 if self.update_channel == 'unstable'
+                 else 'Stable installieren & neu starten'),
+            )
             self.download_button.show()
             if startup_check:
                 self.queue_update_popup(latest_version)
@@ -2007,25 +2088,36 @@ class PasswordWindow(QMainWindow):
             reply.deleteLater()
 
     def download_update(self):
-        if CHANNEL == 'unstable':
-            return  # Preview builds must not install public Stable releases.
         if self.download_reply is not None or not self.latest_asset:
             return
+        if self.update_channel == 'unstable':
+            answer = QMessageBox.question(
+                self, self._t('Unstable-Testversion'),
+                self._t('Unstable enthält unfertige Funktionen. Separat von Stable installieren?'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
         if self.reporter is not None:
             self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self.latest_version}', force=True)
+        install_path = (UNSTABLE_APPIMAGE if self.update_channel == 'unstable'
+                        else INSTALLED_APPIMAGE)
         self.download_installed = (
-            os.name != 'nt'
-            and INSTALLED_APPIMAGE.is_file()
-            and os.access(INSTALLED_APPIMAGE.parent, os.W_OK)
+            os.name != 'nt' and (
+                self.update_channel == 'unstable'
+                or (INSTALLED_APPIMAGE.is_file()
+                    and os.access(INSTALLED_APPIMAGE.parent, os.W_OK))
+            )
         )
         download_location = QStandardPaths.writableLocation(
             QStandardPaths.StandardLocation.DownloadLocation
         )
         download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
         if os.name == 'nt':
-            target = download_dir / f'PasswortGenerator-{self.latest_version}-Setup-x64.exe'
+            target = download_dir / self.latest_asset['name']
         elif self.download_installed:
-            target = INSTALLED_APPIMAGE
+            target = install_path
         else:
             target = download_dir / f'PasswortGenerator-{self.latest_version}-x86_64.AppImage'
         stage = staging_path(target) if self.download_installed else target
@@ -2091,7 +2183,7 @@ class PasswordWindow(QMainWindow):
             if self.download_bytes != int(self.latest_asset.get('size', -1)):
                 raise ValueError('Die Dateigröße stimmt nicht mit dem GitHub-Release überein.')
             expected_digest = self.latest_asset.get('digest', '')
-            if not expected_digest.startswith('sha256:'):
+            if not isinstance(expected_digest, str) or not expected_digest.startswith('sha256:'):
                 raise ValueError('GitHub hat keine SHA-256-Prüfsumme für dieses Release bereitgestellt.')
             actual_digest = self.download_hash.hexdigest()
             if actual_digest.lower() != expected_digest.split(':', 1)[1].lower():
