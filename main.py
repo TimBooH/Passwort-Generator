@@ -1758,6 +1758,10 @@ class PasswordWindow(QMainWindow):
             self.update_preview.hide()
 
     def check_for_updates(self):
+        if CHANNEL == 'unstable':
+            self._set_ui(self.update_status,
+                         'UNSTABLE-Testversion · Stable-Updates sind deaktiviert.')
+            return
         if self.check_reply is not None or self.download_reply is not None:
             return
         # The existing update-check action also refreshes the list.
@@ -1897,6 +1901,12 @@ class PasswordWindow(QMainWindow):
 
     def rollback_update(self):
         """Restore the trusted local AppImage, or a verified older Windows release."""
+        if CHANNEL == 'unstable':
+            QMessageBox.information(
+                self, 'UNSTABLE',
+                'Rollback ist in der Testversion deaktiviert, um Stable zu schützen.'
+            )
+            return
         if self.download_reply is not None or self._rollback_reply is not None:
             return
         if os.name != 'nt':
@@ -1997,6 +2007,8 @@ class PasswordWindow(QMainWindow):
             reply.deleteLater()
 
     def download_update(self):
+        if CHANNEL == 'unstable':
+            return  # Preview builds must not install public Stable releases.
         if self.download_reply is not None or not self.latest_asset:
             return
         if self.reporter is not None:
