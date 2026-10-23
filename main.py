@@ -186,7 +186,7 @@ class PasswordWindow(QMainWindow):
         content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         outer_layout.addWidget(content, 1)
         content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(5)
+        content_layout.setSpacing(8)
         content_layout.setContentsMargins(16, 10, 16, 8)
         self.glass_cards = []
         self.secondary_cards = []
@@ -233,7 +233,7 @@ class PasswordWindow(QMainWindow):
             button = QPushButton(f'{symbol}  {label}')
             button.setObjectName('navButton')
             button.setCheckable(True)
-            button.setMinimumHeight(36)
+            button.setMinimumHeight(41)
             button.setToolTip(label)
             button.setAccessibleName(label)
             self.nav_group.addButton(button)
@@ -251,7 +251,7 @@ class PasswordWindow(QMainWindow):
         self.info_nav_button.setObjectName('infoNavButton')
         self.info_nav_button.setToolTip('Über PasswortGenerator')
         self.info_nav_button.setAccessibleName('Info')
-        self.info_nav_button.setMinimumHeight(36)
+        self.info_nav_button.setMinimumHeight(41)
         self.info_nav_button.setCheckable(True)
         self.nav_group.addButton(self.info_nav_button)
         self.info_nav_button.clicked.connect(self.show_info)
@@ -281,7 +281,13 @@ class PasswordWindow(QMainWindow):
         group.layout().setSpacing(3)
 
         mode_row = QHBoxLayout()
-        mode_row.setSpacing(6)
+        mode_row.setSpacing(8)
+        self.ocean_hero_icon = QLabel('🔑')
+        self.ocean_hero_icon.setObjectName('oceanHeroIcon')
+        self.ocean_hero_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.ocean_hero_icon.setFixedSize(43, 43)
+        mode_row.addWidget(self.ocean_hero_icon)
+        self.ocean_hero_icon.hide()
         # The real screenshot-inspired header shares a row with the mode
         # selector; hiding it in compact windows keeps all controls visible.
         self.ocean_heading = QWidget()
@@ -1523,6 +1529,7 @@ class PasswordWindow(QMainWindow):
         ocean = self.scheme_combo.currentData() == 'ocean_glass'
         wide = self.width() >= 780
         self.ocean_heading.setVisible(ocean and wide)
+        self.ocean_hero_icon.setVisible(ocean and wide)
         for widget in (
             self.ocean_output_caption, self.ocean_strength_caption,
             self.ocean_strength_value, self.ocean_options_heading,
@@ -1542,7 +1549,7 @@ class PasswordWindow(QMainWindow):
             checkbox.setProperty('oceanCheckmark', ocean)
             checkbox.update()
         self.brand_subtitle.setVisible(not ocean)
-        self.brand_icon.setFixedSize(38 if ocean else 53, 38 if ocean else 53)
+        self.brand_icon.setFixedSize(44 if ocean else 53, 44 if ocean else 53)
         self._set_ui(
             self.brand_title,
             'PasswortGenerator' if ocean else 'Passwort-Generator',
