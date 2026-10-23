@@ -34,6 +34,7 @@ from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
                             make_passphrase, estimate_strength,
                             password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
+from release_channel import CHANNEL
 
 REPO = 'TimBooH/Passwort-Generator'
 REPO_URL = f'https://github.com/{REPO}'
@@ -87,7 +88,10 @@ class PasswordWindow(QMainWindow):
     def __init__(self, auto_check=True, reporter=None):
         super().__init__()
         self.reporter = reporter
-        self.settings = QSettings('TimBooH', 'PasswortGenerator')
+        # Preview builds must never overwrite stable settings.
+        app_settings_name = ('PasswortGenerator-Unstable' if CHANNEL == 'unstable'
+                             else 'PasswortGenerator')
+        self.settings = QSettings('TimBooH', app_settings_name)
         self.language = self.settings.value('ui/language', 'de', type=str)
         if self.language not in ('de', 'en'):
             self.language = 'de'
@@ -109,8 +113,8 @@ class PasswordWindow(QMainWindow):
         self._history_releases = {}
         self._latest_release_note = None  # (tag, raw GitHub Markdown)
         self._new_update_note = ''
-        self._auto_check = auto_check
-        self._startup_update_check_pending = bool(auto_check)
+        self._auto_check = bool(auto_check) and CHANNEL != 'unstable'
+        self._startup_update_check_pending = self._auto_check
         self._pending_update_popup = None
         self._update_popup_dialog = None
         self._first_run_tour = None
@@ -127,7 +131,8 @@ class PasswordWindow(QMainWindow):
         self._clipboard_secret = None
         self._history = []  # Session-only, never persisted to QSettings or disk.
 
-        self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}')
+        channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
+        self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
         self.resize(850, 760)
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
