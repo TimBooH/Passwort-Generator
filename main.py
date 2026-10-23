@@ -1014,7 +1014,8 @@ class PasswordWindow(QMainWindow):
             self._i18n_combo_sources = {}
         for combo in (self.scheme_combo, self.bg_combo,
                       self.image_mode_combo, self.phrase_separator,
-                      self.preset_combo, self.clipboard_timeout_combo):
+                      self.preset_combo, self.clipboard_timeout_combo,
+                      self.channel_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -1813,6 +1814,7 @@ class PasswordWindow(QMainWindow):
         if self.tabs.currentIndex() == 2 and self.history_reply is None:
             self.load_release_history()
         self.check_button.setEnabled(False)
+        self.channel_combo.setEnabled(False)
         self._checked_channel = self.update_channel
         self.download_button.hide()
         self.update_compare.hide()
@@ -1825,6 +1827,7 @@ class PasswordWindow(QMainWindow):
         reply = self.check_reply
         self.check_reply = None
         self.check_button.setEnabled(True)
+        self.channel_combo.setEnabled(True)
         startup_check = self._startup_update_check_pending
         self._startup_update_check_pending = False
         if reply is None:
