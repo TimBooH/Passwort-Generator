@@ -499,8 +499,9 @@ class PasswordWindow(QMainWindow):
         self.ocean_options_panel.setObjectName('oceanOptionPanel')
         self.ocean_options_panel.setMinimumWidth(250)
         options_col = QVBoxLayout(self.ocean_options_panel)
-        options_col.setContentsMargins(13, 12, 13, 10)
-        options_col.setSpacing(7)
+        self.ocean_options_layout = options_col
+        options_col.setContentsMargins(16, 15, 16, 14)
+        options_col.setSpacing(10)
         self.ocean_options_heading = QLabel('Optionen')
         self.ocean_options_heading.setObjectName('oceanPanelHeading')
         options_col.addWidget(self.ocean_options_heading)
@@ -510,15 +511,15 @@ class PasswordWindow(QMainWindow):
         preset_box_layout = QVBoxLayout(self.ocean_preset_box)
         preset_box_layout.setContentsMargins(0, 0, 0, 0)
         preset_box_layout.addLayout(preset_row)
-        options_col.addWidget(self.ocean_preset_box)
         options_col.addStretch(1)
+        options_col.addWidget(self.ocean_preset_box)
 
         self.ocean_length_panel = QFrame(self.ocean_sections)
         self.ocean_length_panel.setObjectName('oceanLengthPanel')
         self.ocean_length_panel.setMinimumWidth(150)
         length_col = QVBoxLayout(self.ocean_length_panel)
-        length_col.setContentsMargins(13, 12, 13, 10)
-        length_col.setSpacing(8)
+        length_col.setContentsMargins(16, 15, 16, 14)
+        length_col.setSpacing(11)
         self.ocean_length_heading = QLabel('Passwort-Länge')
         self.ocean_length_heading.setObjectName('oceanPanelHeading')
         length_col.addWidget(self.ocean_length_heading)
@@ -1498,6 +1499,10 @@ class PasswordWindow(QMainWindow):
         self.length_label.setVisible(not ocean)
         self.length_value.setVisible(not ocean)
         self.ocean_preset_box.setVisible(not self._phrase_mode)
+        # Give the choices more breathing room on large screens without
+        # forcing a scrollbar when the same app is resized narrowly.
+        self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
+        self.ocean_options_layout.setSpacing(11 if ocean and wide else 5)
         self.brand_subtitle.setVisible(not ocean)
         self.brand_icon.setFixedSize(38 if ocean else 53, 38 if ocean else 53)
         self._set_ui(
