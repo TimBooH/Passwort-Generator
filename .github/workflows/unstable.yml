@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python -m compileall -q . --exclude '(^|/)dist/'
+          python -m compileall -q -x '(^|/)dist/' .
           python -m unittest discover -s tests -v
           PYTHONPATH=. python tests/smoke_glossy_ui.py
           PYTHONPATH=. python tests/smoke_default_ocean_ui.py
