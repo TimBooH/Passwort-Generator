@@ -323,7 +323,6 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setRange(0, 100)
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
-        group_layout.addWidget(self.strength_bar)
         self.analysis_button = QPushButton('ⓘ Analyse')
         self.analysis_button.setObjectName('analysisButton')
         self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
@@ -335,7 +334,6 @@ class PasswordWindow(QMainWindow):
         self.ocean_strength_value.setObjectName('oceanStrengthValue')
         strength_row.insertWidget(0, self.ocean_strength_caption)
         strength_row.insertWidget(3, self.ocean_strength_value)
-        group_layout.removeWidget(self.strength_bar)
         strength_row.insertWidget(2, self.strength_bar, 1)
         for i in range(strength_row.count() - 1, -1, -1):
             if strength_row.itemAt(i).spacerItem() is not None:
@@ -343,6 +341,38 @@ class PasswordWindow(QMainWindow):
         self.ocean_strength_caption.hide()
         self.ocean_strength_value.hide()
         group_layout.addSpacing(2)
+
+        # Build the real options and length panels in their final parents.
+        # Never remove/reparent already-owned QLayouts: native Qt needs
+        # stable ownership for repeated resizes and safe interpreter cleanup.
+        self.ocean_sections = QWidget(group)
+        self.ocean_sections.setObjectName('oceanSections')
+        sections_row = QHBoxLayout(self.ocean_sections)
+        sections_row.setContentsMargins(0, 0, 0, 0)
+        sections_row.setSpacing(10)
+        self.ocean_options_panel = QFrame(self.ocean_sections)
+        self.ocean_options_panel.setObjectName('oceanOptionPanel')
+        self.ocean_options_panel.setMinimumWidth(250)
+        options_col = QVBoxLayout(self.ocean_options_panel)
+        self.ocean_options_layout = options_col
+        options_col.setContentsMargins(16, 15, 16, 14)
+        options_col.setSpacing(10)
+        self.ocean_options_heading = QLabel('Optionen')
+        self.ocean_options_heading.setObjectName('oceanPanelHeading')
+        options_col.addWidget(self.ocean_options_heading)
+        self.ocean_preset_box = QWidget(self.ocean_options_panel)
+        preset_box_layout = QVBoxLayout(self.ocean_preset_box)
+        preset_box_layout.setContentsMargins(0, 0, 0, 0)
+
+        self.ocean_length_panel = QFrame(self.ocean_sections)
+        self.ocean_length_panel.setObjectName('oceanLengthPanel')
+        self.ocean_length_panel.setMinimumWidth(150)
+        length_col = QVBoxLayout(self.ocean_length_panel)
+        length_col.setContentsMargins(16, 15, 16, 14)
+        length_col.setSpacing(11)
+        self.ocean_length_heading = QLabel('Passwort-Länge')
+        self.ocean_length_heading.setObjectName('oceanPanelHeading')
+        length_col.addWidget(self.ocean_length_heading)
 
         length_row = QHBoxLayout()
         length_row.setSpacing(5)
@@ -359,7 +389,7 @@ class PasswordWindow(QMainWindow):
         self.length.setFixedWidth(76)
         self.length.setAccessibleName('Länge des Passworts')
         length_row.addWidget(self.length)
-        group_layout.addLayout(length_row)
+        length_col.addLayout(length_row)
         self.length_slider = QSlider(Qt.Orientation.Horizontal)
         self.length_slider.setRange(8, 128)
         self.length_slider.setValue(20)
@@ -367,8 +397,17 @@ class PasswordWindow(QMainWindow):
         self.length.valueChanged.connect(self.length_slider.setValue)
         self.length_slider.valueChanged.connect(self.length.setValue)
         self.length.valueChanged.connect(lambda value: self.length_value.setText(str(value)))
-        group_layout.addWidget(self.length_slider)
-        group_layout.addSpacing(1)
+        length_row.addWidget(self.length_slider, 1)
+        self.ocean_length_range = QWidget(self.ocean_length_panel)
+        range_layout = QHBoxLayout(self.ocean_length_range)
+        range_layout.setContentsMargins(2, 0, 2, 0)
+        self.ocean_min_label = QLabel('8')
+        self.ocean_max_label = QLabel('128')
+        range_layout.addWidget(self.ocean_min_label)
+        range_layout.addStretch()
+        range_layout.addWidget(self.ocean_max_label)
+        length_col.addWidget(self.ocean_length_range)
+        length_col.addStretch(1)
 
         # Compact password profiles: settings only, never generated secrets.
         preset_row = QHBoxLayout()
@@ -392,7 +431,7 @@ class PasswordWindow(QMainWindow):
         )
         self.save_preset_button.clicked.connect(self.save_password_preset)
         preset_row.addWidget(self.save_preset_button)
-        group_layout.addLayout(preset_row)
+        preset_box_layout.addLayout(preset_row)
 
         self.options_widget = QWidget()
         self.options_widget.setObjectName('passwordOptions')
@@ -414,7 +453,7 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.digits, 2, 0)
         check_layout.addWidget(self.symbols, 0, 1)
         check_layout.addWidget(self.exclude, 1, 1)
-        group_layout.addWidget(self.options_widget)
+        options_col.addWidget(self.options_widget)
         self.rules_button = QPushButton('⚙ Erweiterte Regeln')
         self.rules_button.setObjectName('advancedPasswordRulesButton')
         self.rules_button.clicked.connect(self.show_advanced_rules)
@@ -454,8 +493,12 @@ class PasswordWindow(QMainWindow):
         phrase_layout.addWidget(self.phrase_language, 2, 1)
         phrase_layout.setColumnStretch(1, 1)
         self.phrase_options_widget.hide()
-        group_layout.addWidget(self.phrase_options_widget)
-        group_layout.addStretch(0)
+        options_col.addWidget(self.phrase_options_widget)
+        options_col.addStretch(1)
+        options_col.addWidget(self.ocean_preset_box)
+        sections_row.addWidget(self.ocean_options_panel, 19)
+        sections_row.addWidget(self.ocean_length_panel, 11)
+        group_layout.addWidget(self.ocean_sections, 1)
 
         self.generate_button = QPushButton('🔑  Passwort generieren')
         # Compact, glossy call-to-action; do not stretch to the card width.
@@ -466,9 +509,6 @@ class PasswordWindow(QMainWindow):
         self.generate_button.setMinimumWidth(235)
         self.generate_button.setCursor(Qt.CursorShape.PointingHandCursor)
         self.generate_button.clicked.connect(self.generate)
-        group_layout.addWidget(
-            self.generate_button, 0, Qt.AlignmentFlag.AlignHCenter
-        )
 
         footer = QHBoxLayout()
         footer.setSpacing(5)
@@ -481,80 +521,13 @@ class PasswordWindow(QMainWindow):
         self.history_button.setObjectName('bottomAction')
         self.history_button.clicked.connect(self.show_history)
         footer.addWidget(self.history_button, 1)
-        group_layout.addLayout(footer)
-
-        # Match the reference's real two-column layout: OPTIONS | LENGTH.
-        # Move existing, fully connected Qt controls; never use a screenshot
-        # as a background or replace the live security functionality.
-        group_layout.removeItem(length_row)
-        group_layout.removeWidget(self.length_slider)
-        group_layout.removeItem(preset_row)
-        group_layout.removeWidget(self.options_widget)
-        group_layout.removeWidget(self.phrase_options_widget)
-        group_layout.removeItem(footer)
-        for i in range(group_layout.count() - 1, -1, -1):
-            if group_layout.itemAt(i).spacerItem() is not None:
-                group_layout.takeAt(i)
-
-        self.ocean_sections = QWidget(group)
-        self.ocean_sections.setObjectName('oceanSections')
-        sections_row = QHBoxLayout(self.ocean_sections)
-        sections_row.setContentsMargins(0, 0, 0, 0)
-        sections_row.setSpacing(10)
-        self.ocean_options_panel = QFrame(self.ocean_sections)
-        self.ocean_options_panel.setObjectName('oceanOptionPanel')
-        self.ocean_options_panel.setMinimumWidth(250)
-        options_col = QVBoxLayout(self.ocean_options_panel)
-        self.ocean_options_layout = options_col
-        options_col.setContentsMargins(16, 15, 16, 14)
-        options_col.setSpacing(10)
-        self.ocean_options_heading = QLabel('Optionen')
-        self.ocean_options_heading.setObjectName('oceanPanelHeading')
-        options_col.addWidget(self.ocean_options_heading)
-        options_col.addWidget(self.options_widget)
-        options_col.addWidget(self.phrase_options_widget)
-        self.ocean_preset_box = QWidget()
-        preset_box_layout = QVBoxLayout(self.ocean_preset_box)
-        preset_box_layout.setContentsMargins(0, 0, 0, 0)
-        preset_box_layout.addLayout(preset_row)
-        options_col.addStretch(1)
-        options_col.addWidget(self.ocean_preset_box)
-
-        self.ocean_length_panel = QFrame(self.ocean_sections)
-        self.ocean_length_panel.setObjectName('oceanLengthPanel')
-        self.ocean_length_panel.setMinimumWidth(150)
-        length_col = QVBoxLayout(self.ocean_length_panel)
-        length_col.setContentsMargins(16, 15, 16, 14)
-        length_col.setSpacing(11)
-        self.ocean_length_heading = QLabel('Passwort-Länge')
-        self.ocean_length_heading.setObjectName('oceanPanelHeading')
-        length_col.addWidget(self.ocean_length_heading)
-        length_row.addWidget(self.length_slider, 1)
-        length_col.addLayout(length_row)
-        self.ocean_length_range = QWidget()
-        range_layout = QHBoxLayout(self.ocean_length_range)
-        range_layout.setContentsMargins(2, 0, 2, 0)
-        self.ocean_min_label = QLabel('8')
-        self.ocean_max_label = QLabel('128')
-        range_layout.addWidget(self.ocean_min_label)
-        range_layout.addStretch()
-        range_layout.addWidget(self.ocean_max_label)
-        length_col.addWidget(self.ocean_length_range)
-        length_col.addStretch(1)
-
-        sections_row.addWidget(self.ocean_options_panel, 19)
-        sections_row.addWidget(self.ocean_length_panel, 11)
-        group_layout.insertWidget(
-            group_layout.indexOf(self.generate_button), self.ocean_sections, 1
-        )
-
-        # Keep privacy and session-history actions, but place them subtly
-        # above the main full-width Generate action.
+        # Keep privacy and session-history actions above the final CTA.
         footer.insertStretch(0, 1)
         self.show_button.setMaximumWidth(130)
         self.history_button.setMaximumWidth(130)
-        group_layout.insertLayout(
-            group_layout.indexOf(self.generate_button), footer
+        group_layout.addLayout(footer)
+        group_layout.addWidget(
+            self.generate_button, 0, Qt.AlignmentFlag.AlignHCenter
         )
         layout.addWidget(group, 1)
         self.preset_combo.currentIndexChanged.connect(self.apply_password_preset)
