@@ -5,20 +5,18 @@ name: Unstable Preview - Linux & Windows
 on:
   push:
     branches: [unstable]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: unstable-preview
+  group: unstable-preview-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   linux-preview:
-    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    if: github.ref == 'refs/heads/unstable'
     runs-on: ubuntu-22.04
     timeout-minutes: 25
     env:
@@ -125,7 +123,7 @@ jobs:
           retention-days: 14
 
   windows-preview:
-    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    if: github.ref == 'refs/heads/unstable'
     runs-on: windows-2022
     timeout-minutes: 35
     env:
@@ -221,7 +219,7 @@ jobs:
     # This is a PUBLIC PRERELEASE, never /releases/latest (Stable). The
     # GitHub API exposes its assets without a user token, unlike Actions ZIPs.
     needs: [linux-preview, windows-preview]
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
+    if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
