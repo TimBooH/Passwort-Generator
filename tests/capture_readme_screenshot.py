@@ -54,6 +54,8 @@ print(f'CTA metrics: width={window.generate_button.width()}, height={window.gene
 assert 34 <= window.generate_button.height() <= 52
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
+assert window.check_layout.verticalSpacing() >= 10
+assert all(c.isChecked() for c in (window.upper, window.lower, window.digits, window.symbols))
 assert window.ocean_page_title.isVisible()
 assert window.language == 'de'
 
