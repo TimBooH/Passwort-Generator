@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.21.1 matches the Ocean Glass picture with a real two-card
+password layout, full-width navigation/Generate action, and visible checks.
 Version 0.21.0 implements the screenshot-inspired Ocean Glass styling as
 the actual Qt default, with cached blue ribbons and responsive native UI.
 Version 0.20.1 refines the smaller centered Generate button and its Glass states.
@@ -64,7 +66,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.21.0"
+APP_VERSION = "0.21.1"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 
