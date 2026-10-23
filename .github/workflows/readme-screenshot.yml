@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   screenshot:
-    # A preview run must never push screenshots straight to stable main.
+    # Do not push unstable screenshots to main on manual workflow dispatch.
     if: github.ref == 'refs/heads/main' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
     timeout-minutes: 10

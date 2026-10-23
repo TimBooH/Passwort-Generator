@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   release:
-    # Public releases are forbidden from any preview/development branch.
+    # Never publish if the manual dispatch selected the unstable branch.
     if: github.ref == 'refs/heads/main' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
     timeout-minutes: 20
