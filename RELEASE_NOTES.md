@@ -1,25 +1,27 @@
-# PasswortGenerator v0.21.1 – Ocean Glass näher an der Bildvorlage
+# PasswortGenerator v0.22.0 – Stable / Unstable direkt im Updater
 
-Design-Korrektur innerhalb von **Entwicklungsschritt 21 von 100**. Die erste Ocean-Glass-Fassung v0.21.0 hatte zwar die Farben, aber nicht die Anordnung aus der gemeinsam ausgewählten Vorlage übernommen. Diese Version korrigiert das.
+**Entwicklungsschritt 22 von 100.** Eine gemeinsame Stable-Veröffentlichung nach erfolgreichen Tests auf beiden Plattformen.
 
 ## Deutsch
 
-- **Echtes neues Seitenlayout:** Die Passwortseite hat nun eine große Optionskachel **links** und eine Kachel für die Passwortlänge **rechts**, wie auf der Vorlage. Die bisherigen Profile und erweiterten Passwort-Regeln bleiben funktionsfähig.
-- **Breite Navigation:** Die vier Bereiche „Passwort“, „Update“, „Einstellungen“ und „Info“ liegen nebeneinander in einer dunkelblauen Leiste mit leuchtendem aktivem Tab.
-- **Passwortbereich:** Überschrift mit Glastile und Schlüsselsymbol, eigene Beschriftung über dem Passwortfeld, Stärkeanzeige mit grünem Balken und separatem Stärketext.
-- **Generieren-Button:** Volle Breite am unteren Rand der Passwortkachel, leuchtend blau-türkiser Verlauf wie auf dem Referenzbild. Die Funktionen „Verbergen“ und „Verlauf“ bleiben oberhalb davon zugänglich.
-- **Häkchen & Lesbarkeit:** Deutlich sichtbare weiße Häkchen in blauen Checkboxen, kräftigere Schrift und abgestimmte Abstände in den Optionen.
-- **Dunkles Ocean-Glass-Finish:** Sattere navyblaue Karten, feine cyanfarbene Kanten und der lokal gerenderte blaue Ribbon-Hintergrund.
-- **Erhalten:** Benutzerdefinierte Designs, beide Programmprachen, Password/Passphrase-Modus, Sicherheitsregeln, Profile, Zwischenablageschutz, Updates und Offline-Funktion.
-- **Tests:** Original Linux Qt Screenshot in der README und automatisierte UI- und Funktionsprüfungen unter Linux und Windows, auch bei kleineren Fenstern.
+- **Update-Kanal auswählbar:** In der bestehenden Kachel „Update & Version“ direkt zwischen **Stable** und **Unstable (Test)** wechseln. Die Auswahl wird gespeichert; die Updateprüfung erfolgt beim Start und anschließend alle zwei Stunden.
+- **Unstable ohne ZIP:** Die App erkennt den zuletzt erfolgreichen Test-Build direkt anhand einer Git-Commit-Kennung. Download und Installation erfolgen wie normale Updates mit einem Klick und einer ausdrücklichen Bestätigung für unfertige Testversionen.
+- **GitHub-Prerelease:** Unstable-Builds sind öffentlich erreichbare, als **TESTVERSION** gekennzeichnete Prereleases, nicht offizielle Stable-Releases. Erst wenn Linux und Windows beide Tests/Builds bestehen, veröffentlicht GitHub Actions die geprüften Dateien. Stable bleibt bei `/releases/latest` unverändert.
+- **Getrennte Installationen:** Unter Linux liegt Unstable neben Stable in `~/.local/opt/passwort-generator-unstable/` und aktualisiert sich künftig selbst. Unter Windows nutzt Unstable eine andere Installer-App-ID, einen separaten Program-Files-Ordner und eigene Verknüpfungen. Stable wird nicht überschrieben.
+- **Sichere Downloads:** Strikt geprüfte GitHub-URLs, erwartete Dateinamen, Dateigrößen und SHA-256-Prüfsummen. Keine ausführbare Datei wird installiert, wenn die Verifikation scheitert.
+- **Kanal zurückwechseln:** Beim Auswählen von Stable installiert die App den normalen, geprüften Stable-Installer/AppImage. Die andere Installation bleibt bestehen.
+- **Zweisprachig:** Deutsch und Englisch im gesamten Update-Bereich. Alle bisherigen Passwortfunktionen, das Ocean-Glass-Design und Einstellungen bleiben erhalten.
+
+**Hinweis:** Unstable-Test-Builds sind bewusst öffentlich abrufbar, aber nicht als offizielle stabile Version freigegeben.
 
 ## English
 
-- **Real reference-inspired layout:** Options in a distinct left-hand glass card and password length in a right-hand card. Existing profiles and advanced password rules remain functional.
-- **Full-width navigation:** Password, Update, Settings and Info in a wide glowing blue/navy tab strip.
-- **Password panel:** Key icon in a glass square, separate output label, green strength bar and readable strength rating.
-- **Generate button:** Full-width blue-to-cyan action at the bottom of the password tile. Show/Hide and History are retained just above it.
-- **Checkboxes and readability:** White check marks in blue indicators, clearer text, and more comfortable option spacing.
-- **Deeper navy glass:** Saturated dark surfaces and cyan edges against the locally rendered blue ribbon background.
-- **Retained:** Custom themes, German/English UI, password and passphrase modes, security rules, profiles, clipboard protection, updates, and offline generation.
-- **Tests:** Real Qt screenshot on Linux and GUI/function checks on Windows and Linux, including narrow windows.
+- **Choose update channel:** Switch between **Stable** and **Unstable (test)** directly on the Update page. The choice persists, with startup and two-hour checks.
+- **No ZIP downloads:** The app discovers the newest successful test build by its Git commit ID and installs it from GitHub after user confirmation.
+- **GitHub prerelease:** The build is clearly labelled **TEST VERSION** and is never the official Stable `/releases/latest`. Both platform builds must pass before preview publication.
+- **Separate installations:** Independent Linux AppImage directories and Windows installer app IDs, Program Files paths, and shortcuts; Stable is preserved.
+- **Verified downloads:** Exact GitHub release URLs, expected asset names, published byte lengths, and SHA-256 digests are all validated.
+- **Return to Stable:** Switching back installs the normal verified Stable package without removing the preview installation.
+- **Bilingual interface:** German and English UI, with all existing features and Ocean Glass retained.
+
+**Note:** Preview builds are publicly downloadable, but explicitly experimental and separate from public Stable updates.
