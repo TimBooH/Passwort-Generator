@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-bit) | Linux (x86_64, e.g. CachyOS) |
 | --- | --- |
-| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.20.1/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.20.1/PasswortGenerator-x86_64.AppImage) |
+| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.0/PasswortGenerator-x86_64.AppImage) |
 
 [All releases and installation scripts](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -20,13 +20,13 @@
 
 ![Original screenshot of PasswortGenerator running on Linux in Glass theme](assets/screenshots/passwort-generator-live.png)
 
-*Real screenshot of the running Linux Qt/PySide6 application in Glass Dark mode. The displayed password was generated exclusively for this preview.*
+*Real screenshot of the running Linux Qt/PySide6 application in the new Ocean Glass default theme. The displayed password was generated exclusively for this preview.*
 
 ## Features
 
 - **Passwords:** 8–128 characters, profiles and advanced minimum digit/symbol and excluded-character rules.
 - **Passphrases:** 4–10 words using independent German or English offline word lists, separators and optional two-digit number.
-- **Glass design:** refined glossy highlights, focus states, a smaller polished Generate button, color themes and custom wallpapers.
+- **Ocean Glass default theme:** Glowing blue/cyan navigation, flowing blue wallpaper, polished translucent cards, a green strength bar and compact Generate button. All earlier color themes and custom wallpapers remain available.
 - **Language:** Its own **Language** glass card directly below **Appearance** in Settings; German/English still applies throughout the app and is saved.
 - **Updates:** automatic checking, version comparison and Changelog; consent-based rollback (Linux: previous AppImage; Windows: verified official older installer).
 - **Security:** entropy-based strength explanation, privacy mode on focus loss and optional clipboard clearing after 30, 60 or 120 seconds.
@@ -65,7 +65,7 @@ python -m unittest discover -s tests -v
 
 Windows installers and Linux AppImages are built using [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions).
 
-**Version 0.20.1 · Step 20 of 100 toward the 1.0.0 release.**
+**Version 0.21.0 · Step 21 of 100 toward the 1.0.0 release.**
 [Release notes](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
