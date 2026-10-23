@@ -17,6 +17,8 @@ from theme_colors import DEFAULT_SCHEME, preset_colors
 
 app = QApplication([])
 app.setStyle('Fusion')
+# An earlier GUI test must never leave English active for other smoke tests.
+QSettings('TimBooH', 'PasswortGenerator').setValue('ui/language', 'de')
 window = PasswordWindow(auto_check=False)
 window.resize(1120, 790)
 window.show()
@@ -88,5 +90,8 @@ app.processEvents()
 # Preferences remain selected after a new window is created.
 again = PasswordWindow(auto_check=False)
 assert again.scheme_combo.currentData() == 'ocean_glass'
+again.language_combo.setCurrentIndex(again.language_combo.findData('de'))
+app.processEvents()
 again.close()
+QSettings('TimBooH', 'PasswortGenerator').setValue('ui/language', 'de')
 print('Ocean Glass default, themes, screenshot layout and bilingual pages OK')
