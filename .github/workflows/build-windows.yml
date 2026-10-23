@@ -18,6 +18,8 @@ concurrency:
 
 jobs:
   windows:
+    # Never publish installers from a preview/development ref.
+    if: github.ref == 'refs/heads/main' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: windows-2022
     timeout-minutes: 30
     env:
