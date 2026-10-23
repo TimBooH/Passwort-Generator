@@ -252,6 +252,7 @@ class GlassBackground(QWidget):
         self._base_color = '#071322'
         self.wallpaper_color = None
         self._clear_glass = False
+        self._ocean_enabled = False
         self._image = QPixmap()
         self._mode = 'cover'
 
@@ -273,6 +274,15 @@ class GlassBackground(QWidget):
         self._circuit.setScaledContents(True)
         self._circuit.setPixmap(circuit_texture(accent=accent_for_background(self._base_color)))
         self._circuit.lower()
+        # A genuine Qt-drawn, cached decorative wallpaper for Ocean Glass.
+        from ocean_wallpaper import ocean_texture
+        self._ocean = QLabel(self)
+        self._ocean.setObjectName('oceanWallpaper')
+        self._ocean.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._ocean.setScaledContents(True)
+        self._ocean.setPixmap(ocean_texture())
+        self._ocean.hide()
+        self._ocean.lower()
         self._apply_color_style()
 
         self._resize_timer = QTimer(self)
@@ -299,6 +309,19 @@ class GlassBackground(QWidget):
             'border: none; }'
         )
 
+    def set_ocean_mode(self, enabled):
+        enabled = bool(enabled)
+        if enabled != self._ocean_enabled:
+            self._ocean_enabled = enabled
+            self._apply_color_style()
+        if not self.has_background_image():
+            self._ocean.setVisible(enabled)
+            self._circuit.setVisible(not enabled)
+            if enabled:
+                self._ocean.lower()
+            else:
+                self._circuit.lower()
+
     def set_transparent_glass(self, enabled):
         enabled = bool(enabled)
         if self._clear_glass != enabled:
@@ -319,6 +342,7 @@ class GlassBackground(QWidget):
         self._image = loaded
         self.wallpaper_color = sample_wallpaper_color(loaded)
         self._circuit.hide()
+        self._ocean.hide()
         self._backdrop.show()
         self._shade.show()
         self._render_image()
@@ -330,8 +354,12 @@ class GlassBackground(QWidget):
         self._backdrop.clear()
         self._backdrop.hide()
         self._shade.hide()
-        self._circuit.show()
-        self._circuit.lower()
+        self._circuit.setVisible(not self._ocean_enabled)
+        self._ocean.setVisible(self._ocean_enabled)
+        if self._ocean_enabled:
+            self._ocean.lower()
+        else:
+            self._circuit.lower()
 
     def has_background_image(self):
         return not self._image.isNull()
@@ -347,10 +375,17 @@ class GlassBackground(QWidget):
         self._backdrop.setGeometry(self.rect())
         self._shade.setGeometry(self.rect())
         self._circuit.setGeometry(self.rect())
+        self._ocean.setGeometry(self.rect())
         if self.has_background_image():
             self._backdrop.lower()
             self._circuit.hide()
+            self._ocean.hide()
+        elif self._ocean_enabled:
+            self._circuit.hide()
+            self._ocean.show()
+            self._ocean.lower()
         else:
+            self._ocean.hide()
             self._circuit.show()
             self._circuit.lower()
         if self.has_background_image():
@@ -411,6 +446,7 @@ class GlossyGlassCard(QWidget):
         self._base_color = QColor('#071322')
         self._accent = QColor(accent_for_background('#071322'))
         self._clear_glass = False
+        self._ocean_enabled = False
         self._last_style = None
 
         column = QVBoxLayout(self)
@@ -447,6 +483,12 @@ class GlossyGlassCard(QWidget):
         self._accent = color
         self._refresh_timer.start()
 
+    def set_ocean_mode(self, enabled):
+        enabled = bool(enabled)
+        if enabled != self._ocean_enabled:
+            self._ocean_enabled = enabled
+            self._refresh_timer.start()
+
     def set_glass_mode(self, transparent):
         transparent = bool(transparent)
         if self._clear_glass != transparent:
@@ -457,21 +499,28 @@ class GlossyGlassCard(QWidget):
     def _refresh_style(self):
         dark = is_dark_background(self._base_color)
         base = self._base_color
-        # Reduced opacity keeps neon circuits and custom wallpapers visible.
-        # Glass adopts the actual accent instead of tinting every preset blue.
-        # Soft glossy highlight without expensive blur or paint effects.
-        top = blend(base, self._accent, .29 if dark else .17)
-        mid = blend(base, self._accent, .16 if dark else .11)
-        end = blend(base, '#000000' if dark else '#FFFFFF', .24 if dark else .10)
-        alpha = 158 if dark else 147
-        if self._clear_glass:
-            alpha = 48  # Clearly reveals the app wallpaper through the glass.
+        # Ocean Glass uses vivid blue front highlights and navy back layers.
+        # All other schemes preserve their existing selectable appearance.
+        if self._ocean_enabled:
+            top, mid, end = (QColor('#16477D'), QColor('#0B2B51'),
+                             QColor('#061A37'))
+            alpha = 212
+        else:
+            top = blend(base, self._accent, .29 if dark else .17)
+            mid = blend(base, self._accent, .16 if dark else .11)
+            end = blend(base, '#000000' if dark else '#FFFFFF', .24 if dark else .10)
+            alpha = 158 if dark else 147
+            if self._clear_glass:
+                alpha = 48  # Clearly reveals the app wallpaper through the glass.
         top_rgba = rgba(top, max(0, alpha - 17))
         mid_rgba = rgba(mid, alpha)
         end_rgba = rgba(end, min(250, alpha + 8))
-        edge = rgba(self._accent, 190 if dark else 145)
-        light_edge = rgba(self._accent.lighter(135), 192 if dark else 169)
-        white_spot = rgba(self._accent.lighter(153), 145 if dark else 115)
+        edge = rgba('#3196D5' if self._ocean_enabled else self._accent,
+                    174 if self._ocean_enabled else (190 if dark else 145))
+        light_edge = rgba('#74D5FF' if self._ocean_enabled else self._accent.lighter(135),
+                          209 if self._ocean_enabled else (192 if dark else 169))
+        white_spot = rgba('#B7EDFF' if self._ocean_enabled else self._accent.lighter(153),
+                          145 if dark else 115)
         css = f"""
 QWidget#glossyCard {{
     background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
