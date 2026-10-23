@@ -210,6 +210,13 @@ QLabel#oceanStrengthCaption {
 QLabel#oceanStrengthValue {
     color: #20EAA5; font-size: 12px; font-weight: 800;
 }
+QLabel#oceanHeroIcon {
+    color: #E8F8FF; font-size: 20px;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 rgba(39,105,166,225), stop:1 rgba(14,47,94,229));
+    border: 1px solid rgba(113,190,248,170);
+    border-radius: 11px;
+}
 QLabel#oceanPageTitle {
     color: #FFFFFF; font-size: 19px; font-weight: 850;
 }
