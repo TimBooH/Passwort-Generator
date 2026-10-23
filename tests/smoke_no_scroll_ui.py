@@ -24,13 +24,16 @@ assert window.tabs.count() == 4
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert window.check_button.width() == 175
 assert window.generate_button.objectName() == 'generatePasswordButton'
-assert 35 <= window.generate_button.height() <= 40, (
+assert 35 <= window.generate_button.height() <= 46, (
     f'Actual height={window.generate_button.height()} '
     f'min={window.generate_button.minimumHeight()} '
     f'max={window.generate_button.maximumHeight()} '
     f'hint={window.generate_button.sizeHint().height()}'
 )
-assert window.generate_button.maximumWidth() == 360
+assert window.scheme_combo.currentData() == 'ocean_glass'
+assert window.generate_button.maximumWidth() > 1000
+assert window.ocean_options_panel.objectName() == 'oceanOptionPanel'
+assert window.ocean_length_panel.objectName() == 'oceanLengthPanel'
 assert 'QPushButton#generatePasswordButton' in window.styleSheet()
 assert 'QPushButton#primaryButton' in window.styleSheet()  # Update CTA unchanged.
 
@@ -77,8 +80,8 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
             )
         if page == 0:
             button = window.generate_button
-            assert 35 <= button.height() <= 40, f'Generate button height: {button.height()}'
-            assert 235 <= button.width() <= 360, f'Wrong Generate width: {button.width()}'
+            assert 35 <= button.height() <= 46, f'Generate button height: {button.height()}'
+            assert button.width() >= 235, f'Wrong Generate width: {button.width()}'
             card = window.glass_cards[0]
             from PySide6.QtCore import QPoint
             center_button = button.mapTo(window, QPoint(button.width() // 2, 0)).x()
