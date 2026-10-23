@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-bit) | Linux (x86_64, e.g. CachyOS) |
 | --- | --- |
-| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.1/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.1/PasswortGenerator-x86_64.AppImage) |
+| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.22.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.22.0/PasswortGenerator-x86_64.AppImage) |
 
 [All releases and installation scripts](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -28,7 +28,7 @@
 - **Passphrases:** 4–10 words using independent German or English offline word lists, separators and optional two-digit number.
 - **Ocean Glass default theme:** Bright blue/cyan navigation, separate **Options** and **Password length** glass panels, visible checkbox ticks and a full-width Generate button. Earlier themes and custom wallpapers remain available.
 - **Language:** Its own **Language** glass card directly below **Appearance** in Settings; German/English still applies throughout the app and is saved.
-- **Updates:** automatic checking, version comparison and Changelog; consent-based rollback (Linux: previous AppImage; Windows: verified official older installer).
+- **Updates:** Choose **Stable** or **Unstable** in-app. Test builds auto-update without downloading ZIP archives, installing separately from Stable; downloads are SHA-256 verified. Changelog and rollback remain available.
 - **Security:** entropy-based strength explanation, privacy mode on focus loss and optional clipboard clearing after 30, 60 or 120 seconds.
 - **Usability:** keyboard shortcuts (Ctrl+G, Ctrl+Shift+C, Ctrl+H, Ctrl+1–4), session history, guided tour and saved window geometry. Navigation: Password → Update → Settings → Info.
 
@@ -65,7 +65,7 @@ python -m unittest discover -s tests -v
 
 Windows installers and Linux AppImages are built using [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions).
 
-**Version 0.21.1 · Step 21 of 100 toward the 1.0.0 release.**
+**Version 0.22.0 · Step 22 of 100 toward the 1.0.0 release.**
 [Release notes](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
