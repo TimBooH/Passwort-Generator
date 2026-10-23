@@ -14,6 +14,9 @@ from main import PasswordWindow
 app = QApplication([])
 app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
+# Other smoke processes can save a different color scheme in shared QSettings.
+# The no-scroll design regression explicitly exercises Ocean Glass.
+window.scheme_combo.setCurrentIndex(window.scheme_combo.findData('ocean_glass'))
 window.show()
 app.processEvents()  # Let Qt apply the fixed-size Glass button styling.
 
