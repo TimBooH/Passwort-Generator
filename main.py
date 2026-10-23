@@ -1126,6 +1126,7 @@ class PasswordWindow(QMainWindow):
             self.length_slider.setRange(4, 10)
             self.length.setValue(6)
             self._set_ui(self.generate_button, '🔑  Passphrase generieren')
+            self._set_ui(self.ocean_page_title, 'PASSPHRASE ERSTELLEN')
             self._set_placeholder(self.output, 'Generierte Passphrase')
         else:
             self._set_ui(self.length_label, 'Länge:')
@@ -1133,6 +1134,7 @@ class PasswordWindow(QMainWindow):
             self.length_slider.setRange(8, 128)
             self.length.setValue(20)
             self._set_ui(self.generate_button, '🔑  Passwort generieren')
+            self._set_ui(self.ocean_page_title, 'PASSWORT ERSTELLEN')
             self._set_placeholder(self.output, 'Generiertes Passwort')
         self.output.clear()
         self._set_ui(self.strength_label, '🛡  Stärke: --')
@@ -1319,6 +1321,14 @@ class PasswordWindow(QMainWindow):
                 'background_color', preset_colors(DEFAULT_SCHEME)[0], type=str
             )
             saved_scheme = self.settings.value('color_scheme', '', type=str)
+            # Upgrade legacy untouched default to the new standard once.
+            # All manually selected non-default themes and custom colors stay.
+            previous_default = ('neon_blue', '#071322')
+            if (not self.settings.value('ui/ocean_default_migrated', False, type=bool)
+                    and (saved_scheme, stored_background.upper())
+                    == (previous_default[0], previous_default[1].upper())):
+                saved_scheme = DEFAULT_SCHEME
+                self.settings.setValue('ui/ocean_default_migrated', True)
             if saved_scheme not in SCHEME_MAP:
                 default_background = preset_colors(DEFAULT_SCHEME)[0]
                 saved_scheme = (DEFAULT_SCHEME if
