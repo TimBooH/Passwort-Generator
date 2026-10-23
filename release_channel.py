@@ -6,3 +6,5 @@ normal stable releases can never accidentally be labelled as preview builds.
 """
 
 CHANNEL = 'stable'
+# Populated with 12 hex digits only inside the Unstable CI build workspace.
+BUILD_SHA = ''
