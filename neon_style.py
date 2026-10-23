@@ -135,14 +135,8 @@ QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
     border: 1px solid #49D6FF;
 }
 QCheckBox { color: #E5F3FF; }
-QCheckBox::indicator {
-    width: 15px; height: 15px;
-    border-radius: 4px; border: 1px solid #508DBD;
-    background: rgba(6,26,57,208);
-}
-QCheckBox::indicator:checked {
-    background: #0C8FFA; border: 1px solid #71DFFF;
-}
+/* Let Qt Fusion draw actual check marks in checked indicators. */
+QCheckBox::indicator { width: 17px; height: 17px; }
 QPushButton#squareAction {
     color: #B6E9FF;
     background: rgba(21,68,118,193);
@@ -232,7 +226,25 @@ QLineEdit#passwordOutput {
 QPushButton#generatePasswordButton {
     color: #FFFFFF; font-size: 15px; font-weight: 850;
 }
-QLabel#brandTitle { color: #F8FBFF; font-size: 17px; font-weight: 800; }
+QLabel#brandTitle { color: #F8FBFF; font-size: 18px; font-weight: 800; }
+QFrame#topNav { border-radius: 14px; }
+QWidget#contentColumn {
+    border: 1px solid rgba(58,154,233,154);
+    border-radius: 17px;
+    background: rgba(4,18,43,50);
+}
+QPushButton#navButton, QPushButton#infoNavButton {
+    font-size: 13px; font-weight: 730;
+}
+QCheckBox { color: #E7F4FF; font-size: 12px; spacing: 9px; }
+QPushButton#squareAction {
+    font-size: 19px; min-width: 37px; min-height: 35px;
+}
+QLineEdit#passwordOutput { font-size: 18px; }
+QLabel#oceanPanelHeading { font-size: 14px; }
+QLabel#oceanOutputCaption { font-size: 13px; }
+QLabel#oceanStrengthCaption { font-size: 12px; }
+QLabel#oceanStrengthValue { font-size: 13px; }
 """ if ocean_theme else ""
     return f"""
 QMainWindow {{ background-color: {background}; }}
