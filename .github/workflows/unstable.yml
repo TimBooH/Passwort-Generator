@@ -58,6 +58,7 @@ jobs:
           PYTHONPATH=. python tests/smoke_v020_ui.py
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
+          PYTHONPATH=. python tests/smoke_update_channels_ui.py
       - name: Embed UNSTABLE build identity and verify isolation
         shell: bash
         run: |
@@ -150,11 +151,11 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python -m compileall -q .
           if ($LASTEXITCODE -ne 0) { throw 'Source syntax errors' }
-          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py')) {
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py', 'test_update_channels.py')) {
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test $test" }
           }
-          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py')) {
+          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py')) {
             python "tests/$test"
             if ($LASTEXITCODE -ne 0) { throw "Failed GUI smoke $test" }
           }
