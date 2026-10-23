@@ -56,8 +56,26 @@ class GlassStyleTests(unittest.TestCase):
         self.assertFalse(pixmap.isNull())
         self.assertEqual((pixmap.width(), pixmap.height()), (220, 300))
 
+    def test_ocean_blue_theme_and_cached_wallpaper(self):
+        from ocean_wallpaper import ocean_texture
+        app = QApplication.instance() or QApplication([])
+        pixmap = ocean_texture(240, 160)
+        self.assertFalse(pixmap.isNull())
+        self.assertEqual((pixmap.width(), pixmap.height()), (240, 160))
+        self.assertNotEqual(pixmap.toImage().pixelColor(0, 0),
+                            pixmap.toImage().pixelColor(200, 140))
+        css = neon_stylesheet('#091D3D', '#FFFFFF',
+                              ocean_theme=True)
+        self.assertIn('Ocean Glass', css)
+        self.assertIn('#18B7F7', css)
+        self.assertIn('QPushButton#generatePasswordButton', css)
+        self.assertIn('#16DFA5', css)
+
     def test_accent_follows_background(self):
-        self.assertEqual(len(COLOR_SCHEMES), 7)
+        self.assertEqual(len(COLOR_SCHEMES), 8)
+        self.assertEqual(preset_colors('ocean_glass'), ('#091D3D', '#F7FBFF'))
+        from theme_colors import DEFAULT_SCHEME
+        self.assertEqual(DEFAULT_SCHEME, 'ocean_glass')
         self.assertEqual(preset_colors('glass'), ('#142638', '#F6FAFF'))
         self.assertEqual(preset_colors('glass_dark'), ('#171C26', '#F0F4FC'))
         self.assertEqual(preset_colors('glass_light'), ('#F0F4FA', '#142436'))
