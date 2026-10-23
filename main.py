@@ -241,7 +241,8 @@ class PasswordWindow(QMainWindow):
         self.glass_cards.append(group)
         group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         group_layout = group.body
-        group_layout.setSpacing(4)
+        self.password_group_layout = group_layout
+        group_layout.setSpacing(6)
         group.layout().setContentsMargins(16, 8, 16, 8)
         group.layout().setSpacing(3)
 
@@ -330,6 +331,9 @@ class PasswordWindow(QMainWindow):
         strength_row.insertWidget(3, self.ocean_strength_value)
         group_layout.removeWidget(self.strength_bar)
         strength_row.insertWidget(2, self.strength_bar, 1)
+        for i in range(strength_row.count() - 1, -1, -1):
+            if strength_row.itemAt(i).spacerItem() is not None:
+                strength_row.takeAt(i)
         self.ocean_strength_caption.hide()
         self.ocean_strength_value.hide()
         group_layout.addSpacing(2)
@@ -1217,6 +1221,10 @@ class PasswordWindow(QMainWindow):
             self.length.setValue(6)
             self._set_ui(self.generate_button, '🔑  Passphrase generieren')
             self._set_ui(self.ocean_page_title, 'PASSPHRASE ERSTELLEN')
+            self._set_ui(self.ocean_output_caption, 'Generierte Passphrase')
+            self._set_ui(self.ocean_length_heading, 'Passphrase-Wörter')
+            self.ocean_min_label.setText('4')
+            self.ocean_max_label.setText('10')
             self._set_placeholder(self.output, 'Generierte Passphrase')
         else:
             self._set_ui(self.length_label, 'Länge:')
@@ -1225,10 +1233,16 @@ class PasswordWindow(QMainWindow):
             self.length.setValue(20)
             self._set_ui(self.generate_button, '🔑  Passwort generieren')
             self._set_ui(self.ocean_page_title, 'PASSWORT ERSTELLEN')
+            self._set_ui(self.ocean_output_caption, 'Generiertes Passwort')
+            self._set_ui(self.ocean_length_heading, 'Passwort-Länge')
+            self.ocean_min_label.setText('8')
+            self.ocean_max_label.setText('128')
             self._set_placeholder(self.output, 'Generiertes Passwort')
         self.output.clear()
         self._set_ui(self.strength_label, '🛡  Stärke: --')
         self.strength_bar.setValue(0)
+        self._set_ui(self.ocean_strength_value, '--')
+        self.update_ocean_presentation()
         self._set_ui(self.status, '')
         if self.reporter is not None:
             self.reporter.note('MODE_CHANGED', 'passphrase' if self._phrase_mode else 'password', force=True)
@@ -1469,6 +1483,34 @@ class PasswordWindow(QMainWindow):
         if selected.isValid():
             self.select_color(combo, selected.name(), '#101827')
 
+    def update_ocean_presentation(self):
+        """Keep the real two-panel layout usable in all schemes and sizes."""
+        ocean = self.scheme_combo.currentData() == 'ocean_glass'
+        wide = self.width() >= 780
+        self.ocean_heading.setVisible(ocean and wide)
+        for widget in (
+            self.ocean_output_caption, self.ocean_strength_caption,
+            self.ocean_strength_value, self.ocean_options_heading,
+            self.ocean_length_heading, self.ocean_length_range,
+        ):
+            widget.setVisible(ocean)
+        self.strength_label.setVisible(not ocean)
+        self.length_label.setVisible(not ocean)
+        self.length_value.setVisible(not ocean)
+        self.ocean_preset_box.setVisible(not self._phrase_mode)
+        self.brand_subtitle.setVisible(not ocean)
+        self.brand_icon.setFixedSize(38 if ocean else 53, 38 if ocean else 53)
+        self._set_ui(
+            self.brand_title,
+            'PasswortGenerator' if ocean else 'Passwort-Generator',
+        )
+        self.generate_button.setFixedHeight(46 if ocean and wide else 40)
+        self.generate_button.setMaximumWidth(16777215 if ocean else 360)
+        self.password_group_layout.setAlignment(
+            self.generate_button,
+            Qt.AlignmentFlag(0) if ocean else Qt.AlignmentFlag.AlignHCenter,
+        )
+
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
@@ -1518,11 +1560,8 @@ class PasswordWindow(QMainWindow):
             self._first_run_tour.update()
         if hasattr(self, 'nav_buttons'):
             self.update_navigation_labels()
-        if hasattr(self, 'ocean_heading') and hasattr(self, 'scheme_combo'):
-            self.ocean_heading.setVisible(
-                self.scheme_combo.currentData() == 'ocean_glass'
-                and self.width() >= 780
-            )
+        if hasattr(self, 'ocean_sections') and hasattr(self, 'scheme_combo'):
+            self.update_ocean_presentation()
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
             compact = self.width() < 680
             if compact != self._compact_options:
@@ -1556,8 +1595,8 @@ class PasswordWindow(QMainWindow):
             card.set_glass_color(actual_background, accent)
             card.set_glass_mode(glass_mode)
             card.set_ocean_mode(ocean_mode)
-        if hasattr(self, 'ocean_heading'):
-            self.ocean_heading.setVisible(ocean_mode and self.width() >= 780)
+        if hasattr(self, 'ocean_sections'):
+            self.update_ocean_presentation()
         source = 'Bild' if image_color else 'Hintergrund'
         self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
         self.accent_preview.setToolTip(self._t(
@@ -1681,6 +1720,7 @@ class PasswordWindow(QMainWindow):
 
         self.output.setText(generated)
         self._set_ui(self.strength_label, f'🛡  Stärke: {label}')
+        self._set_ui(self.ocean_strength_value, label)
         self.strength_bar.setValue(score)
         self._set_ui(self.status, f'{kind} erstellt.')
         self._history.append((kind, generated))
