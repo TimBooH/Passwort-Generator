@@ -71,6 +71,19 @@ class GlassStyleTests(unittest.TestCase):
         self.assertIn('QPushButton#generatePasswordButton', css)
         self.assertIn('#16DFA5', css)
 
+    def test_native_ocean_checkbox_icon_is_valid_png(self):
+        from ocean_checkmark import checkmark_png_path
+        from pathlib import Path
+        from PySide6.QtGui import QImageReader
+        path = checkmark_png_path()
+        self.assertIsNotNone(path)
+        self.assertTrue(Path(path).is_file())
+        reader = QImageReader(path)
+        self.assertTrue(reader.canRead())
+        image = reader.read()
+        self.assertFalse(image.isNull())
+        self.assertEqual((image.width(), image.height()), (22, 22))
+
     def test_accent_follows_background(self):
         self.assertEqual(len(COLOR_SCHEMES), 8)
         self.assertEqual(preset_colors('ocean_glass'), ('#091D3D', '#F7FBFF'))
