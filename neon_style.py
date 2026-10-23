@@ -259,7 +259,7 @@ QLabel#oceanStrengthValue { font-size: 13px; }
         if check_path:
             # Qt draws the icon itself: no Python callbacks on every repaint.
             ocean_css += (
-                '\\nQCheckBox::indicator:checked { '
+                '\nQCheckBox::indicator:checked { '
                 f'image: url("{check_path}"); '
                 'background: transparent; border: none; }'
             )
