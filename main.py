@@ -245,6 +245,19 @@ class PasswordWindow(QMainWindow):
 
         mode_row = QHBoxLayout()
         mode_row.setSpacing(6)
+        # The real screenshot-inspired header shares a row with the mode
+        # selector; hiding it in compact windows keeps all controls visible.
+        self.ocean_heading = QWidget()
+        ocean_heading_layout = QVBoxLayout(self.ocean_heading)
+        ocean_heading_layout.setContentsMargins(0, 0, 0, 0)
+        ocean_heading_layout.setSpacing(1)
+        self.ocean_page_title = QLabel('PASSWORT ERSTELLEN')
+        self.ocean_page_title.setObjectName('oceanPageTitle')
+        self.ocean_page_subtitle = QLabel('Sichere Passwörter und Passphrasen')
+        self.ocean_page_subtitle.setObjectName('oceanPageSubtitle')
+        ocean_heading_layout.addWidget(self.ocean_page_title)
+        ocean_heading_layout.addWidget(self.ocean_page_subtitle)
+        mode_row.addWidget(self.ocean_heading, 1)
         self.mode_group = QButtonGroup(self)
         self.mode_group.setExclusive(True)
         self.password_mode_button = QPushButton('Passwort')
@@ -254,11 +267,12 @@ class PasswordWindow(QMainWindow):
             button.setCheckable(True)
             button.setMinimumHeight(29)
             self.mode_group.addButton(button)
-            mode_row.addWidget(button, 1)
+            mode_row.addWidget(button, 0)
         self.password_mode_button.setChecked(True)
         self.password_mode_button.clicked.connect(lambda: self.switch_mode(False))
         self.passphrase_mode_button.clicked.connect(lambda: self.switch_mode(True))
         group_layout.addLayout(mode_row)
+        self.ocean_heading.setVisible(False)
 
         password_row = QHBoxLayout()
         password_row.setSpacing(7)
@@ -1302,7 +1316,7 @@ class PasswordWindow(QMainWindow):
         self._restoring = True
         try:
             stored_background = self.settings.value(
-                'background_color', '#071322', type=str
+                'background_color', preset_colors(DEFAULT_SCHEME)[0], type=str
             )
             saved_scheme = self.settings.value('color_scheme', '', type=str)
             if saved_scheme not in SCHEME_MAP:
@@ -1404,6 +1418,11 @@ class PasswordWindow(QMainWindow):
             self._first_run_tour.update()
         if hasattr(self, 'nav_buttons'):
             self.update_navigation_labels()
+        if hasattr(self, 'ocean_heading') and hasattr(self, 'scheme_combo'):
+            self.ocean_heading.setVisible(
+                self.scheme_combo.currentData() == 'ocean_glass'
+                and self.width() >= 780
+            )
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
             compact = self.width() < 680
             if compact != self._compact_options:
@@ -1427,23 +1446,31 @@ class PasswordWindow(QMainWindow):
         actual_background = image_color or base_background
         fg = accessible_text_color(actual_background)
         accent = accent_for_background(actual_background)
-        glass_mode = self.scheme_combo.currentData() == 'glass'
+        scheme = self.scheme_combo.currentData()
+        ocean_mode = scheme == 'ocean_glass'
+        glass_mode = scheme in ('glass', 'ocean_glass')
         self.background_surface.set_base_color(base_background)
+        self.background_surface.set_ocean_mode(ocean_mode)
         self.background_surface.set_transparent_glass(glass_mode)
         for card in self.glass_cards + self.secondary_cards + [self.info_card]:
             card.set_glass_color(actual_background, accent)
             card.set_glass_mode(glass_mode)
+            card.set_ocean_mode(ocean_mode)
+        if hasattr(self, 'ocean_heading'):
+            self.ocean_heading.setVisible(ocean_mode and self.width() >= 780)
         source = 'Bild' if image_color else 'Hintergrund'
         self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
         self.accent_preview.setToolTip(self._t(
             'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
         ))
-        palette_key = (base_background, actual_background, fg, accent, glass_mode)
+        palette_key = (base_background, actual_background, fg, accent, glass_mode,
+                       ocean_mode)
         if self._applied_palette != palette_key:
             self._applied_palette = palette_key
             self.setStyleSheet(
                 build_glass_stylesheet(actual_background, fg)
-                + '\n' + neon_stylesheet(actual_background, fg, accent)
+                + '\n' + neon_stylesheet(actual_background, fg, accent,
+                                         ocean_theme=ocean_mode)
             )
             self.settings.setValue('background_color', base_background)
             if self.reporter is not None:
