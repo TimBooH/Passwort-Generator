@@ -1829,47 +1829,80 @@ class PasswordWindow(QMainWindow):
         self._startup_update_check_pending = False
         if reply is None:
             return
+        if self._checked_channel != self.update_channel:
+            reply.deleteLater()
+            self.check_for_updates()
+            return
         try:
             if reply.error() != QNetworkReply.NetworkError.NoError:
                 raise ValueError(reply.errorString())
             response = json.loads(bytes(reply.readAll()).decode('utf-8'))
-            latest_version = response.get('tag_name', '')
-            if not self._release_history_loaded and not self._history_releases:
-                note = response.get('body', '')
-                if isinstance(note, str) and note.strip():
-                    self._latest_release_note = (latest_version, note)
-                    self._set_ui(self.changelog_title, f'Kurzüberblick · {latest_version}')
-                    self._set_changelog_release(note, latest_version)
-            current_number = parse_version(APP_VERSION)
-            newest_number = parse_version(latest_version)
-            if newest_number is None or current_number is None:
-                raise ValueError('Ungültige Versionsnummer bei GitHub.')
-            if not is_newer_release(latest_version, APP_VERSION):
+            if not isinstance(response, dict):
+                raise ValueError('Ungültige GitHub-Antwort.')
+            if self.update_channel == 'unstable':
+                # GitHub prereleases are deliberately excluded from /latest.
+                # The prerelease asset is named with its own build SHA.
+                build_sha, asset = select_unstable_asset(response, os.name)
+                latest_version = 'UNSTABLE ' + build_sha
+                update_ready = has_channel_update(
+                    'unstable', CHANNEL, build_sha, APP_VERSION,
+                    APP_VERSION, BUILD_SHA, is_newer_release,
+                )
+            else:
+                latest_version = response.get('tag_name', '')
+                if parse_version(latest_version) is None:
+                    raise ValueError('Ungültige Versionsnummer bei GitHub.')
+                update_ready = has_channel_update(
+                    'stable', CHANNEL, latest_version, APP_VERSION,
+                    APP_VERSION, BUILD_SHA, is_newer_release,
+                )
+                assets = response.get('assets', [])
+                artifact_name = (WINDOWS_INSTALLER_NAME if os.name == 'nt'
+                                 else APPIMAGE_NAME)
+                asset = next(
+                    (item for item in assets if isinstance(item, dict)
+                     and item.get('name') == artifact_name), None
+                )
+                if asset is None:
+                    raise ValueError(
+                        'Im neuesten Release ist noch kein '
+                        + ('Windows-Installer.' if os.name == 'nt' else 'Linux-AppImage.')
+                    )
+                url = asset.get('browser_download_url', '')
+                if (url != RELEASE_DOWNLOAD_PREFIX + latest_version + '/'
+                        + artifact_name):
+                    raise ValueError('Der GitHub-Downloadlink ist ungültig.')
+            if not update_ready:
                 self.latest_asset = None
                 self.latest_version = None
                 self._new_update_note = ''
                 self.set_update_indicator()
                 self.refresh_update_preview()
-                self._set_ui(self.update_status, f'v{APP_VERSION} ist aktuell. Kein Update verfügbar.')
+                self._set_ui(self.update_status,
+                             'Dieser Update-Kanal ist bereits aktuell.')
                 return
-            assets = response.get('assets', [])
-            artifact_name = WINDOWS_INSTALLER_NAME if os.name == 'nt' else APPIMAGE_NAME
-            asset = next((item for item in assets if item.get('name') == artifact_name), None)
-            if asset is None:
-                raise ValueError(
-                    'Im neuesten Release ist noch kein '
-                    + ('Windows-Installer.' if os.name == 'nt' else 'Linux-AppImage.')
-                )
-            url = asset.get('browser_download_url', '')
-            if not url.startswith(RELEASE_DOWNLOAD_PREFIX) or not url.endswith('/' + artifact_name):
-                raise ValueError('Der GitHub-Downloadlink ist ungültig.')
+            if self.update_channel == 'stable':
+                if not self._release_history_loaded and not self._history_releases:
+                    note = response.get('body', '')
+                    if isinstance(note, str) and note.strip():
+                        self._latest_release_note = (latest_version, note)
+                        self._set_ui(self.changelog_title,
+                                     f'Kurzüberblick · {latest_version}')
+                        self._set_changelog_release(note, latest_version)
             self.latest_asset = asset
             self.latest_version = latest_version
             note = response.get('body', '')
             self._new_update_note = note if isinstance(note, str) else ''
             self.set_update_indicator(latest_version)
             self.refresh_update_preview()
-            self._set_ui(self.update_status, f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
+            self._set_ui(self.update_status,
+                         f'Neue Version {latest_version} verfügbar! Installiert: v{APP_VERSION}')
+            self._set_ui(
+                self.download_button,
+                ('Testversion installieren & starten'
+                 if self.update_channel == 'unstable'
+                 else 'Stable installieren & neu starten'),
+            )
             self.download_button.show()
             if startup_check:
                 self.queue_update_popup(latest_version)
