@@ -159,6 +159,7 @@ class PasswordWindow(QMainWindow):
         self._compact_options = None
         self._applied_palette = None
         self._restoring = False
+        self._ocean_presentation_state = None
 
         # Header: compact branding, with four navigation actions at top right.
         header = QHBoxLayout()
@@ -1467,6 +1468,12 @@ class PasswordWindow(QMainWindow):
         """Keep the real two-panel layout usable in all schemes and sizes."""
         ocean = self.scheme_combo.currentData() == 'ocean_glass'
         wide = self.width() >= 780
+        state = (ocean, wide, self._phrase_mode)
+        # Avoid repeatedly changing Qt child geometry while its parent
+        # is being resized; only update when mode or breakpoint changes.
+        if state == self._ocean_presentation_state:
+            return
+        self._ocean_presentation_state = state
         self.ocean_heading.setVisible(ocean and wide)
         self.ocean_hero_icon.setVisible(ocean and wide)
         for widget in (
