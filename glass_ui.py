@@ -502,9 +502,11 @@ class GlossyGlassCard(QWidget):
         # Ocean Glass uses vivid blue front highlights and navy back layers.
         # All other schemes preserve their existing selectable appearance.
         if self._ocean_enabled:
-            top, mid, end = (QColor('#16477D'), QColor('#0B2B51'),
-                             QColor('#061A37'))
-            alpha = 212
+            # High-contrast navy glass like the reference; the moving blue
+            # wallpaper remains visible behind the window, not through text.
+            top, mid, end = (QColor('#10345F'), QColor('#092142'),
+                             QColor('#06152E'))
+            alpha = 237
         else:
             top = blend(base, self._accent, .29 if dark else .17)
             mid = blend(base, self._accent, .16 if dark else .11)
