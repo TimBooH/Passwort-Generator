@@ -198,6 +198,41 @@ QSlider::handle:horizontal {
 }
 QLabel#glassCardTitle { color: #F5FAFF; font-size: 13px; font-weight: 800; }
 QLabel#supportText { color: #B4D0EB; }
+QFrame#oceanOptionPanel, QFrame#oceanLengthPanel {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 rgba(11,39,78,225), stop:1 rgba(6,24,51,230));
+    border: 1px solid rgba(72,156,232,158);
+    border-radius: 13px;
+}
+QLabel#oceanPanelHeading {
+    color: #F4F9FF; font-size: 13px; font-weight: 780;
+}
+QLabel#oceanOutputCaption {
+    color: #EAF5FF; font-size: 12px; font-weight: 720;
+}
+QLabel#oceanStrengthCaption {
+    color: #E7F5FF; font-size: 12px; font-weight: 700;
+}
+QLabel#oceanStrengthValue {
+    color: #20EAA5; font-size: 12px; font-weight: 800;
+}
+QLabel#oceanPageTitle {
+    color: #FFFFFF; font-size: 19px; font-weight: 850;
+}
+QLabel#oceanPageSubtitle {
+    color: #B5D3ED; font-size: 11px;
+}
+QLineEdit#passwordOutput {
+    color: #FCFEFF; font-size: 16px;
+    background: rgba(3,18,42,221);
+    border: 1px solid rgba(87,164,233,150);
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+QPushButton#generatePasswordButton {
+    color: #FFFFFF; font-size: 15px; font-weight: 850;
+}
+QLabel#brandTitle { color: #F8FBFF; font-size: 17px; font-weight: 800; }
 """ if ocean_theme else ""
     return f"""
 QMainWindow {{ background-color: {background}; }}
