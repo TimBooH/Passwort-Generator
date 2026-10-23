@@ -253,6 +253,16 @@ QLabel#oceanOutputCaption { font-size: 13px; }
 QLabel#oceanStrengthCaption { font-size: 12px; }
 QLabel#oceanStrengthValue { font-size: 13px; }
 """ if ocean_theme else ""
+    if ocean_theme:
+        from ocean_checkmark import checkmark_png_path
+        check_path = checkmark_png_path()
+        if check_path:
+            # Qt draws the icon itself: no Python callbacks on every repaint.
+            ocean_css += (
+                '\\nQCheckBox::indicator:checked { '
+                f'image: url("{check_path}"); '
+                'background: transparent; border: none; }'
+            )
     return f"""
 QMainWindow {{ background-color: {background}; }}
 QLabel#brandTitle {{
