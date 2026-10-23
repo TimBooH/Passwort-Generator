@@ -20,6 +20,8 @@ concurrency:
 
 jobs:
   release:
+    # Never publish if the manual dispatch selected the unstable branch.
+    if: github.ref == 'refs/heads/main' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     env:
