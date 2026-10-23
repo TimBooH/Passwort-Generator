@@ -23,6 +23,7 @@ window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
 assert window.appearance_card.objectName() == 'glossyCard'
+assert window._ocean_presentation_state[0] is True
 assert window.options_widget.parentWidget() is window.ocean_options_panel
 assert window.length_slider.parentWidget() is window.ocean_length_panel
 assert window.scheme_combo.findData('ocean_glass') >= 0
