@@ -43,7 +43,8 @@ window = PasswordWindow(auto_check=False)
 window.show()
 window.tabs.setCurrentIndex(1)
 app.processEvents()
-assert window.scheme_combo.count() == 7
+assert window.scheme_combo.count() == 8
+assert window.scheme_combo.findData('ocean_glass') >= 0
 assert window.scheme_combo.findData('glass_dark') >= 0
 assert window.scheme_combo.findData('glass_light') >= 0
 assert window.scheme_combo.findData('custom') >= 0
