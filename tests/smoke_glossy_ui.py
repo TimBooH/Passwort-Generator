@@ -23,6 +23,8 @@ window.show()
 app.processEvents()
 assert len(window.glass_cards) == 3
 assert window.appearance_card.objectName() == 'glossyCard'
+assert window.scheme_combo.findData('ocean_glass') >= 0
+assert not window.background_surface._ocean.pixmap().isNull()
 assert window.language_card.objectName() == 'glossyCard'
 assert window.language_card.isAncestorOf(window.language_combo)
 assert window.changelog_card.objectName() == 'glossyCard'
