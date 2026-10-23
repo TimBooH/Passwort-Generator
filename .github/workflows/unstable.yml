@@ -1,0 +1,210 @@
+name: Unstable Preview - Linux & Windows
+
+# Test packages only. Absolutely no GitHub Releases, tags, or write token.
+on:
+  push:
+    branches: [unstable]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unstable-preview
+  cancel-in-progress: true
+
+jobs:
+  linux-preview:
+    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: "1"
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install minimal Linux/Qt dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libegl1 libopengl0; then
+            sudo apt-get update -qq
+            sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends libegl1 libopengl0
+          fi
+          python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt pyinstaller==6.22.3
+      - name: Test complete Linux app without releasing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m compileall -q . --exclude '(^|/)dist/'
+          python -m unittest discover -s tests -v
+          PYTHONPATH=. python tests/smoke_glossy_ui.py
+          PYTHONPATH=. python tests/smoke_default_ocean_ui.py
+          PYTHONPATH=. python tests/smoke_tabs_ui.py
+          PYTHONPATH=. python tests/smoke_theme_history_ui.py
+          PYTHONPATH=. python tests/smoke_update_navigation_ui.py
+          PYTHONPATH=. python tests/smoke_no_scroll_ui.py
+          PYTHONPATH=. python tests/smoke_language_ui.py
+          PYTHONPATH=. python tests/smoke_profile_clipboard_ui.py
+          PYTHONPATH=. python tests/smoke_v020_ui.py
+          PYTHONPATH=. python tests/smoke_window_geometry_ui.py
+          PYTHONPATH=. python tests/smoke_update_gui.py
+      - name: Embed UNSTABLE build identity and verify isolation
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf "CHANNEL = 'unstable'\n" > release_channel.py
+          python - <<'PY'
+          import os
+          os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+          from PySide6.QtWidgets import QApplication
+          from main import PasswordWindow
+          from release_channel import CHANNEL
+          app = QApplication([])
+          window = PasswordWindow(auto_check=True)
+          assert CHANNEL == 'unstable'
+          assert window.settings.applicationName() == 'PasswortGenerator-Unstable'
+          assert not window._auto_check
+          assert '[UNSTABLE]' in window.windowTitle()
+          window.check_for_updates()
+          assert window.check_reply is None
+          window.close()
+          print('UNSTABLE isolated identity, settings, and updates verified')
+          PY
+      - name: Create standalone Linux UNSTABLE AppImage
+        shell: bash
+        run: |
+          set -euo pipefail
+          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator main.py
+          mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/scalable/apps
+          cp -r dist/PasswortGenerator AppDir/usr/bin/
+          cp assets/de.timbooh.passwortgenerator.svg AppDir/de.timbooh.passwortgenerator.svg
+          cp assets/de.timbooh.passwortgenerator.svg AppDir/usr/share/icons/hicolor/scalable/apps/de.timbooh.passwortgenerator.svg
+          cat > AppDir/AppRun <<'SH'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "$0")")"
+          exec "$HERE/usr/bin/PasswortGenerator/PasswortGenerator" "$@"
+          SH
+          chmod +x AppDir/AppRun
+          cat > AppDir/de.timbooh.passwortgenerator.desktop <<'DESKTOP'
+          [Desktop Entry]
+          Type=Application
+          Name=PasswortGenerator UNSTABLE
+          Exec=AppRun
+          Icon=de.timbooh.passwortgenerator
+          Categories=Utility;Security;
+          Terminal=false
+          DESKTOP
+          curl --fail --location --silent --show-error --retry 3 -o appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
+          ARCH=x86_64 ./appimagetool.AppImage AppDir PasswortGenerator-UNSTABLE-x86_64.AppImage
+          test -s PasswortGenerator-UNSTABLE-x86_64.AppImage
+          sha256sum PasswortGenerator-UNSTABLE-x86_64.AppImage > SHA256SUMS-unstable-linux.txt
+      - name: Upload Linux preview, not a public release
+        uses: actions/upload-artifact@v4
+        with:
+          name: PasswortGenerator-UNSTABLE-Linux
+          path: |
+            PasswortGenerator-UNSTABLE-x86_64.AppImage
+            SHA256SUMS-unstable-linux.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  windows-preview:
+    if: github.ref == 'refs/heads/unstable' || (github.event_name == 'pull_request' && github.head_ref == 'unstable')
+    runs-on: windows-2022
+    timeout-minutes: 35
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONFAULTHANDLER: "1"
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+      - name: Install Windows/Qt dependencies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m pip install --disable-pip-version-check --prefer-binary -r requirements.txt pyinstaller==6.22.3 pillow
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to install dependencies' }
+      - name: Test Windows app before building preview
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python -m compileall -q .
+          if ($LASTEXITCODE -ne 0) { throw 'Source syntax errors' }
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py')) {
+            python -m unittest discover -s tests -p $test -v
+            if ($LASTEXITCODE -ne 0) { throw "Failed test $test" }
+          }
+          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py')) {
+            python "tests/$test"
+            if ($LASTEXITCODE -ne 0) { throw "Failed GUI smoke $test" }
+          }
+      - name: Embed UNSTABLE identity
+        shell: pwsh
+        run: |
+          "CHANNEL = 'unstable'" | Set-Content release_channel.py -Encoding ascii
+          python -c "from release_channel import CHANNEL; assert CHANNEL == 'unstable'"
+          if ($LASTEXITCODE -ne 0) { throw 'Unstable build identity missing' }
+      - name: Package isolated Windows UNSTABLE app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          python tools/make_windows_icon.py
+          if ($LASTEXITCODE -ne 0) { throw 'Icon generator failed' }
+          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" main.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows PyInstaller preview failed' }
+          $exe = Join-Path $PWD 'dist\PasswortGenerator\PasswortGenerator.exe'
+          $smoke = Start-Process -FilePath $exe -ArgumentList '--verify-bundle' -Wait -PassThru
+          if ($smoke.ExitCode -ne 0) { throw "Preview executable startup failed: $($smoke.ExitCode)" }
+      - name: Create separately installed Windows UNSTABLE installer
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup not available' }
+          $source = Get-Content 'windows\PasswortGenerator.iss' -Raw
+          $source = $source.Replace('#define MyAppName "PasswortGenerator"', '#define MyAppName "PasswortGenerator UNSTABLE"')
+          $source = $source.Replace('AppId={{F06B418B-3DB8-42BA-95D1-BF5DDB0B775D}', 'AppId={{C1EB2C1F-55A6-44F6-B3AD-BED6CD63A3AF}')
+          $source = $source.Replace('DefaultDirName={autopf}\PasswortGenerator', 'DefaultDirName={autopf}\PasswortGenerator-UNSTABLE')
+          $source = $source.Replace('DefaultGroupName=PasswortGenerator', 'DefaultGroupName=PasswortGenerator UNSTABLE')
+          $source = $source.Replace('OutputBaseFilename=PasswortGenerator-Setup-x64', 'OutputBaseFilename=PasswortGenerator-UNSTABLE-Setup-x64')
+          $source = $source.Replace('Name: "{autoprograms}\PasswortGenerator"', 'Name: "{autoprograms}\PasswortGenerator UNSTABLE"')
+          $source = $source.Replace('Name: "{autodesktop}\PasswortGenerator"', 'Name: "{autodesktop}\PasswortGenerator UNSTABLE"')
+          $source = $source.Replace('AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/releases/latest', 'AppUpdatesURL=https://github.com/TimBooH/Passwort-Generator/actions')
+          if (!$source.Contains('AppId={{C1EB2C1F-55A6-44F6-B3AD-BED6CD63A3AF}')) { throw 'Unstable installer would replace Stable!' }
+          if (!$source.Contains('DefaultDirName={autopf}\PasswortGenerator-UNSTABLE')) { throw 'Unstable install folder not isolated!' }
+          $source | Set-Content 'windows\PasswortGenerator-UNSTABLE.iss' -Encoding utf8
+          $version = (python -c "from version import APP_VERSION; print(APP_VERSION)").Trim()
+          & $iscc "/DMyAppVersion=$version" ".\windows\PasswortGenerator-UNSTABLE.iss"
+          if ($LASTEXITCODE -ne 0) { throw 'Preview installer build failed' }
+          $installer = 'release-windows\PasswortGenerator-UNSTABLE-Setup-x64.exe'
+          if (!(Test-Path $installer) -or (Get-Item $installer).Length -lt 10MB) { throw 'Preview installer invalid' }
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  PasswortGenerator-UNSTABLE-Setup-x64.exe" | Set-Content release-windows\SHA256SUMS-unstable-windows.txt -Encoding ascii
+      - name: Upload Windows preview, not a public release
+        uses: actions/upload-artifact@v4
+        with:
+          name: PasswortGenerator-UNSTABLE-Windows
+          path: |
+            release-windows/PasswortGenerator-UNSTABLE-Setup-x64.exe
+            release-windows/SHA256SUMS-unstable-windows.txt
+          if-no-files-found: error
+          retention-days: 14
