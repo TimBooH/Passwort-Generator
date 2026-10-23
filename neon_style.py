@@ -54,7 +54,7 @@ def circuit_texture(width=1100, height=1450, accent='#178CFF'):
     return texture
 
 
-def neon_stylesheet(background, foreground, accent=None):
+def neon_stylesheet(background, foreground, accent=None, ocean_theme=False):
     """Auto-accent styling, matching the background or a sampled wallpaper."""
     dark = is_dark_background(background)
     fg = QColor(foreground).name() if QColor(foreground).isValid() else ('#EDF6FF' if dark else '#142436')
@@ -71,6 +71,134 @@ def neon_stylesheet(background, foreground, accent=None):
     primary_top = color.lighter(145).name() if dark else color.lighter(110).name()
     primary_bottom = color.darker(172).name()
     tab_selected = color.darker(205).name() if dark else color.lighter(200).name()
+
+    ocean_css = """
+/* Ocean Glass: screenshot-inspired, native Qt controls (no HTML or fake UI). */
+QLabel#brandTitle { color: #F2FAFF; font-size: 21px; font-weight: 800; }
+QLabel#brandSubtitle { color: #A7C9E9; font-size: 11px; }
+QLabel#brandLock {
+    color: #72E5FF; background: rgba(9,51,103,195);
+    border: 1px solid rgba(100,203,255,160); border-radius: 13px;
+}
+QFrame#topNav {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 rgba(6,26,61,231), stop:1 rgba(5,22,51,228));
+    border: 1px solid rgba(81,173,238,80);
+    border-radius: 14px;
+}
+QPushButton#navButton, QPushButton#infoNavButton {
+    color: #DBEDFF; background: rgba(12,39,77,80);
+    border: 1px solid transparent; border-radius: 10px;
+    font-size: 12px; font-weight: 720;
+    padding: 5px 9px;
+}
+QPushButton#navButton:hover, QPushButton#infoNavButton:hover {
+    color: #FFFFFF; background: rgba(27,105,185,155);
+    border: 1px solid rgba(80,203,255,170);
+}
+QPushButton#navButton:checked, QPushButton#infoNavButton:checked {
+    color: #FFFFFF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 #18B7F7, stop:0.52 #086BF4, stop:1 #0572F1);
+    border: 1px solid #55D8FF;
+}
+QPushButton#modeButton {
+    color: #D8E9FF; background: rgba(7,28,59,204);
+    border: 1px solid rgba(69,147,217,126);
+    border-radius: 11px; font-size: 12px;
+}
+QPushButton#modeButton:checked {
+    color: #FFFFFF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 #13C5FB, stop:1 #0463ED);
+    border: 1px solid #57DDFF;
+}
+QLabel#oceanPageTitle {
+    color: #F4F9FF; font-size: 16px; font-weight: 800;
+}
+QLabel#oceanPageSubtitle { color: #B9D4EE; font-size: 10px; }
+QLabel#strengthCaption { color: #D8EBFC; font-weight: 750; }
+QLabel#lengthValue { color: #79DBFF; font-weight: 800; }
+QLineEdit#passwordOutput {
+    color: #F8FCFF; font-size: 14px;
+    background: rgba(4,20,48,198);
+    border: 1px solid rgba(85,174,245,137);
+    border-radius: 11px; padding: 7px 12px;
+    selection-background-color: #126AE5;
+}
+QLineEdit, QSpinBox, QComboBox {
+    color: #F1F8FF; background: rgba(5,23,52,186);
+    border: 1px solid rgba(63,143,206,133);
+    border-radius: 10px; selection-background-color: #0D71E8;
+}
+QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border: 1px solid #49D6FF;
+}
+QCheckBox { color: #E5F3FF; }
+QCheckBox::indicator {
+    width: 15px; height: 15px;
+    border-radius: 4px; border: 1px solid #508DBD;
+    background: rgba(6,26,57,208);
+}
+QCheckBox::indicator:checked {
+    background: #0C8FFA; border: 1px solid #71DFFF;
+}
+QPushButton#squareAction {
+    color: #B6E9FF;
+    background: rgba(21,68,118,193);
+    border: 1px solid rgba(92,175,241,145);
+    border-radius: 11px;
+}
+QPushButton#squareAction:hover {
+    color: #FFFFFF; background: rgba(26,104,185,221);
+    border: 1px solid #7BE5FF;
+}
+QPushButton#generatePasswordButton, QPushButton#primaryButton {
+    color: #FFFFFF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #0863F2, stop:0.58 #078CF5, stop:1 #1BD7ED);
+    border: 1px solid #57DFFF;
+    border-radius: 13px;
+    font-size: 13px; font-weight: 850;
+}
+QPushButton#generatePasswordButton:hover, QPushButton#primaryButton:hover {
+    color: #FFFFFF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #167EFF, stop:1 #4BEFFF);
+    border: 1px solid #B5F3FF;
+}
+QPushButton#generatePasswordButton:pressed, QPushButton#primaryButton:pressed {
+    background: #0756C7; border: 1px solid #46BCFF;
+}
+QPushButton#generatePasswordButton:focus {
+    border: 2px solid #B4F5FF;
+}
+QProgressBar#strengthBar {
+    background: rgba(2,25,57,210);
+    border: 1px solid rgba(79,159,216,118);
+    border-radius: 7px;
+    min-height: 12px;
+}
+QProgressBar#strengthBar::chunk {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #16DFA5, stop:1 #43EAA7);
+    border-radius: 6px;
+}
+QSlider::groove:horizontal {
+    height: 7px; background: rgba(74,129,189,140);
+    border-radius: 3px;
+}
+QSlider::sub-page:horizontal {
+    background: #078EEA; border-radius: 3px;
+}
+QSlider::handle:horizontal {
+    width: 15px; margin: -6px 0;
+    background: #E5FAFF; border: 2px solid #36ABFF;
+    border-radius: 8px;
+}
+QLabel#glassCardTitle { color: #F5FAFF; font-size: 13px; font-weight: 800; }
+QLabel#supportText { color: #B4D0EB; }
+""" if ocean_theme else ""
     return f"""
 QMainWindow {{ background-color: {background}; }}
 QLabel#brandTitle {{
@@ -338,4 +466,4 @@ QLabel#supportText {{ color: {muted}; font-size: 11px; }}
 QLabel {{
     color: {fg}; background: transparent;
 }}
-""".strip()
+""".strip() + ocean_css
