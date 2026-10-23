@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-Bit) | Linux (x86_64, z. B. CachyOS) |
 | --- | --- |
-| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.0/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows-Installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.1/PasswortGenerator-Setup-x64.exe) | [**Linux-AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.21.1/PasswortGenerator-x86_64.AppImage) |
 
 [Alle Versionen und Installationsskripte](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -26,7 +26,7 @@
 
 - **Passwörter:** 8–128 Zeichen, Profile und erweiterte Regeln für Mindestzahlen, Sonderzeichen und ausgeschlossene Zeichen.
 - **Passphrasen:** 4–10 Wörter, deutsche oder englische Wortlisten unabhängig von der Programmsprache, Trennzeichen und optionale zweistellige Zufallszahl.
-- **Standarddesign Ocean Glass:** Blau-cyanfarbener Glass-Look mit fließendem Hintergrund, leuchtender Navigation, edlen Kacheln, grünem Stärkebalken und kompaktem Generieren-Button. Weitere Designs und eigene Hintergrundbilder bleiben auswählbar.
+- **Standarddesign Ocean Glass:** Blau-cyanfarbene Navigation, gläserne Kacheln für **Optionen** und **Passwortlänge**, gut sichtbare Auswahlhäkchen, ein durchgehender Generieren-Button und ein fließender blauer Hintergrund. Die bisherigen Designs bleiben auswählbar.
 - **Sprache:** Eigene Glaskachel **„Sprache“** direkt unter **„Erscheinungsbild“** in den Einstellungen; Deutsch/Englisch gilt weiterhin für das ganze Programm und wird gespeichert.
 - **Update:** automatische Prüfung, Versionsvergleich und Changelog; ältere Version nach Bestätigung wiederherstellen (Linux: AppImage-Sicherung, Windows: geprüfter offizieller Installer).
 - **Sicherheit:** Stärkeanalyse mit Entropieschätzung, Privatsphäre-Modus beim Fensterwechsel und optionales Leeren der Zwischenablage nach 30, 60 oder 120 Sekunden.
@@ -65,7 +65,7 @@ python -m unittest discover -s tests -v
 
 Windows-Installer und Linux-AppImage werden über [GitHub Actions](https://github.com/TimBooH/Passwort-Generator/actions) erstellt.
 
-**Version 0.21.0 · Schritt 21 von 100 bis zur Vollversion 1.0.0.**
+**Version 0.21.1 · Schritt 21 von 100 bis zur Vollversion 1.0.0.**
 [Änderungen](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
