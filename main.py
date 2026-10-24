@@ -1523,7 +1523,7 @@ class PasswordWindow(QMainWindow):
         self.ocean_preset_box.setVisible(not self._phrase_mode)
         if ocean and wide:
             # Prevent the enormous empty panels from the previous design.
-            self.ocean_sections.setFixedHeight(251 if self._phrase_mode else 228)
+            self.ocean_sections.setFixedHeight(276 if self._phrase_mode else 258)
             self.ocean_hero_icon.setPixmap(key_icon(30))
             self.brand_icon.setPixmap(key_icon(29))
             self.password_mode_button.setIcon(QIcon(key_icon(22, '#FFFFFF')))
