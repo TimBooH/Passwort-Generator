@@ -67,6 +67,13 @@ for size in ((1660, 900), (530, 700)):
     app.processEvents()
     assert window.grab().save('glossy-preview.png')
 
+# Give Qt its normal event-loop deferred-delete pass before Python exits.
 window.close()
+window.deleteLater()
+from PySide6.QtCore import QCoreApplication, QEvent
+QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 app.processEvents()
-print('Fixed Ocean GUI stress passed: 60 resizes, four tabs, no appearance switch.')
+del window
+import gc
+gc.collect()
+print('Fixed Ocean GUI stress passed: 60 resizes, four tabs, no appearance switch.', flush=True)
