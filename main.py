@@ -1531,9 +1531,9 @@ class PasswordWindow(QMainWindow):
             self.length.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.length.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
             self.ocean_length_range.layout().setContentsMargins(89, 0, 0, 0)
-            self.output.setMinimumHeight(54)
-            self.copy_top_button.setMinimumHeight(54)
-            self.regenerate_button.setMinimumHeight(54)
+            self.output.setFixedHeight(54)
+            self.copy_top_button.setFixedHeight(54)
+            self.regenerate_button.setFixedHeight(54)
         else:
             self.ocean_sections.setMinimumHeight(0)
             self.ocean_sections.setMaximumHeight(16777215)
@@ -1545,9 +1545,9 @@ class PasswordWindow(QMainWindow):
             self.length.setMinimumHeight(0)
             self.length.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
             self.ocean_length_range.layout().setContentsMargins(2, 0, 2, 0)
-            self.output.setMinimumHeight(43)
-            self.copy_top_button.setMinimumHeight(43)
-            self.regenerate_button.setMinimumHeight(43)
+            self.output.setFixedHeight(43)
+            self.copy_top_button.setFixedHeight(43)
+            self.regenerate_button.setFixedHeight(43)
         # Give the choices more breathing room on large screens without
         # forcing a scrollbar when the same app is resized narrowly.
         self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
