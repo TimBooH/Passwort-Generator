@@ -45,7 +45,7 @@ assert window.ocean_sections.height() <= 276
 assert window.ocean_length_panel.height() <= 276
 assert window.output.height() >= 54
 assert window.generate_button.height() >= 55
-assert window.ocean_hero_icon.text() == '⚿'
+assert window.ocean_hero_icon.text() == '🔑'
 assert window.symbols.mapTo(window.ocean_options_panel, window.symbols.rect().topLeft()).y() > window.digits.mapTo(window.ocean_options_panel, window.digits.rect().topLeft()).y()
 assert 'Ocean Glass' in window.styleSheet()
 assert '#18B7F7' in window.styleSheet()
