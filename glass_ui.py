@@ -504,9 +504,9 @@ class GlossyGlassCard(QWidget):
         if self._ocean_enabled:
             # High-contrast navy glass like the reference; the moving blue
             # wallpaper remains visible behind the window, not through text.
-            top, mid, end = (QColor('#10345F'), QColor('#092142'),
-                             QColor('#06152E'))
-            alpha = 237
+            top, mid, end = (QColor('#16467F'), QColor('#0B305B'),
+                             QColor('#061A38'))
+            alpha = 223
         else:
             top = blend(base, self._accent, .29 if dark else .17)
             mid = blend(base, self._accent, .16 if dark else .11)
