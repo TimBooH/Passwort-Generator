@@ -1526,26 +1526,14 @@ class PasswordWindow(QMainWindow):
         self.ocean_preset_box.setVisible(not self._phrase_mode)
         if ocean and wide:
             # Prevent the enormous empty panels from the previous design.
-            self.ocean_sections.setFixedHeight(276 if self._phrase_mode else 258)
-            # Keep native Qt text glyphs; frequent QPixmap exchanges while
-            # repolishing the Qt style can corrupt Python refcounts at exit.
-            self.ocean_hero_icon.setText('⚿')
-            self.brand_icon.setText('⚿')
-            self.length.setMinimumHeight(50)
-            self.length.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.length.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
-            self.ocean_length_range.layout().setContentsMargins(89, 0, 0, 0)
+            # Cap panel growth instead of resetting QWidget min/max heights
+            # on every resize, avoiding Qt binding invalidation under stress.
+            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 258)
             self.output.setFixedHeight(54)
             self.copy_top_button.setFixedHeight(54)
             self.regenerate_button.setFixedHeight(54)
         else:
-            self.ocean_sections.setMinimumHeight(0)
             self.ocean_sections.setMaximumHeight(16777215)
-            self.ocean_hero_icon.setText('🔑')
-            self.brand_icon.setText('🔑')
-            self.length.setMinimumHeight(0)
-            self.length.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
-            self.ocean_length_range.layout().setContentsMargins(2, 0, 2, 0)
             self.output.setFixedHeight(43)
             self.copy_top_button.setFixedHeight(43)
             self.regenerate_button.setFixedHeight(43)
@@ -1629,11 +1617,6 @@ class PasswordWindow(QMainWindow):
                         (index, 0) if index < 4 else (0, 1)
                     )
                     self.check_layout.addWidget(checkbox, row, column)
-                self.check_layout.removeWidget(self.rules_button)
-                if compact:
-                    self.check_layout.addWidget(self.rules_button, 5, 0)
-                else:
-                    self.check_layout.addWidget(self.rules_button, 1, 1)
         if self.reporter is not None:
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
