@@ -252,6 +252,85 @@ QLabel#oceanPanelHeading { font-size: 14px; }
 QLabel#oceanOutputCaption { font-size: 13px; }
 QLabel#oceanStrengthCaption { font-size: 12px; }
 QLabel#oceanStrengthValue { font-size: 13px; }
+
+/* Ocean Glass reference fidelity: wider controls, brighter borders and
+   typography designed around a 16:10 desktop window, not a mobile card. */
+QFrame#topNav {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 rgba(5,24,52,235),stop:0.5 rgba(4,27,61,236),stop:1 rgba(5,22,49,241));
+    border: 1px solid rgba(63,151,227,133);
+    border-radius: 14px;
+}
+QPushButton#navButton, QPushButton#infoNavButton {
+    color: #E3EFFD; border: 1px solid transparent;
+    border-radius: 11px; font-size: 14px;
+    font-weight: 650; padding: 5px 12px;
+}
+QPushButton#navButton:checked, QPushButton#infoNavButton:checked {
+    color: #FFFFFF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 #0FADEB,stop:0.50 #078DFF,stop:1 #075BF6);
+    border: 1px solid #53DFFB;
+}
+QLabel#brandTitle { color: #F4F9FF; font-size: 21px; font-weight: 750; }
+QLabel#brandLock, QLabel#oceanHeroIcon {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 rgba(35,89,144,243),stop:1 rgba(12,47,92,240));
+    border: 1px solid rgba(124,198,251,190);
+    border-radius: 13px;
+}
+QLabel#oceanPageTitle { color:#F9FCFF; font-size: 22px; font-weight: 800; }
+QLabel#oceanPageSubtitle { color:#B9D1EC; font-size: 12px; }
+QLabel#oceanOutputCaption { color:#F1F8FF; font-size: 14px; font-weight: 700; }
+QLineEdit#passwordOutput {
+    background: rgba(3,18,42,233);
+    color: #ECF9FF; font-size: 20px;
+    border: 1px solid rgba(94,173,249,177);
+    border-radius: 12px; padding: 9px 14px;
+}
+QPushButton#squareAction {
+    color: #DCF4FF;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 rgba(30,82,138,239),stop:1 rgba(14,45,91,232));
+    border: 1px solid rgba(98,180,253,181);
+    border-radius: 11px; font-size: 23px;
+}
+QLabel#oceanStrengthCaption, QLabel#oceanStrengthValue {
+    font-size: 13px; font-weight: 740;
+}
+QFrame#oceanOptionPanel, QFrame#oceanLengthPanel {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+        stop:0 rgba(10,38,77,240),stop:1 rgba(5,24,53,236));
+    border: 1px solid rgba(82,157,225,161);
+    border-radius: 13px;
+}
+QLabel#oceanPanelHeading { color: #F5FAFF; font-size: 15px; font-weight: 750; }
+QCheckBox { color: #E6F4FF; font-size: 13px; spacing: 10px; }
+QCheckBox::indicator { width: 19px; height: 19px; }
+QSpinBox { font-size: 19px; background: rgba(10,38,79,220);
+    border: 1px solid rgba(87,166,232,145); border-radius: 10px; }
+QSlider#oceanLengthSlider::groove:horizontal {
+    height: 9px; background: rgba(63,125,193,160); border-radius: 4px;
+}
+QSlider#oceanLengthSlider::sub-page:horizontal {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #0D6DEF,stop:1 #22C5FF);
+    border-radius: 4px;
+}
+QSlider#oceanLengthSlider::handle:horizontal {
+    width: 19px; margin:-7px 0; background:#EAFBFF;
+    border: 2px solid #3CBDF8; border-radius: 10px;
+}
+QPushButton#generatePasswordButton {
+    color: #FFFFFF; font-size: 17px; font-weight: 800;
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #0961EF,stop:0.55 #078AF9,stop:1 #1BDAE9);
+    border:1px solid #60E4FF; border-radius: 13px;
+}
+QPushButton#generatePasswordButton:hover {
+    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
+        stop:0 #197CFF,stop:1 #5DF2F1);
+    border: 1px solid #B8F9FF;
+}
 """ if ocean_theme else ""
     if ocean_theme:
         from ocean_checkmark import checkmark_png_path
