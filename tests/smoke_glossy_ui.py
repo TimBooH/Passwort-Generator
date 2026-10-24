@@ -42,16 +42,23 @@ heights = (700, 710, 820, 940, 900, 740, 750, 880, 820, 770)
 for repeat in range(6):
     for width, height in zip(widths, heights):
         window.resize(width, height)
-        for index in (0, 1, 2, 3):
-            window.tabs.setCurrentIndex(index)
-            app.processEvents()
-            assert window.tabs.currentIndex() == index
-        window.tabs.setCurrentIndex(0)
-        window.generate()
         app.processEvents()
-        assert window.output.text()
+        assert window.width() >= 510
         assert window.background_surface._ocean_enabled
         assert not window.background_surface.has_background_image()
+
+# Generate passwords and change pages separately, avoiding concurrent
+# invalidation of the same native QWidget layout during resize callbacks.
+window.resize(1120, 790)
+for number in range(25):
+    window.length.setValue(8 + (number * 5) % 121)
+    window.generate()
+    app.processEvents()
+    assert len(window.output.text()) == window.length.value()
+for page in (0, 1, 2, 3, 2, 1, 0):
+    window.tabs.setCurrentIndex(page)
+    app.processEvents()
+    assert window.tabs.currentIndex() == page
 
 # Show each interactive card at desktop and narrow widths.
 for size in ((1660, 900), (530, 700)):
