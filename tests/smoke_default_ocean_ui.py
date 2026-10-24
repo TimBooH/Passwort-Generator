@@ -26,9 +26,14 @@ for _ in range(5):
     app.processEvents()
 
 assert DEFAULT_SCHEME == 'ocean_glass'
-assert window.scheme_combo.currentData() == DEFAULT_SCHEME
-assert window.settings.value('color_scheme') == DEFAULT_SCHEME
-assert window.bg_combo.currentData() == preset_colors(DEFAULT_SCHEME)[0]
+assert not hasattr(window, 'scheme_combo')
+assert not hasattr(window, 'bg_combo')
+assert not hasattr(window, 'appearance_card')
+assert not hasattr(window, 'choose_background_button')
+assert not hasattr(window, 'image_mode_combo')
+assert not window.background_surface.has_background_image()
+assert window.settings.value('color_scheme') is None
+assert window.settings.value('background_image_path') is None
 assert window.background_surface._ocean_enabled
 assert window.background_surface._ocean.isVisible()
 assert not window.background_surface._circuit.isVisible()
@@ -68,22 +73,19 @@ window.generate()
 assert window.output.text()
 window.switch_mode(False)
 
-# The redesigned theme does not replace other available themes.
-window.tabs.setCurrentIndex(1)
-normal = window.scheme_combo.findData('glass_light')
-assert normal >= 0
-window.scheme_combo.setCurrentIndex(normal)
-for _ in range(3):
-    app.processEvents()
-assert not window.background_surface._ocean_enabled
-assert not window.background_surface._ocean.isVisible()
-assert not window.glass_cards[0]._ocean_enabled
-
-window.scheme_combo.setCurrentIndex(window.scheme_combo.findData('ocean_glass'))
-for _ in range(3):
-    app.processEvents()
+# Even saved legacy color/background choices cannot alter the fixed theme.
+window.settings.setValue('color_scheme', 'glass_light')
+window.settings.setValue('background_color', '#FFFFFF')
+window.settings.setValue('background_image_path', '/tmp/no-longer-allowed.png')
+window.apply_colors()
 assert window.background_surface._ocean_enabled
-assert window.settings.value('color_scheme') == 'ocean_glass'
+assert not window.background_surface.has_background_image()
+window.settings.remove('color_scheme')
+window.settings.remove('background_color')
+window.settings.remove('background_image_path')
+window.tabs.setCurrentIndex(1)
+assert window.language_card.isVisible()
+assert window.security_card.isVisible()
 
 # All pages, both languages and small-window layouts still work.
 window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
@@ -109,7 +111,9 @@ app.processEvents()
 
 # Preferences remain selected after a new window is created.
 again = PasswordWindow(auto_check=False)
-assert again.scheme_combo.currentData() == 'ocean_glass'
+assert again.background_surface._ocean_enabled
+assert not hasattr(again, 'scheme_combo')
+assert not hasattr(again, 'appearance_card')
 again.language_combo.setCurrentIndex(again.language_combo.findData('de'))
 app.processEvents()
 again.close()
