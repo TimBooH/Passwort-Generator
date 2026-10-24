@@ -14,9 +14,7 @@ from main import PasswordWindow
 app = QApplication([])
 app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
-# Other smoke processes can save a different color scheme in shared QSettings.
-# The no-scroll design regression explicitly exercises Ocean Glass.
-window.scheme_combo.setCurrentIndex(window.scheme_combo.findData('ocean_glass'))
+# The reference design is permanent: there is no appearance selector.
 window.show()
 app.processEvents()  # Let Qt apply the fixed-size Glass button styling.
 
@@ -33,15 +31,15 @@ assert 35 <= window.generate_button.height() <= 60, (
     f'max={window.generate_button.maximumHeight()} '
     f'hint={window.generate_button.sizeHint().height()}'
 )
-assert window.scheme_combo.currentData() == 'ocean_glass'
+assert window.background_surface._ocean_enabled
+assert not hasattr(window, 'scheme_combo')
 assert window.generate_button.maximumWidth() > 1000
 assert window.ocean_options_panel.objectName() == 'oceanOptionPanel'
 assert window.ocean_length_panel.objectName() == 'oceanLengthPanel'
 assert 'QPushButton#generatePasswordButton' in window.styleSheet()
 assert 'QPushButton#primaryButton' in window.styleSheet()  # Update CTA unchanged.
 
-assert window.appearance_card.body.spacing() == 3
-assert window.appearance_card.layout().contentsMargins().top() == 6
+assert not hasattr(window, 'appearance_card')
 assert window.language_card.objectName() == 'glossyCard'
 assert window.language_card.header.text() == 'SPRACHE'
 assert window.language_card.layout().contentsMargins().top() == 5
@@ -51,10 +49,8 @@ assert window.changelog_card.layout().contentsMargins().top() == 5
 controls = (
     (window.generate_button, window.history_button, window.length_slider,
      window.preset_combo, window.save_preset_button),
-    (window.scheme_combo, window.bg_combo, window.choose_background_button,
-     window.clear_background_button, window.image_mode_combo,
-     window.language_combo, window.clear_clipboard_checkbox,
-     window.clipboard_timeout_combo),
+    (window.language_combo, window.clear_clipboard_checkbox,
+     window.clipboard_timeout_combo, window.privacy_focus_checkbox),
     (window.check_button, window.changelog_view, window.release_combo,
      window.release_history_status),
     (window.info_credit, window.info_version, window.visual_guide_button,
