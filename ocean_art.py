@@ -3,13 +3,10 @@
 Drawn into tiny cached QPixmaps one time, not via a widget paintEvent. This
 keeps the interface portable on Linux/Windows and independent of emoji fonts.
 """
-from functools import lru_cache
-
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 
 
-@lru_cache(maxsize=8)
 def key_icon(size=28, color='#86E5FF'):
     pixmap = QPixmap(size, size)
     pixmap.fill(Qt.GlobalColor.transparent)
