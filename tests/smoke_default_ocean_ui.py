@@ -40,7 +40,13 @@ assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
 assert 'QCheckBox::indicator:checked' in window.styleSheet()
 assert 'checked.png' in window.styleSheet()
 assert window.ocean_page_title.text() == 'PASSWORT ERSTELLEN'
-assert window.ocean_page_subtitle.text() == 'Sichere Passwörter und Passphrasen'
+assert window.ocean_page_subtitle.text() == 'Erstelle sichere und zufällige Passwörter oder Passphrasen.'
+assert window.ocean_sections.height() <= 276
+assert window.ocean_length_panel.height() <= 276
+assert window.output.height() >= 54
+assert window.generate_button.height() >= 55
+assert not window.ocean_hero_icon.pixmap().isNull()
+assert window.symbols.mapTo(window.ocean_options_panel, window.symbols.rect().topLeft()).y() > window.digits.mapTo(window.ocean_options_panel, window.digits.rect().topLeft()).y()
 assert 'Ocean Glass' in window.styleSheet()
 assert '#18B7F7' in window.styleSheet()
 assert not window.findChildren(QScrollArea)
@@ -84,7 +90,7 @@ window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
 app.processEvents()
 window.tabs.setCurrentIndex(0)
 assert window.ocean_page_title.text() == 'CREATE PASSWORD'
-assert window.ocean_page_subtitle.text() == 'Secure passwords and passphrases'
+assert window.ocean_page_subtitle.text() == 'Create secure random passwords or passphrases.'
 assert window.ocean_options_heading.text() == 'Options'
 assert window.ocean_length_heading.text() == 'Password length'
 for width, height in ((530, 700), (850, 760), (1100, 820)):
