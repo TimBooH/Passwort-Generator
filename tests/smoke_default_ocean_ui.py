@@ -49,6 +49,8 @@ assert window.ocean_page_subtitle.text() == 'Erstelle sichere und zufällige Pas
 assert window.ocean_sections.height() <= 276
 assert window.ocean_length_panel.height() <= 276
 assert window.output.height() >= 54
+assert window.length_slider.height() >= 30  # Keep the round thumb fully inside its widget.
+assert window.length.lineEdit().width() >= 25  # The numeric value must remain readable.
 assert window.generate_button.height() >= 55
 assert not window.ocean_hero_icon.pixmap().isNull()
 assert window.font().family() == 'Carlito'

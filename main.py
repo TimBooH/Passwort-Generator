@@ -272,7 +272,7 @@ class PasswordWindow(QMainWindow):
         group.layout().setSpacing(3)
 
         mode_row = QHBoxLayout()
-        mode_row.setSpacing(8)
+        mode_row.setSpacing(14)
         self.ocean_hero_icon = QLabel()
         self.ocean_hero_icon.setPixmap(icon_pixmap('key', 37))
         self.ocean_hero_icon.setObjectName('oceanHeroIcon')
@@ -395,7 +395,7 @@ class PasswordWindow(QMainWindow):
         self.ocean_options_panel.setMinimumWidth(250)
         options_col = QVBoxLayout(self.ocean_options_panel)
         self.ocean_options_layout = options_col
-        options_col.setContentsMargins(18, 15, 18, 14)
+        options_col.setContentsMargins(18, 12, 18, 12)
         options_col.setSpacing(10)
         self.ocean_options_heading = QLabel('Optionen')
         self.ocean_options_heading.setObjectName('oceanPanelHeading')
@@ -426,11 +426,13 @@ class PasswordWindow(QMainWindow):
         self.length.setRange(8, 128)
         self.length.setValue(20)
         self.length.setFixedWidth(78)
+        self.length.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.length.setAccessibleName('Länge des Passworts')
         length_row.addWidget(self.length)
         length_col.addLayout(length_row)
         self.length_slider = QSlider(Qt.Orientation.Horizontal)
         self.length_slider.setObjectName('oceanLengthSlider')
+        self.length_slider.setMinimumHeight(34)
         self.length_slider.setRange(8, 128)
         self.length_slider.setValue(20)
         self.length_slider.setAccessibleName('Länge einstellen')
@@ -1402,10 +1404,10 @@ class PasswordWindow(QMainWindow):
             # Prevent the enormous empty panels from the previous design.
             # Cap panel growth instead of resetting QWidget min/max heights
             # on every resize, avoiding Qt binding invalidation under stress.
-            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 258)
-            self.output.setFixedHeight(54)
-            self.copy_top_button.setFixedHeight(54)
-            self.regenerate_button.setFixedHeight(54)
+            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 232)
+            self.output.setFixedHeight(64)
+            self.copy_top_button.setFixedHeight(64)
+            self.regenerate_button.setFixedHeight(64)
         else:
             self.ocean_sections.setMaximumHeight(16777215)
             self.output.setFixedHeight(43)
@@ -1413,8 +1415,8 @@ class PasswordWindow(QMainWindow):
             self.regenerate_button.setFixedHeight(43)
         # Give the choices more breathing room on large screens without
         # forcing a scrollbar when the same app is resized narrowly.
-        self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
-        self.ocean_options_layout.setSpacing(11 if ocean and wide else 5)
+        self.check_layout.setVerticalSpacing(10 if ocean and wide else 2)
+        self.ocean_options_layout.setSpacing(7 if ocean and wide else 5)
         self.brand_subtitle.setVisible(not ocean)
         self.brand_icon.setFixedSize(32, 36)
         desktop = self.width() >= 960
@@ -1426,7 +1428,7 @@ class PasswordWindow(QMainWindow):
             self.brand_title,
             'PasswortGenerator' if ocean else 'Passwort-Generator',
         )
-        self.generate_button.setFixedHeight(57 if ocean and wide else 40)
+        self.generate_button.setFixedHeight(57 if self.width() >= 960 else 40)
         self.generate_button.setMaximumWidth(16777215 if ocean else 360)
         self.password_group_layout.setAlignment(
             self.generate_button,
@@ -1524,7 +1526,7 @@ class PasswordWindow(QMainWindow):
                 + neon_stylesheet(FIXED_BG, FIXED_FG, FIXED_ACCENT,
                                   ocean_theme=True, compact=self.width() < 960)
             )
-        self.generate_button.setFixedHeight(57 if self.width() >= 780 else 40)
+        self.generate_button.setFixedHeight(57 if self.width() >= 960 else 40)
 
     def generate(self):
         try:

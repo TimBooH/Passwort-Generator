@@ -51,7 +51,7 @@ assert window.generate_button.isVisible()
 assert window.generate_button.objectName() == 'generatePasswordButton'
 assert window.generate_button.width() >= 600
 print(f'CTA metrics: width={window.generate_button.width()}, height={window.generate_button.height()}')
-assert 40 <= window.generate_button.height() <= 60
+assert 55 <= window.generate_button.height() <= 60
 assert window.ocean_sections.height() <= 276
 assert window.output.height() >= 54
 assert not window.ocean_hero_icon.pixmap().isNull()

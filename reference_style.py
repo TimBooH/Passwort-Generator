@@ -6,7 +6,7 @@ def reference_stylesheet(compact=False):
     sizes = {'nav': 14 if compact else 18, 'mode': 13 if compact else 18,
              'title': 22 if compact else 27, 'subtitle': 13 if compact else 17,
              'output': 22 if compact else 32, 'label': 13 if compact else 17,
-             'panel': 15 if compact else 19, 'cta': 18 if compact else 24}
+             'panel': 15 if compact else 19, 'cta': 18 if compact else 24, 'cta_height': 38 if compact else 55}
     css = """
 /* Ocean Glass: fixed reference appearance, native Qt widgets. */
 QWidget { font-family: "Carlito"; }
@@ -85,6 +85,7 @@ QSlider#oceanLengthSlider::handle:horizontal { width: 23px; margin: -9px 0; back
 QProgressBar#strengthBar { background: #265887; border: none; border-radius: 6px; min-height: 12px; max-height: 12px; }
 QProgressBar#strengthBar::chunk { background: #16DFA5; border-radius: 6px; }
 QPushButton#generatePasswordButton {
+    min-height: @cta_height@px; max-height: @cta_height@px; padding: 0 15px;
     color: white; font-size: @cta@px; font-weight: 700; border: 1px solid #47E9FF; border-radius: 13px;
     background: qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #008FFF,stop:.5 #006CFF,stop:1 #17DDEB);
 }

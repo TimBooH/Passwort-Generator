@@ -1,1 +1,3 @@
+# Build/runtime: Python 3.12 (also embedded in the distributed app).
 PySide6-Essentials==6.12.0
+
