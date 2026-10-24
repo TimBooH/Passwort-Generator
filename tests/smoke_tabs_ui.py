@@ -171,16 +171,16 @@ assert not window.output.text()
 # Pages follow window width; navigation stays right-aligned near the header.
 for width in (460, 720, 1600, 530, 990, 470):
     window.resize(width, 790)
-    for index, card in enumerate(window.glass_cards):
-        tabs.setCurrentIndex(index)
+    for page, card in ((0, window.glass_cards[0]),
+                       (2, window.glass_cards[1])):
+        tabs.setCurrentIndex(page)
         app.processEvents()
         assert card.isVisible()
         assert card.width() >= width - 120, (
-            f'{window.tab_names[index]} card too narrow at {width}: {card.width()}'
+            f'{window.tab_names[page]} card too narrow at {width}: {card.width()}'
         )
         assert window.nav_container.y() < tabs.y()
-        if index < len(window.nav_buttons):
-            assert window.nav_buttons[index].isChecked()
+        assert window.nav_buttons[page].isChecked()
         if width < 720:
             assert window.nav_buttons[1].text().endswith('Einstellungen')
         else:
