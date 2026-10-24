@@ -50,7 +50,11 @@ assert window.ocean_sections.height() <= 276
 assert window.ocean_length_panel.height() <= 276
 assert window.output.height() >= 54
 assert window.generate_button.height() >= 55
-assert window.ocean_hero_icon.text() == '🔑'
+assert not window.ocean_hero_icon.pixmap().isNull()
+assert window.font().family() == 'Carlito'
+assert all(not b.icon().isNull() for b in window.nav_buttons + [window.info_nav_button])
+assert not window.copy_top_button.icon().isNull()
+assert not window.regenerate_button.icon().isNull()
 assert window.symbols.mapTo(window.ocean_options_panel, window.symbols.rect().topLeft()).y() > window.digits.mapTo(window.ocean_options_panel, window.digits.rect().topLeft()).y()
 assert 'Ocean Glass' in window.styleSheet()
 assert '#18B7F7' in window.styleSheet()
@@ -119,3 +123,4 @@ app.processEvents()
 again.close()
 QSettings('TimBooH', 'PasswortGenerator').setValue('ui/language', 'de')
 print('Ocean Glass default, themes, screenshot layout and bilingual pages OK')
+

@@ -94,7 +94,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator main.py
+          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator --add-data "assets/fonts:assets/fonts" main.py
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/scalable/apps
           cp -r dist/PasswortGenerator AppDir/usr/bin/
           cp assets/de.timbooh.passwortgenerator.svg AppDir/de.timbooh.passwortgenerator.svg
@@ -178,7 +178,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python tools/make_windows_icon.py
           if ($LASTEXITCODE -ne 0) { throw 'Icon generator failed' }
-          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" main.py
+          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" --add-data "assets/fonts;assets/fonts" main.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows PyInstaller preview failed' }
           $exe = Join-Path $PWD 'dist\PasswortGenerator\PasswortGenerator.exe'
           $smoke = Start-Process -FilePath $exe -ArgumentList '--verify-bundle' -Wait -PassThru
@@ -272,3 +272,4 @@ jobs:
             fi
           done <<< "$assets"
           echo "Preview ready: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"
+

@@ -120,7 +120,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pyinstaller --noconfirm --windowed --name PasswortGenerator main.py
+          pyinstaller --noconfirm --windowed --name PasswortGenerator --add-data "assets/fonts:assets/fonts" main.py
 
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications \
             AppDir/usr/share/icons/hicolor/scalable/apps
@@ -169,3 +169,4 @@ jobs:
             --title "PasswortGenerator ${{ steps.version.outputs.tag }}" \
             --notes-file RELEASE_NOTES.md \
             --latest
+

@@ -9,6 +9,13 @@ LANGUAGES = (('Deutsch', 'de'), ('English', 'en'))
 
 EN = {
     'Stark. Sicher. Einzigartig.': 'Strong. Secure. Unique.',
+    'Passwort generieren': 'Generate password',
+    'Passphrase generieren': 'Generate passphrase',
+    'Anzeigen': 'Show',
+    'Verbergen': 'Hide',
+    'Verlauf': 'History',
+    'Analyse': 'Analysis',
+    'Erweiterte Regeln': 'Advanced rules',
     'Passwort': 'Password',
     'Einstellungen': 'Settings',
     'Design': 'Design',
@@ -307,3 +314,4 @@ def translate(text, language='de'):
             out = out.replace(reason, translate(reason, language))
         return out
     return text
+

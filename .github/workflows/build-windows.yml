@@ -106,7 +106,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python tools/make_windows_icon.py
           if ($LASTEXITCODE -ne 0) { throw 'Icon generation failed' }
-          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" main.py
+          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" --add-data "assets/fonts;assets/fonts" main.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows PyInstaller failed' }
           $executable = Join-Path $PWD 'dist\PasswortGenerator\PasswortGenerator.exe'
           if (!(Test-Path $executable)) { throw 'Compiled Windows executable missing' }
@@ -155,3 +155,4 @@ jobs:
           gh release upload $tag "release-windows\PasswortGenerator-Setup-x64.exe" "release-windows\SHA256SUMS-windows.txt" --repo $env:GITHUB_REPOSITORY --clobber
           if ($LASTEXITCODE -ne 0) { throw 'GitHub Windows installer upload failed' }
           gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name'
+

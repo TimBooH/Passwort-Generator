@@ -1,51 +1,33 @@
-"""Static abstract blue ribbon background for the built-in Ocean Glass theme.
-
-Generated once by Qt at startup and displayed via QLabel. No image synthesis,
-network request, resize-time painting or extra packaged asset is required.
-"""
-
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPixmap
+"""Cached soft blue light behind the fixed Ocean Glass surface."""
+from PySide6.QtGui import QColor, QLinearGradient, QRadialGradient, QPainter, QPainterPath, QPixmap
 
 
 def ocean_texture(width=1440, height=960):
-    """Make a cached wallpaper-like pixmap with soft blue flowing ribbons."""
     image = QPixmap(width, height)
-    image.fill(QColor('#06152F'))
-    painter = QPainter(image)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-    painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-    background = QLinearGradient(0, 0, width, height)
-    background.setColorAt(0, QColor('#0B2450'))
-    background.setColorAt(0.46, QColor('#071832'))
-    background.setColorAt(1, QColor('#053A80'))
-    painter.fillRect(image.rect(), background)
-
-    # Three wide, soft ribbon forms, like the reference's blue desktop curves.
-    for i, (start, crest, trough, end) in enumerate((
-        ('#0644C2', '#147DEA', '#063A92', '#031B45'),
-        ('#0B59DC', '#22A9FC', '#0B4CAC', '#062C64'),
-        ('#08337F', '#1585E3', '#075BAF', '#032459'),
-    )):
+    image.fill(QColor('#07182F'))
+    p = QPainter(image)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    base = QLinearGradient(0, 0, width, height)
+    for position, color in ((0, '#10457B'), (.35, '#06192F'), (.7, '#092C56'), (1, '#10609B')):
+        base.setColorAt(position, QColor(color))
+    p.fillRect(image.rect(), base)
+    for x, y, radius, color in ((.9, .02, .72, '#1878E6'), (.12, .95, .65, '#086ADD')):
+        light = QRadialGradient(width*x, height*y, width*radius)
+        light.setColorAt(0, QColor(color))
+        light.setColorAt(1, QColor(5, 32, 67, 0))
+        p.fillRect(image.rect(), light)
+    for i in range(3):
         path = QPainterPath()
-        y = height * (.17 + i * .21)
-        path.moveTo(-120, y + 185)
-        path.cubicTo(width * .20, y - 360, width * .66, y + 255,
-                     width + 120, y - 125)
-        path.lineTo(width + 120, height + 120)
-        path.lineTo(-120, height + 120)
+        y = height * (.88 + i * .08)
+        path.moveTo(-100, y)
+        path.cubicTo(width*.25, y-height*.38, width*.7, y+height*.4, width+100, y-height*.13)
+        path.lineTo(width+100, height+100)
+        path.lineTo(-100, height+100)
         path.closeSubpath()
-        fill = QLinearGradient(0, y - 120, width, y + 360)
-        for pos, color in ((0, start), (.38, crest), (.70, trough), (1, end)):
-            fill.setColorAt(pos, QColor(color))
-        painter.fillPath(path, fill)
-
-    # Top-left cyan glimmer creates depth without distracting from the content.
-    glint = QPainterPath()
-    glint.moveTo(-120, height * .47)
-    glint.cubicTo(width * .34, -height * .12, width * .71, height * .44,
-                  width + 120, height * .09)
-    painter.setPen(QColor(72, 192, 255, 65))
-    painter.drawPath(glint)
-    painter.end()
+        ribbon = QLinearGradient(0, y-height*.2, width, height)
+        ribbon.setColorAt(0, QColor(21, 127, 231, 20))
+        ribbon.setColorAt(.6, QColor(7, 44, 95, 5))
+        ribbon.setColorAt(1, QColor(36, 153, 238, 38))
+        p.fillPath(path, ribbon)
+    p.end()
     return image

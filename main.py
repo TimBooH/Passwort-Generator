@@ -7,7 +7,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
+from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, QSize, Qt, QTimer, QUrl, QSaveFile
 from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
@@ -23,6 +23,8 @@ from password_presets import PRESETS, FIELDS, decode_profile, encode_profile, va
 from diagnostics import CrashReporter
 from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet
 from neon_style import neon_stylesheet
+from ocean_art import icon_pixmap, vector_icon
+from ocean_fonts import reference_font
 from theme_colors import DEFAULT_SCHEME, preset_colors
 from release_history import normalized_releases
 from release_notes_i18n import release_changelog
@@ -89,6 +91,7 @@ class CurrentPageStack(QStackedWidget):
 class PasswordWindow(QMainWindow):
     def __init__(self, auto_check=True, reporter=None):
         super().__init__()
+        self.setFont(reference_font())
         self.reporter = reporter
         # Preview builds must never overwrite stable settings.
         app_settings_name = ('PasswortGenerator-Unstable' if CHANNEL == 'unstable'
@@ -144,7 +147,7 @@ class PasswordWindow(QMainWindow):
         channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
         # Widescreen proportions as in the reference; saved geometry still wins.
-        self.resize(1120, 750)
+        self.resize(1120, 790)
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
             icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
@@ -180,7 +183,8 @@ class PasswordWindow(QMainWindow):
         # Header: compact branding, with four navigation actions at top right.
         header = QHBoxLayout()
         header.setSpacing(12)
-        lock = QLabel('🔑')
+        lock = QLabel()
+        lock.setPixmap(icon_pixmap('key', 30, '#39DEFF'))
         self.brand_icon = lock
         lock.setObjectName('brandLock')
         lock.setFixedSize(53, 53)
@@ -213,7 +217,9 @@ class PasswordWindow(QMainWindow):
         for index, (label, symbol) in enumerate((
             ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Update', '↻'),
         )):
-            button = QPushButton(f'{symbol}  {label}')
+            button = QPushButton(label)
+            button.setIcon(vector_icon({'Passwort': 'key', 'Einstellungen': 'settings', 'Update': 'update'}[label]))
+            button.setIconSize(QSize(25, 25))
             button.setObjectName('navButton')
             button.setCheckable(True)
             button.setMinimumHeight(44)
@@ -230,7 +236,9 @@ class PasswordWindow(QMainWindow):
         nav_layout.removeWidget(self.nav_buttons[1])
         nav_layout.addWidget(self.nav_buttons[1], 1)
         self.nav_buttons[0].setChecked(True)
-        self.info_nav_button = QPushButton('ⓘ  Info')
+        self.info_nav_button = QPushButton('Info')
+        self.info_nav_button.setIcon(vector_icon('info'))
+        self.info_nav_button.setIconSize(QSize(25, 25))
         self.info_nav_button.setObjectName('infoNavButton')
         self.info_nav_button.setToolTip('Über PasswortGenerator')
         self.info_nav_button.setAccessibleName('Info')
@@ -265,10 +273,11 @@ class PasswordWindow(QMainWindow):
 
         mode_row = QHBoxLayout()
         mode_row.setSpacing(8)
-        self.ocean_hero_icon = QLabel('🔑')
+        self.ocean_hero_icon = QLabel()
+        self.ocean_hero_icon.setPixmap(icon_pixmap('key', 37))
         self.ocean_hero_icon.setObjectName('oceanHeroIcon')
         self.ocean_hero_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.ocean_hero_icon.setFixedSize(52, 52)
+        self.ocean_hero_icon.setFixedSize(58, 58)
         mode_row.addWidget(self.ocean_hero_icon)
         self.ocean_hero_icon.hide()
         # The real screenshot-inspired header shares a row with the mode
@@ -282,15 +291,19 @@ class PasswordWindow(QMainWindow):
         self.ocean_page_title.setObjectName('oceanPageTitle')
         self.ocean_page_subtitle = QLabel('Erstelle sichere und zufällige Passwörter oder Passphrasen.')
         self.ocean_page_subtitle.setObjectName('oceanPageSubtitle')
+        self.ocean_page_subtitle.setWordWrap(True)
         ocean_heading_layout.addWidget(self.ocean_page_title)
         ocean_heading_layout.addWidget(self.ocean_page_subtitle)
         mode_row.addWidget(self.ocean_heading, 1)
         self.mode_group = QButtonGroup(self)
         self.mode_group.setExclusive(True)
         self.password_mode_button = QPushButton('Passwort')
+        self.password_mode_button.setIcon(vector_icon('key'))
         self.passphrase_mode_button = QPushButton('Passphrase')
+        self.passphrase_mode_button.setIcon(vector_icon('document'))
         for button in (self.password_mode_button, self.passphrase_mode_button):
             button.setObjectName('modeButton')
+            button.setIconSize(QSize(25, 25))
             button.setCheckable(True)
             button.setMinimumHeight(38)
             self.mode_group.addButton(button)
@@ -316,14 +329,20 @@ class PasswordWindow(QMainWindow):
         self.output.setMinimumHeight(43)
         self.output.setFont(QFont('Monospace', 12))
         password_row.addWidget(self.output, 1)
-        copy_top = QPushButton('⧉')
+        copy_top = QPushButton()
+        copy_top.setIcon(vector_icon('copy', 32))
+        copy_top.setIconSize(QSize(29, 29))
+        copy_top.setAccessibleName('Passwort kopieren')
         self.copy_top_button = copy_top
         copy_top.setObjectName('squareAction')
         copy_top.setToolTip('Passwort kopieren')
         copy_top.setMinimumSize(41, 43)
         copy_top.clicked.connect(self.copy)
         password_row.addWidget(copy_top)
-        regenerate = QPushButton('↻')
+        regenerate = QPushButton()
+        regenerate.setIcon(vector_icon('update', 32))
+        regenerate.setIconSize(QSize(29, 29))
+        regenerate.setAccessibleName('Neues Passwort erzeugen')
         self.regenerate_button = regenerate
         regenerate.setObjectName('squareAction')
         regenerate.setToolTip('Neues Passwort erzeugen')
@@ -343,7 +362,8 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setRange(0, 100)
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
-        self.analysis_button = QPushButton('ⓘ Analyse')
+        self.analysis_button = QPushButton('Analyse')
+        self.analysis_button.setIcon(vector_icon('info', 18))
         self.analysis_button.setObjectName('analysisButton')
         self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
         self.analysis_button.clicked.connect(self.show_security_analysis)
@@ -402,7 +422,6 @@ class PasswordWindow(QMainWindow):
         self.length_value = QLabel('20')
         self.length_value.setObjectName('lengthValue')
         length_row.addWidget(self.length_value)
-        length_row.addStretch()
         self.length = QSpinBox()
         self.length.setRange(8, 128)
         self.length.setValue(20)
@@ -475,7 +494,8 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.symbols, 3, 0)
         check_layout.addWidget(self.exclude, 0, 1)
         options_col.addWidget(self.options_widget)
-        self.rules_button = QPushButton('⚙ Erweiterte Regeln')
+        self.rules_button = QPushButton('Erweiterte Regeln')
+        self.rules_button.setIcon(vector_icon('settings', 18))
         self.rules_button.setObjectName('advancedPasswordRulesButton')
         self.rules_button.clicked.connect(self.show_advanced_rules)
         check_layout.addWidget(self.rules_button, 1, 1)
@@ -521,10 +541,12 @@ class PasswordWindow(QMainWindow):
         sections_row.addWidget(self.ocean_length_panel, 11)
         group_layout.addWidget(self.ocean_sections, 1)
 
-        self.generate_button = QPushButton('🔑  Passwort generieren')
+        self.generate_button = QPushButton('Passwort generieren')
         # Compact, glossy call-to-action; do not stretch to the card width.
         # The update installer keeps the existing #primaryButton design.
         self.generate_button.setObjectName('generatePasswordButton')
+        self.generate_button.setIcon(vector_icon('key', 34, '#FFD534'))
+        self.generate_button.setIconSize(QSize(32, 32))
         self.generate_button.setFixedHeight(40)
         self.generate_button.setMaximumWidth(360)
         self.generate_button.setMinimumWidth(235)
@@ -533,12 +555,14 @@ class PasswordWindow(QMainWindow):
 
         footer = QHBoxLayout()
         footer.setSpacing(5)
-        self.show_button = QPushButton('◉  Anzeigen')
+        self.show_button = QPushButton('Anzeigen')
+        self.show_button.setIcon(vector_icon('eye', 18))
         self.show_button.setObjectName('bottomAction')
         self.show_button.setCheckable(True)
         self.show_button.toggled.connect(self.toggle_visibility)
         footer.addWidget(self.show_button, 1)
-        self.history_button = QPushButton('☷  Verlauf')
+        self.history_button = QPushButton('Verlauf')
+        self.history_button.setIcon(vector_icon('history', 18))
         self.history_button.setObjectName('bottomAction')
         self.history_button.clicked.connect(self.show_history)
         footer.addWidget(self.history_button, 1)
@@ -1167,7 +1191,7 @@ class PasswordWindow(QMainWindow):
             self.length.setRange(4, 10)
             self.length_slider.setRange(4, 10)
             self.length.setValue(6)
-            self._set_ui(self.generate_button, '🔑  Passphrase generieren')
+            self._set_ui(self.generate_button, 'Passphrase generieren')
             self._set_ui(self.ocean_page_title, 'PASSPHRASE ERSTELLEN')
             self._set_ui(self.ocean_output_caption, 'Generierte Passphrase')
             self._set_ui(self.ocean_length_heading, 'Passphrase-Wörter')
@@ -1179,7 +1203,7 @@ class PasswordWindow(QMainWindow):
             self.length.setRange(8, 128)
             self.length_slider.setRange(8, 128)
             self.length.setValue(20)
-            self._set_ui(self.generate_button, '🔑  Passwort generieren')
+            self._set_ui(self.generate_button, 'Passwort generieren')
             self._set_ui(self.ocean_page_title, 'PASSWORT ERSTELLEN')
             self._set_ui(self.ocean_output_caption, 'Generiertes Passwort')
             self._set_ui(self.ocean_length_heading, 'Passwort-Länge')
@@ -1199,7 +1223,7 @@ class PasswordWindow(QMainWindow):
         self.output.setEchoMode(
             QLineEdit.EchoMode.Normal if visible else QLineEdit.EchoMode.Password
         )
-        self._set_ui(self.show_button, '◉  Verbergen' if visible else '◉  Anzeigen')
+        self._set_ui(self.show_button, 'Verbergen' if visible else 'Anzeigen')
 
     def show_history(self):
         """Show only passwords from this session; never persist history."""
@@ -1392,7 +1416,12 @@ class PasswordWindow(QMainWindow):
         self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
         self.ocean_options_layout.setSpacing(11 if ocean and wide else 5)
         self.brand_subtitle.setVisible(not ocean)
-        self.brand_icon.setFixedSize(44 if ocean else 53, 44 if ocean else 53)
+        self.brand_icon.setFixedSize(32, 36)
+        desktop = self.width() >= 960
+        for button in self.nav_buttons + [self.info_nav_button]:
+            button.setMinimumHeight(48 if desktop else 36)
+        for button in (self.password_mode_button, self.passphrase_mode_button):
+            button.setMinimumHeight(44 if desktop else 30)
         self._set_ui(
             self.brand_title,
             'PasswortGenerator' if ocean else 'Passwort-Generator',
@@ -1407,11 +1436,13 @@ class PasswordWindow(QMainWindow):
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
-        labels = ('⌑ Passwort', '⚙ Einstellungen', '↻ Update')
+        labels = ('Passwort', 'Einstellungen', 'Update')
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
             localized = self._t(label)
+            if index == 2 and self._available_update:
+                localized = self._t('Update') + (' • NEW' if self.language == 'en' else ' • NEU')
             if button.text() != localized:
                 button.setText(localized)
 
@@ -1467,6 +1498,9 @@ class PasswordWindow(QMainWindow):
                         (index, 0) if index < 4 else (0, 1)
                     )
                     self.check_layout.addWidget(checkbox, row, column)
+        if (self._applied_palette is not None and
+                self._applied_palette != ('fixed-ocean-glass', self.width() < 960)):
+            self.apply_colors()
         if self.reporter is not None:
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
@@ -1482,13 +1516,15 @@ class PasswordWindow(QMainWindow):
             card.set_ocean_mode(True)
         if hasattr(self, 'ocean_sections'):
             self.update_ocean_presentation()
-        if self._applied_palette != 'fixed-ocean-glass':
-            self._applied_palette = 'fixed-ocean-glass'
+        palette = ('fixed-ocean-glass', self.width() < 960)
+        if self._applied_palette != palette:
+            self._applied_palette = palette
             self.setStyleSheet(
                 build_glass_stylesheet(FIXED_BG, FIXED_FG) + '\n'
                 + neon_stylesheet(FIXED_BG, FIXED_FG, FIXED_ACCENT,
-                                  ocean_theme=True)
+                                  ocean_theme=True, compact=self.width() < 960)
             )
+        self.generate_button.setFixedHeight(57 if self.width() >= 780 else 40)
 
     def generate(self):
         try:
@@ -2092,6 +2128,8 @@ if __name__ == '__main__':
             and window.info_nav_button.isVisible()
             and len(window.glass_cards) == 2
             and window.length.value() == 20
+            and window.font().family() == 'Carlito'
+            and not window.nav_buttons[0].icon().isNull()
         )
         window.close()
         reporter.close()
@@ -2107,3 +2145,4 @@ if __name__ == '__main__':
         sys.exit(app.exec())
     finally:
         reporter.close()
+

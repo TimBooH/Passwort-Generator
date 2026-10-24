@@ -54,7 +54,11 @@ print(f'CTA metrics: width={window.generate_button.width()}, height={window.gene
 assert 40 <= window.generate_button.height() <= 60
 assert window.ocean_sections.height() <= 276
 assert window.output.height() >= 54
-assert window.ocean_hero_icon.text() == '🔑'
+assert not window.ocean_hero_icon.pixmap().isNull()
+assert window.font().family() == 'Carlito'
+assert all(not b.icon().isNull() for b in window.nav_buttons + [window.info_nav_button])
+assert not window.copy_top_button.icon().isNull()
+assert not window.regenerate_button.icon().isNull()
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
 assert window.check_layout.verticalSpacing() >= 10
@@ -79,3 +83,4 @@ print(
     f'PasswortGenerator v{APP_VERSION}, '
     f'{image.width()}x{image.height()}, {filename.stat().st_size} bytes'
 )
+
