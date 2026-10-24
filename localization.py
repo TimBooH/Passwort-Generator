@@ -39,6 +39,7 @@ EN = {
     'Passwort-Stärke': 'Password strength',
     'Passphrase-Wörter': 'Passphrase words',
     'Sichere Passwörter und Passphrasen': 'Secure passwords and passphrases',
+    'Erstelle sichere und zufällige Passwörter oder Passphrasen.': 'Create secure random passwords or passphrases.',
     'Ocean Glass · Standard': 'Ocean Glass · Default',
     'Passphrase': 'Passphrase',
     'Generiertes Passwort': 'Generated password',
