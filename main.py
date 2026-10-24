@@ -1352,20 +1352,6 @@ class PasswordWindow(QMainWindow):
         if self.reporter is not None:
             self.reporter.note('NAVIGATE', f'tab={self.tab_names[index]}', force=True)
 
-    def select_color(self, combo, color, default):
-        if not QColor(color).isValid():
-            color = default
-        normalized = QColor(color).name().upper()
-        for index in range(combo.count()):
-            if combo.itemData(index).upper() == normalized:
-                combo.setCurrentIndex(index)
-                return
-        source = f'Eigene Farbe ({normalized})'
-        combo.addItem(self._t(source), normalized)
-        if hasattr(self, '_i18n_combo_sources') and combo in self._i18n_combo_sources:
-            self._i18n_combo_sources[combo].append(source)
-        combo.setCurrentIndex(combo.count() - 1)
-
     def update_ocean_presentation(self):
         """Keep the real two-panel layout usable in all schemes and sizes."""
         ocean = True  # Fixed reference design on every page.
