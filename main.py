@@ -11,8 +11,8 @@ from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPa
 from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
-    QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog,
+    QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
     QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTabWidget,
     QTextBrowser, QVBoxLayout, QWidget,
@@ -21,10 +21,9 @@ from PySide6.QtWidgets import (
 from localization import LANGUAGES, translate
 from password_presets import PRESETS, FIELDS, decode_profile, encode_profile, validate_profile
 from diagnostics import CrashReporter
-from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
+from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet
 from neon_style import neon_stylesheet
-from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background,
-                          accessible_text_color, preset_colors)
+from theme_colors import DEFAULT_SCHEME, preset_colors
 from release_history import normalized_releases
 from release_notes_i18n import release_changelog
 from updater import (install_staged_appimage, restart_updated_app,
@@ -49,12 +48,12 @@ APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
 UNSTABLE_APPIMAGE = Path.home() / '.local/opt/passwort-generator-unstable/PasswortGenerator.AppImage'
 
-BACKGROUND_COLORS = [
-    ('Nachtblau', '#101827'), ('Anthrazit', '#20242C'), ('Schwarz', '#111111'),
-    ('Dunkelgrün', '#123329'), ('Dunkelrot', '#351A23'), ('Violett', '#2A1D45'),
-    ('Hellgrau', '#F1F4F8'), ('Weiß', '#FFFFFF'), ('Sand', '#F5EDDB'),
-    ('Eisblau', '#E5F3FA'),
-]
+# Ocean Glass is the only selectable appearance in this experimental build.
+# Legacy saved theme/wallpaper settings are discarded at startup.
+FIXED_BG, FIXED_FG = preset_colors(DEFAULT_SCHEME)
+FIXED_ACCENT = '#3EBCF7'
+
+
 def contrast_color(hex_color):
     color = QColor(hex_color)
     luminance = 0.2126 * color.redF() + 0.7152 * color.greenF() + 0.0722 * color.blueF()
@@ -95,6 +94,10 @@ class PasswordWindow(QMainWindow):
         app_settings_name = ('PasswortGenerator-Unstable' if CHANNEL == 'unstable'
                              else 'PasswortGenerator')
         self.settings = QSettings('TimBooH', app_settings_name)
+        for obsolete in ('color_scheme', 'background_color',
+                         'background_image_path', 'background_image_mode',
+                         'text_color', 'glass_opacity'):
+            self.settings.remove(obsolete)
         self.language = self.settings.value('ui/language', 'de', type=str)
         if self.language not in ('de', 'en'):
             self.language = 'de'
@@ -559,78 +562,9 @@ class PasswordWindow(QMainWindow):
         settings_page_layout.setSpacing(5)
         settings_page_layout.setContentsMargins(3, 4, 3, 3)
 
-        colors = GlossyGlassCard('ERSCHEINUNGSBILD')
-        self.appearance_card = colors
-        self.glass_cards.append(colors)
-        colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # Tight, top-aligned controls instead of vertically stretched gaps.
-        colors.layout().setContentsMargins(13, 6, 13, 7)
-        colors.layout().setSpacing(2)
-        colors_layout = colors.body
-        colors_layout.setSpacing(3)
-        scheme_row = QHBoxLayout()
-        scheme_row.addWidget(QLabel('Farbschema:'))
-        self.scheme_combo = QComboBox()
-        self.scheme_combo.setObjectName('colorSchemeCombo')
-        for scheme_id, scheme_name, _background, _foreground in COLOR_SCHEMES:
-            self.scheme_combo.addItem(scheme_name, scheme_id)
-        scheme_row.addWidget(self.scheme_combo, 1)
-        colors_layout.addLayout(scheme_row)
-        self.scheme_combo.setToolTip(
-            'Glass (Hintergrund sichtbar), Glass Dark, Glass Light und weitere Vorlagen.'
-        )
-        bg_row = QHBoxLayout()
-        bg_row.addWidget(QLabel('Hintergrund:'))
-        self.bg_combo = QComboBox()
-        for label, color in BACKGROUND_COLORS:
-            self.bg_combo.addItem(label, color)
-        bg_row.addWidget(self.bg_combo, 1)
-        bg_custom = QPushButton('Eigene Farbe …')
-        bg_custom.clicked.connect(lambda: self.pick_color(self.bg_combo))
-        colors_layout.addLayout(bg_row)
-        colors_layout.addWidget(bg_custom, 0, Qt.AlignmentFlag.AlignRight)
-        accent_label = QLabel('Akzentfarbe – passt sich automatisch dem Hintergrund an:')
-        accent_label.setWordWrap(True)
-        colors_layout.addWidget(accent_label)
-        self.accent_preview = QLabel('Automatisch')
-        self.accent_preview.setObjectName('accentPreview')
-        self.accent_preview.setMinimumHeight(25)
-        colors_layout.addWidget(self.accent_preview)
-        # Text and accent colors already explain themselves in the preview.
-        # Avoid an extra wrapped line so Security fits without page scrolling.
-        # Colors and wallpaper now share a single appearance tile.
-        image_heading = QLabel('HINTERGRUNDBILD')
-        image_heading.setObjectName('supportText')
-        image_heading.setStyleSheet('font-weight: 700;')
-        colors_layout.addWidget(image_heading)
-        image_layout = colors_layout
-        # The chosen image stays on disk; only its path and display mode are stored.
-        # Vertical actions avoid cramped/overlapping buttons in narrow windows.
-        picture_actions = QVBoxLayout()
-        picture_actions.setSpacing(2)
-        self.choose_background_button = QPushButton('Bild auswählen …')
-        self.choose_background_button.clicked.connect(self.choose_background_image)
-        picture_actions.addWidget(self.choose_background_button)
-        self.clear_background_button = QPushButton('Bild entfernen')
-        self.clear_background_button.clicked.connect(self.remove_background_image)
-        picture_actions.addWidget(self.clear_background_button)
-        image_layout.addLayout(picture_actions)
-        self.background_file_label = QLabel('Kein Hintergrundbild ausgewählt')
-        self.background_file_label.setObjectName('supportText')
-        self.background_file_label.setWordWrap(True)
-        image_layout.addWidget(self.background_file_label)
-        mode_row = QHBoxLayout()
-        mode_row.addWidget(QLabel('Bilddarstellung:'))
-        self.image_mode_combo = QComboBox()
-        for label, mode in IMAGE_MODES:
-            self.image_mode_combo.addItem(label, mode)
-        mode_row.addWidget(self.image_mode_combo, 1)
-        image_layout.addLayout(mode_row)
-        colors_layout.addStretch(1)
+        # No appearance card: only the fixed reference design is available.
 
-        settings_page_layout.addWidget(colors, 1)
-
-        # Language has its own glass tile immediately below Appearance.
+        # Language remains independently configurable.
         # There is only one language selector for the entire application.
         language_card = GlossyGlassCard('SPRACHE')
         self.language_card = language_card
@@ -704,6 +638,7 @@ class PasswordWindow(QMainWindow):
             'Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.'
         )
         settings_page_layout.addWidget(security_card, 0)
+        settings_page_layout.addStretch(1)
 
         self.clipboard_timer = QTimer(self)
         self.clipboard_timer.setSingleShot(True)
@@ -918,12 +853,8 @@ class PasswordWindow(QMainWindow):
         self.status.setWordWrap(True)
         content_layout.addWidget(self.status)
 
-        self.scheme_combo.currentIndexChanged.connect(self.apply_color_scheme)
-        self.bg_combo.currentIndexChanged.connect(self.on_manual_color_change)
-        self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.language_combo.currentIndexChanged.connect(self.change_language)
-        self.restore_colors()
-        self.restore_background_image()
+        self.apply_colors()
         self.tabs.currentChanged.connect(self.on_tab_changed)
         # The startup check and repeating 2-hour timer are both disabled in
         # CI/screenshot modes, so these runs never contact GitHub.
@@ -1021,10 +952,8 @@ class PasswordWindow(QMainWindow):
         # Keep itemData unchanged so saved schemes and separators still work.
         if not hasattr(self, '_i18n_combo_sources'):
             self._i18n_combo_sources = {}
-        for combo in (self.scheme_combo, self.bg_combo,
-                      self.image_mode_combo, self.phrase_separator,
-                      self.preset_combo, self.clipboard_timeout_combo,
-                      self.channel_combo):
+        for combo in (self.phrase_separator, self.preset_combo,
+                      self.clipboard_timeout_combo, self.channel_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -1437,74 +1366,9 @@ class PasswordWindow(QMainWindow):
             self._i18n_combo_sources[combo].append(source)
         combo.setCurrentIndex(combo.count() - 1)
 
-    def restore_colors(self):
-        self._restoring = True
-        try:
-            stored_background = self.settings.value(
-                'background_color', preset_colors(DEFAULT_SCHEME)[0], type=str
-            )
-            saved_scheme = self.settings.value('color_scheme', '', type=str)
-            # Upgrade legacy untouched default to the new standard once.
-            # All manually selected non-default themes and custom colors stay.
-            previous_default = ('neon_blue', '#071322')
-            if (not self.settings.value('ui/ocean_default_migrated', False, type=bool)
-                    and (saved_scheme, stored_background.upper())
-                    == (previous_default[0], previous_default[1].upper())):
-                saved_scheme = DEFAULT_SCHEME
-                self.settings.setValue('ui/ocean_default_migrated', True)
-            if saved_scheme not in SCHEME_MAP:
-                default_background = preset_colors(DEFAULT_SCHEME)[0]
-                saved_scheme = (DEFAULT_SCHEME if
-                                stored_background.upper() == default_background.upper()
-                                else 'custom')
-            index = self.scheme_combo.findData(saved_scheme)
-            self.scheme_combo.setCurrentIndex(max(0, index))
-            preset = preset_colors(saved_scheme)
-            background = preset[0] if preset else stored_background
-            self.select_color(self.bg_combo, background, '#071322')
-        finally:
-            self._restoring = False
-        # Text is selected automatically for contrast; old manual preference is obsolete.
-        self.settings.remove('text_color')
-        self.settings.remove('glass_opacity')
-        self.settings.setValue('color_scheme', self.scheme_combo.currentData())
-        self.apply_colors()
-
-    def apply_color_scheme(self, *_):
-        if self._restoring:
-            return
-        scheme = self.scheme_combo.currentData() or DEFAULT_SCHEME
-        preset = preset_colors(scheme)
-        if preset:
-            self._restoring = True
-            try:
-                self.select_color(self.bg_combo, preset[0], '#071322')
-            finally:
-                self._restoring = False
-        self.settings.setValue('color_scheme', scheme)
-        self.apply_colors()
-
-    def on_manual_color_change(self, *_):
-        if self._restoring:
-            return
-        custom_index = self.scheme_combo.findData('custom')
-        if custom_index >= 0 and self.scheme_combo.currentIndex() != custom_index:
-            self._restoring = True
-            try:
-                self.scheme_combo.setCurrentIndex(custom_index)
-            finally:
-                self._restoring = False
-        self.settings.setValue('color_scheme', 'custom')
-        self.apply_colors()
-
-    def pick_color(self, combo):
-        selected = QColorDialog.getColor(QColor(combo.currentData()), self, self._t('Farbe auswählen'))
-        if selected.isValid():
-            self.select_color(combo, selected.name(), '#101827')
-
     def update_ocean_presentation(self):
         """Keep the real two-panel layout usable in all schemes and sizes."""
-        ocean = self.scheme_combo.currentData() == 'ocean_glass'
+        ocean = True  # Fixed reference design on every page.
         wide = self.width() >= 780
         state = (ocean, wide, self._phrase_mode)
         # Avoid repeatedly changing Qt child geometry while its parent
@@ -1603,7 +1467,7 @@ class PasswordWindow(QMainWindow):
             self._first_run_tour.update()
         if hasattr(self, 'nav_buttons'):
             self.update_navigation_labels()
-        if hasattr(self, 'ocean_sections') and hasattr(self, 'scheme_combo'):
+        if hasattr(self, 'ocean_sections'):
             self.update_ocean_presentation()
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
             compact = self.width() < 680
@@ -1621,97 +1485,24 @@ class PasswordWindow(QMainWindow):
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
     def apply_colors(self, *_):
-        if self._restoring:
-            return
-        base_background = self.bg_combo.currentData() or '#071322'
-        image_color = self.background_surface.wallpaper_color
-        actual_background = image_color or base_background
-        fg = accessible_text_color(actual_background)
-        accent = accent_for_background(actual_background)
-        scheme = self.scheme_combo.currentData()
-        ocean_mode = scheme == 'ocean_glass'
-        glass_mode = scheme in ('glass', 'ocean_glass')
-        self.background_surface.set_base_color(base_background)
-        self.background_surface.set_ocean_mode(ocean_mode)
-        self.background_surface.set_transparent_glass(glass_mode)
+        """Enforce the single design regardless of older saved preferences."""
+        self.background_surface.clear_background_image()
+        self.background_surface.set_base_color(FIXED_BG)
+        self.background_surface.set_ocean_mode(True)
+        self.background_surface.set_transparent_glass(True)
         for card in self.glass_cards + self.secondary_cards + [self.info_card]:
-            card.set_glass_color(actual_background, accent)
-            card.set_glass_mode(glass_mode)
-            card.set_ocean_mode(ocean_mode)
+            card.set_glass_color(FIXED_BG, FIXED_ACCENT)
+            card.set_glass_mode(True)
+            card.set_ocean_mode(True)
         if hasattr(self, 'ocean_sections'):
             self.update_ocean_presentation()
-        source = 'Bild' if image_color else 'Hintergrund'
-        self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
-        self.accent_preview.setToolTip(self._t(
-            'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
-        ))
-        palette_key = (base_background, actual_background, fg, accent, glass_mode,
-                       ocean_mode)
-        if self._applied_palette != palette_key:
-            self._applied_palette = palette_key
+        if self._applied_palette != 'fixed-ocean-glass':
+            self._applied_palette = 'fixed-ocean-glass'
             self.setStyleSheet(
-                build_glass_stylesheet(actual_background, fg)
-                + '\n' + neon_stylesheet(actual_background, fg, accent,
-                                         ocean_theme=ocean_mode)
+                build_glass_stylesheet(FIXED_BG, FIXED_FG) + '\n'
+                + neon_stylesheet(FIXED_BG, FIXED_FG, FIXED_ACCENT,
+                                  ocean_theme=True)
             )
-            self.settings.setValue('background_color', base_background)
-            if self.reporter is not None:
-                self.reporter.note(
-                    'PALETTE_CHANGED',
-                    f'background={base_background}, image={"yes" if image_color else "no"}',
-                    force=True,
-                )
-
-    def restore_background_image(self):
-        mode = self.settings.value('background_image_mode', 'cover', type=str)
-        index = self.image_mode_combo.findData(mode)
-        self.image_mode_combo.setCurrentIndex(index if index >= 0 else 0)
-        path = self.settings.value('background_image_path', '', type=str)
-        if path:
-            try:
-                self.background_surface.set_background_image(path)
-                self._set_ui(self.background_file_label, Path(path).name)
-            except (OSError, ValueError):
-                self._set_ui(self.background_file_label, 'Gespeichertes Bild nicht gefunden oder ungültig.')
-                self.background_surface.clear_background_image()
-        self.clear_background_button.setEnabled(self.background_surface.has_background_image())
-        self.apply_colors()
-
-    def choose_background_image(self):
-        selected, _ = QFileDialog.getOpenFileName(
-            self, self._t('Hintergrundbild auswählen'), str(Path.home()),
-            self._t('Bilder (*.png *.jpg *.jpeg *.webp *.bmp)'),
-        )
-        if not selected:
-            return
-        try:
-            self.background_surface.set_background_image(selected)
-        except (ValueError, OSError) as error:
-            QMessageBox.warning(self, self._t('Hintergrundbild nicht geladen'), self._t(str(error)))
-            return
-        self._set_ui(self.background_file_label, Path(selected).name)
-        self.clear_background_button.setEnabled(True)
-        self.settings.setValue('background_image_path', selected)
-        self.apply_colors()
-        self._set_ui(self.status, 'Hintergrundbild geladen.')
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_LOADED', f'format={Path(selected).suffix.lower()}', force=True)
-
-    def remove_background_image(self):
-        self.background_surface.clear_background_image()
-        self._set_ui(self.background_file_label, 'Kein Hintergrundbild ausgewählt')
-        self.clear_background_button.setEnabled(False)
-        self.settings.remove('background_image_path')
-        self.apply_colors()
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_REMOVED', force=True)
-
-    def update_image_mode(self, *_):
-        mode = self.image_mode_combo.currentData() or 'cover'
-        self.background_surface.set_image_mode(mode)
-        self.settings.setValue('background_image_mode', mode)
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_MODE', f'mode={mode}', force=True)
 
     def generate(self):
         try:
