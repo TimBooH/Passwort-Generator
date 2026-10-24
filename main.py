@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
-from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
@@ -35,7 +35,6 @@ from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
                             password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
 from release_channel import CHANNEL, BUILD_SHA
-from ocean_art import key_icon
 from update_channels import (channel_api, select_unstable_asset,
                              has_channel_update, unstable_asset_name)
 
@@ -941,6 +940,10 @@ class PasswordWindow(QMainWindow):
         self._translate_interface()
         self.update_navigation_labels()
         self.restore_window_geometry()
+        # The first Qt style pass can precede window geometry restoration.
+        # Re-evaluate final dimensions once all child widgets are constructed.
+        self._ocean_presentation_state = None
+        self.update_ocean_presentation()
         self._shortcuts = []
         for key, callback in (
             ('Ctrl+G', self.generate),
@@ -1524,9 +1527,10 @@ class PasswordWindow(QMainWindow):
         if ocean and wide:
             # Prevent the enormous empty panels from the previous design.
             self.ocean_sections.setFixedHeight(276 if self._phrase_mode else 258)
-            self.ocean_hero_icon.setPixmap(key_icon(30))
-            self.brand_icon.setPixmap(key_icon(29))
-            self.password_mode_button.setIcon(QIcon(key_icon(22, '#FFFFFF')))
+            # Keep native Qt text glyphs; frequent QPixmap exchanges while
+            # repolishing the Qt style can corrupt Python refcounts at exit.
+            self.ocean_hero_icon.setText('⚿')
+            self.brand_icon.setText('⚿')
             self.length.setMinimumHeight(50)
             self.length.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.length.setButtonSymbols(QSpinBox.ButtonSymbols.NoButtons)
@@ -1537,11 +1541,8 @@ class PasswordWindow(QMainWindow):
         else:
             self.ocean_sections.setMinimumHeight(0)
             self.ocean_sections.setMaximumHeight(16777215)
-            self.ocean_hero_icon.setPixmap(QPixmap())
             self.ocean_hero_icon.setText('🔑')
-            self.brand_icon.setPixmap(QPixmap())
             self.brand_icon.setText('🔑')
-            self.password_mode_button.setIcon(QIcon())
             self.length.setMinimumHeight(0)
             self.length.setButtonSymbols(QSpinBox.ButtonSymbols.UpDownArrows)
             self.ocean_length_range.layout().setContentsMargins(2, 0, 2, 0)
@@ -1625,9 +1626,14 @@ class PasswordWindow(QMainWindow):
                     self.check_layout.removeWidget(checkbox)
                 for index, checkbox in enumerate(boxes):
                     row, column = (index, 0) if compact else (
-                        (index, 0) if index < 3 else (index - 3, 1)
+                        (index, 0) if index < 4 else (0, 1)
                     )
                     self.check_layout.addWidget(checkbox, row, column)
+                self.check_layout.removeWidget(self.rules_button)
+                if compact:
+                    self.check_layout.addWidget(self.rules_button, 5, 0)
+                else:
+                    self.check_layout.addWidget(self.rules_button, 1, 1)
         if self.reporter is not None:
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
