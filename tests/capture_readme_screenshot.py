@@ -27,11 +27,11 @@ window.resize(1120, 790)
 window.show()
 window.tabs.setCurrentIndex(0)
 
-# Capture the actual default UI, now Ocean Glass (not a mockup).
-theme_index = window.scheme_combo.findData('ocean_glass')
-assert theme_index >= 0, 'Ocean Glass must exist as a real application theme.'
-window.scheme_combo.setCurrentIndex(theme_index)
+# Genuine Qt app capture with the sole fixed reference design.
 assert window.background_surface._ocean_enabled
+assert not hasattr(window, 'appearance_card')
+assert not hasattr(window, 'scheme_combo')
+assert not window.background_surface.has_background_image()
 
 # Generate a one-use demonstration password through the application itself.
 # Showing it makes the real strength indicator and new compact button visible.
