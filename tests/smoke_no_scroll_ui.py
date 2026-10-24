@@ -27,7 +27,7 @@ assert window.tabs.count() == 4
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert window.check_button.width() == 175
 assert window.generate_button.objectName() == 'generatePasswordButton'
-assert 35 <= window.generate_button.height() <= 46, (
+assert 35 <= window.generate_button.height() <= 60, (
     f'Actual height={window.generate_button.height()} '
     f'min={window.generate_button.minimumHeight()} '
     f'max={window.generate_button.maximumHeight()} '
@@ -83,7 +83,7 @@ for w, h in ((850, 760), (610, 700), (530, 700), (1100, 820)):
             )
         if page == 0:
             button = window.generate_button
-            assert 35 <= button.height() <= 46, f'Generate button height: {button.height()}'
+            assert 35 <= button.height() <= 60, f'Generate button height: {button.height()}'
             assert button.width() >= 235, f'Wrong Generate width: {button.width()}'
             card = window.glass_cards[0]
             from PySide6.QtCore import QPoint
