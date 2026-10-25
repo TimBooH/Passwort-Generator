@@ -35,3 +35,43 @@ def checkmark_png_path():
         return _icon_path
     except (OSError, ValueError):
         return None
+
+
+# Small, precisely drawn two-state slider icons for all application switches.
+# Use Qt's own rasterizer to keep rendering identical on Linux and Windows.
+_switch_icons = None
+_switch_dir = None
+
+
+def switch_png_paths():
+    """Return (off, on) image paths valid for this process' lifetime."""
+    global _switch_icons, _switch_dir
+    if _switch_icons is not None:
+        return _switch_icons
+
+    from PySide6.QtCore import QRectF, Qt
+    from PySide6.QtGui import QColor, QImage, QPainter, QPen
+
+    folder = TemporaryDirectory(prefix='passwortgenerator-switches-')
+    paths = []
+    for enabled in (False, True):
+        image = QImage(64, 36, QImage.Format.Format_ARGB32_Premultiplied)
+        image.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(image)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.scale(2, 2)
+        painter.setPen(QPen(QColor('#5DA0D0' if enabled else '#5482B0'), 1))
+        painter.setBrush(QColor('#078ED9' if enabled else '#163455'))
+        painter.drawRoundedRect(QRectF(0.5, 0.5, 31, 17), 8.5, 8.5)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor('#EAFBFF' if enabled else '#AEC4DC'))
+        painter.drawEllipse(QRectF(17, 3, 12, 12) if enabled else QRectF(3, 3, 12, 12))
+        painter.end()
+        path = Path(folder.name) / ('switch-on.png' if enabled else 'switch-off.png')
+        if not image.save(str(path), 'PNG'):
+            folder.cleanup()
+            raise RuntimeError('Ocean Glass switch icon could not be saved.')
+        paths.append(path.as_posix())
+    _switch_dir = folder
+    _switch_icons = tuple(paths)
+    return _switch_icons
