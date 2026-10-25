@@ -1680,7 +1680,7 @@ class PasswordWindow(QMainWindow):
             if not isinstance(response, dict):
                 raise ValueError('Ungültige GitHub-Antwort.')
             if self.update_channel == 'unstable':
-                # Unstable uses a separate GitHub download branch, not Releases.
+                # Unstable uses a dedicated Git tag for downloads, not Releases.
                 # Assets are named with the tested build SHA.
                 build_sha, asset = select_unstable_asset(response, os.name)
                 latest_version = 'UNSTABLE ' + build_sha

@@ -1,15 +1,15 @@
 """Validation and selection for the two independent update channels.
 
 Stable uses the latest Stable release endpoint. Unstable reads a checksum-protected
-manifest from the dedicated download branch in the SAME repository, published by
+manifest from a dedicated moving Git tag in the SAME repository, published by
 GitHub Actions using only GITHUB_TOKEN. No GitHub release or PAT is needed.
 """
 
 import re
 
 REPOSITORY = 'TimBooH/Passwort-Generator'
-UNSTABLE_BRANCH = 'unstable-downloads'
-RELEASE_PREFIX = f'https://raw.githubusercontent.com/{REPOSITORY}/{UNSTABLE_BRANCH}/'
+UNSTABLE_REF = 'unstable-downloads'  # A Git tag, not a branch.
+RELEASE_PREFIX = f'https://raw.githubusercontent.com/{REPOSITORY}/{UNSTABLE_REF}/'
 UNSTABLE_API = RELEASE_PREFIX + 'latest.json'
 STABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/latest'
 VALID_CHANNELS = ('stable', 'unstable')
