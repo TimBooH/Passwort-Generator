@@ -43,7 +43,8 @@ assert window.ocean_hero_icon.isVisible()
 assert window.ocean_options_panel.x() < window.ocean_length_panel.x()
 assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
 assert 'QCheckBox::indicator:checked' in window.styleSheet()
-assert 'checked.png' in window.styleSheet()
+assert 'switch-on.png' in window.styleSheet()
+assert 'switch-off.png' in window.styleSheet()
 assert window.ocean_page_title.text() == 'PASSWORT ERSTELLEN'
 assert window.ocean_page_subtitle.text() == 'Erstelle sichere und zufällige Passwörter oder Passphrasen.'
 assert window.ocean_sections.height() <= 276
