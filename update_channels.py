@@ -8,8 +8,9 @@ ZIP extraction is needed. Never trust arbitrary release URLs or filenames.
 import re
 
 REPOSITORY = 'TimBooH/Passwort-Generator'
-RELEASE_PREFIX = f'https://github.com/{REPOSITORY}/releases/download/'
-UNSTABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/tags/unstable'
+UNSTABLE_REPOSITORY = 'TimBooH/Passwort-Generator-Unstable'
+RELEASE_PREFIX = f'https://github.com/{UNSTABLE_REPOSITORY}/releases/download/'
+UNSTABLE_API = f'https://api.github.com/repos/{UNSTABLE_REPOSITORY}/releases/tags/unstable'
 STABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/latest'
 VALID_CHANNELS = ('stable', 'unstable')
 _UNSTABLE_SHA = re.compile(r'^[0-9a-f]{12}$')
