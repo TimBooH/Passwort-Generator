@@ -50,6 +50,26 @@ APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
 UNSTABLE_APPIMAGE = Path.home() / '.local/opt/passwort-generator-unstable/PasswortGenerator.AppImage'
 
+
+def persist_installed_update_channel(channel):
+    """Transfer only the chosen update channel to the target installation.
+
+    Stable and Unstable deliberately use separate QSettings namespaces for
+    private UI, security and password settings. When installing the other
+    build, its previously stored update-channel preference must not override
+    the user's explicit selection after the application restarts.
+    """
+    if channel not in ('stable', 'unstable'):
+        raise ValueError('Ungültiger Update-Kanal.')
+    target_name = ('PasswortGenerator-Unstable' if channel == 'unstable'
+                   else 'PasswortGenerator')
+    target_settings = QSettings('TimBooH', target_name)
+    target_settings.setValue('updates/channel', channel)
+    target_settings.sync()
+    if target_settings.status() != QSettings.Status.NoError:
+        raise OSError('Update-Kanal konnte nicht dauerhaft gespeichert werden.')
+
+
 # Ocean Glass is the only selectable appearance in this experimental build.
 # Legacy saved theme/wallpaper settings are discarded at startup.
 FIXED_BG, FIXED_FG = preset_colors(DEFAULT_SCHEME)
@@ -1607,6 +1627,7 @@ class PasswordWindow(QMainWindow):
             return
         self.update_channel = selected
         self.settings.setValue('updates/channel', selected)
+        self.settings.sync()
         self.latest_asset = None
         self.latest_version = None
         self._new_update_note = ''
@@ -2027,6 +2048,12 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Die SHA-256-Prüfsumme stimmt nicht überein!')
             if not self.save_file.commit():
                 raise OSError(self.save_file.errorString())
+            # Stable and Unstable use separate settings stores. Copy only the
+            # explicitly chosen target channel before handing off to the
+            # installed build, so old target preferences cannot reset it.
+            self.settings.setValue('updates/channel', self.update_channel)
+            self.settings.sync()
+            persist_installed_update_channel(self.update_channel)
             if os.name == 'nt':
                 # The Inno installer closes old files and restarts the updated
                 # application after successful installation.
