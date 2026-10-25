@@ -90,7 +90,7 @@ jobs:
           from release_channel import BUILD_SHA
           assert BUILD_SHA == os.environ['GITHUB_SHA'][:12]
           from update_channels import channel_api
-          assert channel_api(window.update_channel).endswith('unstable-downloads/latest.json')
+          assert channel_api(window.update_channel).endswith('/releases/tags/unstable')
           window.close()
           print('UNSTABLE isolated identity, settings, and updates verified')
           PY
