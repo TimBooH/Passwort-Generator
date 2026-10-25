@@ -14,6 +14,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 from theme_colors import accent_for_background, sample_wallpaper_color
+from ocean_checkmark import switch_png_paths
 
 
 IMAGE_MODES = (
@@ -134,6 +135,7 @@ def build_glass_stylesheet(background, foreground):
     selection_fg = '#F3F9FF' if dark else '#192B3D'
     line = rgba('#FFFFFF' if dark else '#587EA1', 70)
     progress = '#68D6F6' if dark else '#257EB5'
+    switch_off, switch_on = switch_png_paths()
     return f"""
 QMainWindow {{ background-color: {QColor(background).name()}; }}
 QScrollArea, QScrollArea QWidget#qt_scrollarea_viewport {{
@@ -155,7 +157,8 @@ QWidget#passwordPage, QWidget#settingsPage, QWidget#updatesPage {{
 }}
 QStackedWidget#mainPages {{ background: transparent; border: none; }}
 QCheckBox {{ color: {foreground}; background: transparent; spacing: 9px; padding: 3px 0; }}
-QCheckBox::indicator {{ width: 17px; height: 17px; }}
+QCheckBox::indicator {{ width: 32px; height: 18px; background: transparent; border: none; image: url("{switch_off}"); }}
+QCheckBox::indicator:checked {{ image: url("{switch_on}"); }}
 QLineEdit, QSpinBox, QComboBox {{
     color: {foreground};
     background: {field};
