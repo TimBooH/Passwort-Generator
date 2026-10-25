@@ -1,5 +1,5 @@
 """One coherent Ocean Glass stylesheet, with a compact layout of the same design."""
-from ocean_checkmark import checkmark_png_path
+from ocean_checkmark import switch_png_paths
 
 
 def reference_stylesheet(compact=False):
@@ -75,8 +75,8 @@ QFrame#oceanOptionPanel, QFrame#oceanLengthPanel {
 }
 QLabel#oceanPanelHeading { color: #F7F9FF; font-size: @panel@px; font-weight: 600; }
 QWidget#passwordPage QCheckBox { color: #E8F0FF; font-size: @label@px; font-weight: 400; spacing: 12px; }
-QWidget#passwordPage QCheckBox::indicator { width: 24px; height: 24px; border: 1px solid #5589B9; border-radius: 5px; background: rgba(8,31,59,180); }
-QWidget#passwordPage QCheckBox::indicator:checked { image: url("@check@"); border: none; background: transparent; }
+QWidget#passwordPage QCheckBox::indicator { width: 32px; height: 18px; border: none; background: transparent; image: url("@switch_off@"); }
+QWidget#passwordPage QCheckBox::indicator:checked { image: url("@switch_on@"); }
 QSpinBox { color: #F5F8FF; font-size: 24px; font-weight: 400;
     background: rgba(10,36,75,175); border: 1px solid rgba(73,142,213,150); border-radius: 10px; padding: 4px 6px; }
 QSlider#oceanLengthSlider::groove:horizontal { height: 10px; background: #315D91; border-radius: 5px; }
@@ -100,10 +100,11 @@ QPushButton#bottomAction, QPushButton#analysisButton, QPushButton#advancedPasswo
 """
     for name, value in sizes.items():
         css = css.replace('@' + name + '@', str(value))
-    css = css.replace('@check@', checkmark_png_path() or '')
+    off_path, on_path = switch_png_paths()
+    css = css.replace('@switch_off@', off_path).replace('@switch_on@', on_path)
     if compact:
         css += """
-QWidget#passwordPage QCheckBox::indicator { width: 19px; height: 19px; }
+QWidget#passwordPage QCheckBox::indicator { width: 28px; height: 16px; }
 QSpinBox { font-size: 19px; }
 """
     return css
