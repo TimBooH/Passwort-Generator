@@ -57,12 +57,16 @@ jobs:
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
           PYTHONPATH=. python tests/smoke_update_channels_ui.py
+          PYTHONPATH=. python tests/smoke_switches_ui.py
           PYTHONPATH=. python tests/capture_readme_screenshot.py
+          PYTHONPATH=. python tests/capture_settings_switches.py
       - name: Upload genuine Linux application design screenshot
         uses: actions/upload-artifact@v4
         with:
           name: PasswortGenerator-UNSTABLE-Designvorschau
-          path: readme-screenshot.png
+          path: |
+            readme-screenshot.png
+            settings-switches.png
           if-no-files-found: error
           retention-days: 14
       - name: Embed UNSTABLE build identity and verify isolation

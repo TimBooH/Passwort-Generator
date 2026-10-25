@@ -74,6 +74,25 @@ def neon_stylesheet(background, foreground, accent=None, ocean_theme=False, comp
 
     from reference_style import reference_stylesheet
     ocean_css = reference_stylesheet(compact=compact) if ocean_theme else ''
+    # The base stylesheet previously overwrote checked switch icons with a
+    # square checkbox. Apply the switch indicators LAST for every checkbox
+    # (including Security settings, not just the Password page).
+    switch_css = ''
+    if ocean_theme:
+        from ocean_checkmark import switch_png_paths
+        switch_off, switch_on = switch_png_paths()
+        switch_css = f"""
+QCheckBox::indicator {{
+    width: 32px; height: 18px;
+    background: transparent; border: none;
+    image: url("{switch_off}");
+}}
+QCheckBox::indicator:checked {{
+    background: transparent; border: none;
+    image: url("{switch_on}");
+}}
+"""
+
     return f"""
 QMainWindow {{ background-color: {background}; }}
 QLabel#brandTitle {{
@@ -341,5 +360,5 @@ QLabel#supportText {{ color: {muted}; font-size: 11px; }}
 QLabel {{
     color: {fg}; background: transparent;
 }}
-""".strip() + ocean_css
+""".strip() + ocean_css + switch_css
 
