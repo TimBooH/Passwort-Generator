@@ -57,6 +57,7 @@ jobs:
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
           PYTHONPATH=. python tests/smoke_update_channels_ui.py
+          PYTHONPATH=. python tests/smoke_channel_persistence_ui.py
           PYTHONPATH=. python tests/smoke_switches_ui.py
           PYTHONPATH=. python tests/capture_readme_screenshot.py
           PYTHONPATH=. python tests/capture_settings_switches.py
@@ -165,7 +166,7 @@ jobs:
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test $test" }
           }
-          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py')) {
+          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py', 'smoke_channel_persistence_ui.py')) {
             python "tests/$test"
             if ($LASTEXITCODE -ne 0) { throw "Failed GUI smoke $test" }
           }
