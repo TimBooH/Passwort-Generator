@@ -64,7 +64,8 @@ assert window.ocean_length_panel.isVisible()
 assert window.check_layout.verticalSpacing() >= 10
 assert all(c.isChecked() for c in (window.upper, window.lower, window.digits, window.symbols))
 assert 'QCheckBox::indicator:checked' in window.styleSheet()
-assert 'checked.png' in window.styleSheet()
+assert 'switch-on.png' in window.styleSheet()
+assert 'switch-off.png' in window.styleSheet()
 assert window.ocean_hero_icon.isVisible()
 assert window.ocean_page_title.isVisible()
 assert window.language == 'de'
