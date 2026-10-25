@@ -224,16 +224,16 @@ jobs:
           retention-days: 14
 
   publish-unstable-prerelease:
-    # This is a PUBLIC PRERELEASE, never /releases/latest (Stable). The
-    # GitHub API exposes its assets without a user token, unlike Actions ZIPs.
+    # Publish only to the dedicated TEST repository, never the source repository.
     needs: [linux-preview, windows-preview]
     if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
-      contents: write
+      contents: read
     env:
-      GH_TOKEN: ${{ github.token }}
+      GH_TOKEN: ${{ secrets.UNSTABLE_RELEASE_TOKEN }}
+      TEST_RELEASE_REPO: TimBooH/Passwort-Generator-Unstable
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -253,23 +253,31 @@ jobs:
           # Normalize the checksum manifest, not the signed installer bytes.
           sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
           (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::warning::UNSTABLE_RELEASE_TOKEN fehlt: Linux/Windows-Builds sind bereit, aber keine Test-Veröffentlichung."
+            exit 0
+          fi
+          if ! gh api "repos/$TEST_RELEASE_REPO/commits/main" --jq '.sha' >/dev/null 2>&1; then
+            echo "::error::Das Test-Repository benötigt einen initialen main-Commit (README) und Token-Zugriff."
+            exit 1
+          fi
           title="PasswortGenerator Unstable $short"
           body="**UNSTABLE / TESTVERSION** – Nicht für den Produktiveinsatz!\n\nTest-Build vom Commit \`$GITHUB_SHA\`. Windows und Linux erfolgreich getestet.\n\nDie offizielle Stable-Version bleibt unter /releases/latest und wird davon nicht verändert."
-          if gh release view unstable --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release edit unstable --repo "$GITHUB_REPOSITORY" --title "$title" --notes "$body" --prerelease --latest=false
+          if gh release view unstable --repo "$TEST_RELEASE_REPO" >/dev/null 2>&1; then
+            gh release edit unstable --repo "$TEST_RELEASE_REPO" --title "$title" --notes "$body" --prerelease --latest=false
           else
-            gh release create unstable --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$title" --notes "$body" --prerelease --latest=false
+            gh release create unstable --repo "$TEST_RELEASE_REPO" --target main --title "$title" --notes "$body" --prerelease --latest=false
           fi
           gh release upload unstable "preview-assets/$linux" "preview-assets/$windows" \
-            --repo "$GITHUB_REPOSITORY"
+            --repo "$TEST_RELEASE_REPO"
           # Discard old preview assets only after both new files were published.
           # Names contain the build SHA; clients only select the exact pair.
-          assets="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable" --jq '.assets[] | [.id, .name] | @tsv')"
+          assets="$(gh api "repos/$TEST_RELEASE_REPO/releases/tags/unstable" --jq '.assets[] | [.id, .name] | @tsv')"
           while IFS=$'\t' read -r id filename; do
             [[ -n "$id" ]] || continue
             if [[ "$filename" != "$linux" && "$filename" != "$windows" ]]; then
-              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
+              gh api -X DELETE "repos/$TEST_RELEASE_REPO/releases/assets/$id"
             fi
           done <<< "$assets"
-          echo "Preview ready: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"
+          echo "Preview ready: https://github.com/$TEST_RELEASE_REPO/releases/tag/unstable"
 
