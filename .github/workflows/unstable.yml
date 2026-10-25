@@ -1,6 +1,6 @@
 name: Unstable Preview - Linux & Windows
 
-# Preview packages are published to unstable-downloads branch only (not Releases).
+# Preview packages are published via a Git tag, not another branch or Release.
 # Linux and Windows must both pass before publishing.
 on:
   push:
@@ -288,15 +288,45 @@ jobs:
           python -m json.tool "$folder/latest.json" >/dev/null
           (
             cd "$folder"
-            git init -q -b unstable-downloads
+            git init -q -b snapshot
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add latest.json "$linux" "$windows"
             git commit -qm "Verified Unstable $short"
+            git tag unstable-downloads
             git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
             auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
             git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" \
-              push --force origin HEAD:refs/heads/unstable-downloads
+              push --force origin refs/tags/unstable-downloads:refs/tags/unstable-downloads
+            git rev-parse HEAD > "$folder/snapshot.sha"
+            git rev-parse HEAD:latest.json > "$folder/manifest.sha"
           )
-          gh api "repos/$GITHUB_REPOSITORY/contents/latest.json?ref=unstable-downloads" --jq '.sha' >/dev/null
-          echo "Unstable download feed: $base/latest.json"
+          # Verify the new tag before deleting any branches.
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/unstable-downloads" --jq '.object.sha')"
+          test "$tag_sha" = "$(cat "$folder/snapshot.sha")"
+
+          # Archive the unique history of the older promotion branch as a TAG.
+          promotion_ref="repos/$GITHUB_REPOSITORY/git/ref/heads/stable-channel-promotion"
+          archive_api="repos/$GITHUB_REPOSITORY/git/ref/tags/archive/stable-channel-promotion-20261025"
+          if gh api "$promotion_ref" >/dev/null 2>&1; then
+            promotion_sha="$(gh api "$promotion_ref" --jq '.object.sha')"
+            if ! gh api "$archive_api" >/dev/null 2>&1; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                -f ref="refs/tags/archive/stable-channel-promotion-20261025" \
+                -f sha="$promotion_sha" >/dev/null
+            fi
+            test "$promotion_sha" = "$(gh api "$archive_api" --jq '.object.sha')"
+            test "$promotion_sha" = "$(gh api "$promotion_ref" --jq '.object.sha')"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/stable-channel-promotion"
+          fi
+
+          # The old branch masks the tag of the same name in raw GitHub URLs.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/unstable-downloads" >/dev/null 2>&1; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/unstable-downloads"
+          fi
+          manifest_sha="$(gh api "repos/$GITHUB_REPOSITORY/contents/latest.json?ref=unstable-downloads" --jq '.sha')"
+          test "$manifest_sha" = "$(cat "$folder/manifest.sha")"
+          branches="$(gh api --paginate "repos/$GITHUB_REPOSITORY/branches?per_page=100" --jq '.[].name' | sort)"
+          test "$branches" = "$(printf 'main\nunstable')"
+          echo "Verified only main and unstable branches remain."
+          echo "Unstable tag feed: $base/latest.json"
