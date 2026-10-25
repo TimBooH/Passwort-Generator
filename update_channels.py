@@ -1,16 +1,16 @@
 """Validation and selection for the two independent update channels.
 
-Stable uses GitHub's latest non-prerelease endpoint. Unstable uses a public,
-explicitly labelled prerelease with a stable tag, so no GitHub login and no
-ZIP extraction is needed. Never trust arbitrary release URLs or filenames.
+Stable uses the latest Stable release endpoint. Unstable reads a checksum-protected
+manifest from the dedicated download branch in the SAME repository, published by
+GitHub Actions using only GITHUB_TOKEN. No GitHub release or PAT is needed.
 """
 
 import re
 
 REPOSITORY = 'TimBooH/Passwort-Generator'
-UNSTABLE_REPOSITORY = 'TimBooH/Passwort-Generator-Unstable'
-RELEASE_PREFIX = f'https://github.com/{UNSTABLE_REPOSITORY}/releases/download/'
-UNSTABLE_API = f'https://api.github.com/repos/{UNSTABLE_REPOSITORY}/releases/tags/unstable'
+UNSTABLE_BRANCH = 'unstable-downloads'
+RELEASE_PREFIX = f'https://raw.githubusercontent.com/{REPOSITORY}/{UNSTABLE_BRANCH}/'
+UNSTABLE_API = RELEASE_PREFIX + 'latest.json'
 STABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/latest'
 VALID_CHANNELS = ('stable', 'unstable')
 _UNSTABLE_SHA = re.compile(r'^[0-9a-f]{12}$')
@@ -31,10 +31,10 @@ def unstable_asset_name(platform, build_sha):
 
 
 def select_unstable_asset(release, platform):
-    """Require a real prerelease, valid build ID and exact release URL."""
+    """Require the correct manifest, build ID, SHA-256 and download URL."""
     if (not isinstance(release, dict) or release.get('tag_name') != 'unstable'
             or release.get('draft') or release.get('prerelease') is not True):
-        raise ValueError('Kein gültiges öffentliches Unstable-Prerelease vorhanden.')
+        raise ValueError('Keine gültige öffentliche Unstable-Testversion vorhanden.')
     name = release.get('name', '')
     if not isinstance(name, str):
         raise ValueError('Unstable-Buildkennung fehlt.')
@@ -53,7 +53,7 @@ def select_unstable_asset(release, platform):
     url = asset.get('browser_download_url', '')
     digest = asset.get('digest', '')
     size = asset.get('size')
-    if (url != f'{RELEASE_PREFIX}unstable/{filename}'
+    if (url != f'{RELEASE_PREFIX}{filename}'
             or type(size) is not int or size < 1_000_000
             or not isinstance(digest, str)
             or not re.fullmatch(r'sha256:[0-9a-fA-F]{64}', digest)):

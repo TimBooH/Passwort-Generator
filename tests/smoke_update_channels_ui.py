@@ -52,7 +52,7 @@ assert UNSTABLE_APPIMAGE.parent != INSTALLED_APPIMAGE.parent
 fake = FakeNetwork()
 window.network = fake
 
-# An explicit switch requests only the dedicated prerelease endpoint.
+# An explicit switch requests only the public branch manifest.
 window.channel_combo.setCurrentIndex(window.channel_combo.findData('unstable'))
 assert window.update_channel == 'unstable'
 assert fake.urls[-1] == channel_api('unstable')
@@ -64,7 +64,7 @@ payload = {
     'body': '## Deutsch\\n- Neue Testfunktionen\\n## English\\n- New preview features',
     'assets': [{
         'name': name,
-        'browser_download_url': RELEASE_PREFIX + 'unstable/' + name,
+        'browser_download_url': RELEASE_PREFIX + name,
         'digest': 'sha256:' + 'a'*64, 'size': 100000000,
     }],
 }

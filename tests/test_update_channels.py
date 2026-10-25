@@ -18,7 +18,7 @@ def sample_release(sha='abcdef012345', platform='linux'):
             'name': name,
             'size': 72_000_000,
             'digest': 'sha256:' + 'a1'*32,
-            'browser_download_url': RELEASE_PREFIX + 'unstable/' + name,
+            'browser_download_url': RELEASE_PREFIX + name,
         }],
     }
 
@@ -27,6 +27,8 @@ class UpdateChannelTests(unittest.TestCase):
     def test_channel_urls(self):
         self.assertTrue(channel_api('stable').endswith('/releases/latest'))
         self.assertEqual(channel_api('unstable'), UNSTABLE_API)
+        self.assertTrue(UNSTABLE_API.endswith('/unstable-downloads/latest.json'))
+        self.assertNotIn('/releases/', UNSTABLE_API)
         self.assertEqual(channel_api('stable'), STABLE_API)
         with self.assertRaises(ValueError):
             channel_api('nightly')
