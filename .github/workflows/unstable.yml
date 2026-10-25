@@ -330,3 +330,80 @@ jobs:
           test "$branches" = "$(printf 'main\nunstable')"
           echo "Verified only main and unstable branches remain."
           echo "Unstable tag feed: $base/latest.json"
+
+  publish-unstable-prerelease:
+    # Keep a single rolling UNSTABLE prerelease. Never publish /releases/latest.
+    needs: [linux-preview, windows-preview, publish-unstable-downloads]
+    if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: PasswortGenerator-UNSTABLE-*
+          path: preview-assets
+          merge-multiple: true
+      - name: Publish rolling Unstable release after successful Windows and Linux tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          short="${GITHUB_SHA:0:12}"
+          linux="PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage"
+          windows="PasswortGenerator-UNSTABLE-${short}-Setup-x64.exe"
+          test -s "preview-assets/$linux"
+          test -s "preview-assets/$windows"
+          sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
+          (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
+          title="PasswortGenerator Unstable $short"
+          body="$(printf '%s\n\n%s\n\n%s'             '**UNSTABLE / TESTVERSION** – Keine freigegebene Stable-Version.'             "Getesteter Commit: ${GITHUB_SHA}. Linux und Windows erfolgreich gebaut und SHA-256-geprüft."             'Stable v0.22.0 und der Branch main bleiben unverändert.')"
+          if ! gh release view unstable --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create unstable --repo "$GITHUB_REPOSITORY"               --target "$GITHUB_SHA" --title "PasswortGenerator Unstable (initializing)"               --notes "Unstable release in Vorbereitung" --prerelease --latest=false
+          fi
+          # The two new asset names include the commit SHA. Upload first,
+          # then update the visible title only once both uploads are present.
+          gh release upload unstable "preview-assets/$linux" "preview-assets/$windows"             --repo "$GITHUB_REPOSITORY" --clobber
+          linux_sha="$(sha256sum "preview-assets/$linux" | cut -d' ' -f1)"
+          windows_sha="$(sha256sum "preview-assets/$windows" | cut -d' ' -f1)"
+          linux_size="$(wc -c < "preview-assets/$linux" | tr -d '[:space:]')"
+          windows_size="$(wc -c < "preview-assets/$windows" | tr -d '[:space:]')"
+          for attempt in 1 2 3 4 5 6; do
+            release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable")"
+            if RELEASE_JSON="$release" LINUX_NAME="$linux" WINDOWS_NAME="$windows"                LINUX_SHA="$linux_sha" WINDOWS_SHA="$windows_sha"                LINUX_SIZE="$linux_size" WINDOWS_SIZE="$windows_size"                python - <<'PY'
+          import json, os
+          release = json.loads(os.environ["RELEASE_JSON"])
+          assert release.get("tag_name") == "unstable"
+          assert release.get("prerelease") is True
+          assert release.get("draft") is False
+          assets = {a["name"]: a for a in release.get("assets", [])}
+          for prefix, name in (("LINUX", os.environ["LINUX_NAME"]),
+                               ("WINDOWS", os.environ["WINDOWS_NAME"])):
+              asset = assets[name]
+              assert asset["size"] == int(os.environ[prefix + "_SIZE"])
+              assert asset.get("digest") == "sha256:" + os.environ[prefix + "_SHA"]
+              assert asset["browser_download_url"] == (
+                  "https://github.com/" + os.environ["GITHUB_REPOSITORY"]
+                  + "/releases/download/unstable/" + name)
+          PY
+            then
+              break
+            fi
+            if [[ "$attempt" -eq 6 ]]; then
+              echo "::error::Unstable assets: GitHub size/digest/URL check failed."
+              exit 1
+            fi
+            sleep 2
+          done
+          gh release edit unstable --repo "$GITHUB_REPOSITORY"             --title "$title" --notes "$body" --prerelease --latest=false
+          # Old binaries are removed only after both tested new uploads
+          # are checked and the release now points at the new build.
+          while IFS=$'\t' read -r id filename; do
+            [[ -n "$id" ]] || continue
+            if [[ "$filename" != "$linux" && "$filename" != "$windows" ]]; then
+              gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
+            fi
+          done < <(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable"             --jq '.assets[] | [.id, .name] | @tsv')
+          echo "UNSTABLE published: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"

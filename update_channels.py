@@ -1,16 +1,15 @@
 """Validation and selection for the two independent update channels.
 
-Stable uses the latest Stable release endpoint. Unstable reads a checksum-protected
-manifest from a dedicated moving Git tag in the SAME repository, published by
-GitHub Actions using only GITHUB_TOKEN. No GitHub release or PAT is needed.
+Stable uses the latest non-prerelease endpoint. Unstable uses the verified,
+rolling public GitHub prerelease tagged 'unstable' in the SAME repository.
+The legacy download tag remains available for older Unstable clients.
 """
 
 import re
 
 REPOSITORY = 'TimBooH/Passwort-Generator'
-UNSTABLE_REF = 'unstable-downloads'  # A Git tag, not a branch.
-RELEASE_PREFIX = f'https://raw.githubusercontent.com/{REPOSITORY}/{UNSTABLE_REF}/'
-UNSTABLE_API = RELEASE_PREFIX + 'latest.json'
+RELEASE_PREFIX = f'https://github.com/{REPOSITORY}/releases/download/'
+UNSTABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/tags/unstable'
 STABLE_API = f'https://api.github.com/repos/{REPOSITORY}/releases/latest'
 VALID_CHANNELS = ('stable', 'unstable')
 _UNSTABLE_SHA = re.compile(r'^[0-9a-f]{12}$')
@@ -31,7 +30,7 @@ def unstable_asset_name(platform, build_sha):
 
 
 def select_unstable_asset(release, platform):
-    """Require the correct manifest, build ID, SHA-256 and download URL."""
+    """Require the real prerelease, exact build SHA, checksum and download URL."""
     if (not isinstance(release, dict) or release.get('tag_name') != 'unstable'
             or release.get('draft') or release.get('prerelease') is not True):
         raise ValueError('Keine gültige öffentliche Unstable-Testversion vorhanden.')
@@ -53,7 +52,7 @@ def select_unstable_asset(release, platform):
     url = asset.get('browser_download_url', '')
     digest = asset.get('digest', '')
     size = asset.get('size')
-    if (url != f'{RELEASE_PREFIX}{filename}'
+    if (url != f'{RELEASE_PREFIX}unstable/{filename}'
             or type(size) is not int or size < 1_000_000
             or not isinstance(digest, str)
             or not re.fullmatch(r'sha256:[0-9a-fA-F]{64}', digest)):

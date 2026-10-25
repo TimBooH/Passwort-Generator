@@ -18,7 +18,7 @@ def sample_release(sha='abcdef012345', platform='linux'):
             'name': name,
             'size': 72_000_000,
             'digest': 'sha256:' + 'a1'*32,
-            'browser_download_url': RELEASE_PREFIX + name,
+            'browser_download_url': RELEASE_PREFIX + 'unstable/' + name,
         }],
     }
 
@@ -27,11 +27,24 @@ class UpdateChannelTests(unittest.TestCase):
     def test_channel_urls(self):
         self.assertTrue(channel_api('stable').endswith('/releases/latest'))
         self.assertEqual(channel_api('unstable'), UNSTABLE_API)
-        self.assertTrue(UNSTABLE_API.endswith('/unstable-downloads/latest.json'))
-        self.assertNotIn('/releases/', UNSTABLE_API)
+        self.assertTrue(UNSTABLE_API.endswith('/releases/tags/unstable'))
+        self.assertEqual(UNSTABLE_API, 'https://api.github.com/repos/TimBooH/Passwort-Generator/releases/tags/unstable')
+        self.assertEqual(STABLE_API, 'https://api.github.com/repos/TimBooH/Passwort-Generator/releases/latest')
         self.assertEqual(channel_api('stable'), STABLE_API)
         with self.assertRaises(ValueError):
             channel_api('nightly')
+
+    def test_reject_other_unsafe_release_paths(self):
+        response = sample_release()
+        filename = response['assets'][0]['name']
+        for wrong_url in (
+            'https://raw.githubusercontent.com/TimBooH/Passwort-Generator/unstable-downloads/' + filename,
+            'https://github.com/TimBooH/Passwort-Generator/releases/download/v0.22.0/' + filename,
+            'https://github.com/other/Passwort-Generator/releases/download/unstable/' + filename,
+        ):
+            with self.subTest(url=wrong_url), self.assertRaises(ValueError):
+                response['assets'][0]['browser_download_url'] = wrong_url
+                select_unstable_asset(response, 'posix')
 
     def test_prerelease_validation_on_both_systems(self):
         for platform in ('nt', 'posix'):

@@ -1,23 +1,23 @@
-# PasswortGenerator – genau zwei Git-Branches
+# PasswortGenerator – Stable und Unstable
 
-## Branches
-- `main`: Stable-Quellcode; Änderungen und reguläre Releases nur mit ausdrücklicher Freigabe.
-- `unstable`: Entwicklung, Linux-/Windows-Tests und getrennte Test-Builds.
-- Keine zusätzlichen Branches, insbesondere keinen Branch `unstable-downloads`.
+## Zwei Entwicklungsbranches
+- **`main`**: Stable-Quellcode. Stable-Releases (aktuell v0.22.0) ausschließlich nach ausdrücklicher Freigabe.
+- **`unstable`**: Sämtlicher Test- und Entwicklungsquellcode. Jeder Push startet automatisch Linux- und Windows-Tests und die beiden getrennten Installationspakete. Es werden keine zusätzlichen Branches angelegt.
 
-## Automatische Unstable-Downloads
-GitHub Actions veröffentlicht nach erfolgreichen Linux- und Windows-Tests die beiden Installer und eine Datei `latest.json` als Git-Snapshot, erreichbar über den beweglichen **Git-Tag** `unstable-downloads`. Ein **Tag ist kein Branch**. Für die automatisierte Veröffentlichung genügt der eingebaute `GITHUB_TOKEN`; zusätzliche Zugangsdaten sind nicht erforderlich.
+## Unstable-Release bei jeder erfolgreichen Änderung
+Nach **beiden erfolgreichen** Linux-/Windows-Jobs aktualisiert GitHub Actions automatisch genau einen öffentlichen, ausdrücklich mit **Unstable / Testversion** gekennzeichneten GitHub-*Prerelease* mit dem festen Tag `unstable`:
+- https://github.com/TimBooH/Passwort-Generator/releases/tag/unstable
+- Dateinamen enthalten die ersten zwölf Stellen der Commit-SHA, damit man den jeweiligen Unstable-Build eindeutig erkennt.
+- Erst SHA-256- und Größenprüfung beider Pakete, dann Upload der neuen Assets, danach Aktualisierung des Releasetitels. Vorherige Dateien werden erst entfernt, wenn die beiden aktuellen erfolgreich verfügbar sind.
+- GitHub Actions benutzt `GITHUB_TOKEN` des *gleichen* Repositories mit `contents: write`; keine zusätzlichen Personal Access Tokens, keine Secrets, keine separate Repo-Veröffentlichung.
+- Ein fehlgeschlagener oder abgebrochener Build veröffentlicht **keine** neue Unstable-Version.
 
-Der Updater ruft weiterhin `https://raw.githubusercontent.com/TimBooH/Passwort-Generator/unstable-downloads/latest.json` ab. Die Adresse bleibt unverändert, aber `unstable-downloads` ist nun ein **Tag**, kein Branch. Für jede Testinstallation werden erwarteter Dateiname, GitHub-Domain/Pfad, Dateigröße und SHA-256-Prüfsumme geprüft. Der Download ist öffentlich und benötigt keinen Login.
+## Integrierte Updates
+- **Stable**: `https://api.github.com/repos/TimBooH/Passwort-Generator/releases/latest`; GitHub gibt keine Prereleases als `latest` zurück.
+- **Unstable**: `https://api.github.com/repos/TimBooH/Passwort-Generator/releases/tags/unstable`; der Updater akzeptiert nur `prerelease=true`, den passenden Commit-Build, die exakten Release-Download-URLs, Dateigröße und SHA-256-Digest.
+- Frühere Unstable-App-Versionen mit der alten Manifest-Adresse unter `unstable-downloads` bleiben kompatibel: Der Workflow aktualisiert übergangsweise zusätzlich den gleichnamigen **Git-Tag**, der ausdrücklich *kein Branch* ist.
+- Stable und Unstable bleiben separate Installationen: Linux `~/.local/opt/passwort-generator/` und `~/.local/opt/passwort-generator-unstable/` mit getrennten Backups; Windows unterschiedliche Inno-App-IDs, Verzeichnisse, Verknüpfungen und UAC-Dialoge; separate QSettings.
+- Die App fragt vor einer Unstable-Installation nach Bestätigung. Der Updater prüft automatisch beim Start und anschließend im Zwei-Stunden-Abstand. Manuelle Updateprüfung bleibt möglich.
 
-Neue Unstable-Testversionen werden nicht als GitHub-Releases veröffentlicht. GitHub-Actions-Artefakte für die Diagnose bleiben zusätzlich 14 Tage verfügbar.
-
-## Bereinigung und Erhalt historischer Daten
-- Nach erfolgreicher Veröffentlichung und Prüfung des neuen Download-Tags löscht der Workflow den früheren Branch `unstable-downloads`.
-- Der bestehende Branch `stable-channel-promotion` enthält vier eigene frühere Commits. Vor seinem Entfernen wird seine Commit-Spitze unter dem Archiv-Tag `archive/stable-channel-promotion-20261025` gesichert.
-- Die Branchliste wird anschließend auf genau `main` und `unstable` geprüft.
-
-## Stable bleibt unverändert
-`main` und Stable v0.22.0 werden bei Unstable-Arbeiten nicht verändert. Der frühere `unstable`-Prerelease wird vorerst nicht gelöscht, damit ältere App-Versionen ihre bisherige Updateadresse nicht verlieren. Er wird nicht weiter aktualisiert.
-
-Linux: getrennte Installationsordner `~/.local/opt/passwort-generator/` und `~/.local/opt/passwort-generator-unstable/`, jeweils mit getrennten Sicherungen. Windows: unterschiedliche Installer-App-IDs, Program-Files-Verzeichnisse und Verknüpfungen sowie UAC-Abfrage. QSettings, Kanalwahl und Rollback bleiben erhalten.
+## Freigabeprozess
+Jede fertig getestete Änderung auf `unstable` führt ohne manuelle Freigabe zu einer aktualisierten **Unstable-Testveröffentlichung**. Für einen offiziellen **Stable-Release** auf `main` ist dagegen weiterhin eine ausdrückliche Freigabe notwendig. Der Release-`unstable` wird als Testversion im selben Repository gelistet, nicht als neues Stable-Release.
