@@ -77,7 +77,11 @@ jobs:
           printf "CHANNEL = 'unstable'\nBUILD_SHA = '%s'\n" "${GITHUB_SHA:0:12}" > release_channel.py
           python - <<'PY'
           import os
+          import tempfile
           os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+          # Keep the installed-build identity test separate from all earlier
+          # smoke tests' QSettings; they intentionally exercise both channels.
+          os.environ['XDG_CONFIG_HOME'] = tempfile.mkdtemp(prefix='passwort-ci-identity-')
           from PySide6.QtWidgets import QApplication
           from main import PasswordWindow
           from release_channel import CHANNEL
