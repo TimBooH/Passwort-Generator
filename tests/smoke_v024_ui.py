@@ -56,7 +56,7 @@ def inspect_history(dialog):
     assert toggles[0].text().startswith('▾')
     assert toggles[1].text().startswith('▸')
     return QDialog.DialogCode.Rejected
-with mock.patch.object(QDialog,'exec',autospec=True, side_effect=inspect_history):
+with mock.patch.object(QDialog,'exec', new=inspect_history):
     window.show_history()
 
 # Countdowns show in the result area and never clear third-party clipboard data.
