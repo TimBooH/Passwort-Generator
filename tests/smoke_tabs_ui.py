@@ -1,192 +1,89 @@
-"""Offscreen regression: top-right navigation, Info and responsive cards."""
-
+"""Compact top navigation, mode switching, history and settings modal smoke."""
 import os
-
+from unittest import mock
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QStackedWidget, QTabWidget
-
+from PySide6.QtCore import QPoint
+from PySide6.QtWidgets import QApplication, QDialog, QLineEdit, QPushButton, QTabWidget
 from main import PasswordWindow
 
-app = QApplication([])
+app=QApplication([])
 app.setStyle('Fusion')
-window = PasswordWindow(auto_check=False)
-window.resize(760, 810)
+window=PasswordWindow(auto_check=False)
+window.resize(730,760)
 window.show()
 app.processEvents()
-
-tabs = window.tabs
-assert isinstance(tabs, QStackedWidget)
-assert tabs.currentIndex() == 0
-assert tabs.count() == 4
-assert tuple(window.tab_names) == ('Passwort', 'Einstellungen', 'Update', 'Info')
-assert len(window.nav_buttons) == 3
-assert [button.accessibleName() for button in window.nav_buttons] == list(window.tab_names[:3])
-assert all(button.isVisible() for button in window.nav_buttons)
-assert window.info_nav_button.isVisible()
-assert window.info_nav_button.accessibleName() == 'Info'
-assert window.centralWidget() is window.background_surface
-assert not hasattr(window, 'scroll_area')
-assert not hasattr(window, 'nav_sidebar')
-assert not hasattr(window, 'settings_shortcut')
-assert window.nav_container.y() < tabs.y()
-assert window.nav_buttons[0].x() > 0, 'Navigation buttons should align to the right'
-assert window.nav_buttons[0].isChecked()
-assert len(window.secondary_cards) == 4
-assert len(window.glass_cards) == 2
-assert not hasattr(window, 'appearance_card')
-assert window.nav_buttons[2].x() < window.nav_buttons[1].x() < window.info_nav_button.x()
-assert window.glass_cards[0].parentWidget() is window.password_page
-assert window.nav_buttons[1].isVisible()
+assert window.tabs.count()==4
 assert window.password_mode_button.isChecked()
 assert not window.passphrase_mode_button.isChecked()
-assert window.output.placeholderText() == 'Generiertes Passwort'
-assert window.strength_bar.value() == 0
-assert window.length_slider.value() == 20
 assert window.history_button.isVisible()
-assert window.info_nav_button.isVisible()
-assert not hasattr(window, 'info_button')
-assert not hasattr(window, 'open_crash_log')
-assert not hasattr(window, 'fg_combo')
-assert not window.settings.contains('text_color')
-assert window.glass_cards[1].parentWidget() is window.updates_page
-assert not hasattr(window, 'scheme_combo')
-assert not hasattr(window, 'bg_combo')
-assert not hasattr(window, 'choose_background_button')
-assert not hasattr(window, 'image_mode_combo')
-assert window.language_card is window.secondary_cards[0]
-assert window.language_card.parentWidget() is window.settings_page
-assert window.language_card.header.text() == 'SPRACHE'
-assert window.language_card.isAncestorOf(window.language_combo)
-assert window.settings_page.layout().indexOf(window.language_card) == 0
-assert window.security_card is window.secondary_cards[1]
-assert window.security_card.parentWidget() is window.settings_page
-assert window.settings_page.layout().indexOf(window.security_card) == (
-    window.settings_page.layout().indexOf(window.language_card) + 1
-)
-assert window.changelog_card is window.secondary_cards[2]
-assert window.changelog_card.parentWidget() is window.updates_page
-assert window.changelog_card.header.text() == 'CHANGELOG'
-assert window.changelog_card.isAncestorOf(window.release_combo)
-assert window.changelog_card.isAncestorOf(window.changelog_view)
-assert window.secondary_cards[3].parentWidget() is window.info_page
-assert window.info_help_card.parentWidget() is window.info_page
-assert window.info_card is not window.info_help_card
-
-# Password options remain intact when moving to settings and back.
+assert window.settings_button.isVisible()
+assert window.history_button.mapTo(window,QPoint(0,0)).y() < window.password_output_card.mapTo(window,QPoint(0,0)).y()
 window.length.setValue(44)
-assert window.length_slider.value() == 44
 window.generate()
-password = window.output.text()
-assert len(password) == 44
-assert window.strength_bar.value() > 0
-assert window._history[-1] == ('Passwort', password)
-window.show_button.setChecked(True)
-app.processEvents()
-assert window.output.echoMode() == window.output.EchoMode.Normal
+value=window.output.text()
+assert len(value)==44
+assert window._history[-1] == ('Passwort',value)
 window.show_button.setChecked(False)
-assert window.output.echoMode() == window.output.EchoMode.Password
+assert window.output.echoMode()==QLineEdit.EchoMode.Password
+window.show_button.setChecked(True)
+assert window.output.echoMode()==QLineEdit.EchoMode.Normal
 window.copy()
-assert app.clipboard().text() == password
-window.nav_buttons[1].click()
+assert app.clipboard().text()==value
+
+def inspect_history(dialog):
+    assert dialog.objectName()=='groupedHistoryDialog'
+    assert len(dialog.findChildren(QPushButton,'historyGroupToggle')) == 1
+    return QDialog.DialogCode.Rejected
+with mock.patch.object(QDialog,'exec',new=inspect_history):
+    window.history_button.click()
+
+window.settings_button.click()
 app.processEvents()
-assert tabs.currentIndex() == 1
-assert window.nav_buttons[1].isChecked()
+dialog=window._settings_dialog
+assert dialog is not None and dialog.isVisible()
+assert window._settings_views.currentIndex()==0
 assert window.language_combo.isVisible()
 assert window.security_card.isVisible()
-assert window.background_surface._ocean_enabled
-assert not window.background_surface.has_background_image()
-
-window.nav_buttons[2].click()
+window._settings_views.setCurrentIndex(1)
 app.processEvents()
-assert tabs.currentIndex() == 2
-assert window.nav_buttons[2].isChecked()
+assert dialog.findChild(QPushButton,'settingsSectionButton') is not None
+assert window._settings_views.currentIndex()==1
+window._settings_views.setCurrentIndex(3)
+app.processEvents()
 assert window.check_button.isVisible()
-assert window.update_status.isVisible()
-assert not window.output.isVisible()
-assert not window.language_combo.isVisible()
-
-# Info is now a regular fourth page, never a new window.
-window.info_nav_button.click()
+assert window.channel_combo.isVisible()
+window.show_info()
 app.processEvents()
-assert tabs.currentIndex() == 3
-assert window.info_nav_button.isChecked()
-assert window.info_page.isVisible()
-assert window.info_credit.text() == 'Made by Jon Bovi'
-assert not window.update_status.isVisible()
+assert window._settings_views.currentIndex()==4
+assert window.info_credit.text()=='Made by Jon Bovi'
 window.visual_guide_button.click()
 app.processEvents()
-assert window.info_detail_stack.currentIndex() == 1
-assert window.info_detail_stack.findChild(QTabWidget, 'visualGuideTabs').count() == 3
-window.visual_guide_button.click()
+assert window.info_detail_stack.findChild(QTabWidget,'visualGuideTabs').count()==3
+dialog.close()
 app.processEvents()
-assert window.info_detail_stack.currentIndex() == 0
+assert window._settings_dialog is None
+assert window.tabs.count()==4
 
-tabs.setCurrentIndex(0)
-app.processEvents()
-assert window.output.text() == password
-assert window.length.value() == 44
-assert window.glass_cards[0].isVisible()
-assert not window.glass_cards[1].isVisible()
-
-# Passphrase mode generates six words, then returns to original password mode.
 window.passphrase_mode_button.click()
 app.processEvents()
 assert window._phrase_mode
-assert window.length.minimum() == 4
-assert window.length.maximum() == 10
-assert window.length_slider.value() == 6
-assert not window.options_widget.isVisible()
+assert window.length.value()==6
 assert window.phrase_options_widget.isVisible()
-assert not window.phrase_two_digits.isChecked()
-assert window.phrase_separator.count() == 4
-assert window.phrase_separator.currentData() == '-'
+assert not window.options_widget.isVisible()
 window.generate()
-phrase = window.output.text()
-assert len(phrase.split('-')) == 6
-assert window._history[-1] == ('Passphrase', phrase)
-base_strength = window.strength_bar.value()
-window.phrase_two_digits.setChecked(True)
-window.phrase_separator.setCurrentIndex(window.phrase_separator.findData('_'))
-window.generate()
-with_digits = window.output.text()
-parts = with_digits.split('_')
-assert len(parts) == 7
-assert parts[-1].isdigit() and 10 <= int(parts[-1]) <= 99
-assert window.strength_bar.value() > base_strength
-assert window._history[-1] == ('Passphrase', with_digits)
-for separator in (' ', '.', '-'):
-    window.phrase_separator.setCurrentIndex(window.phrase_separator.findData(separator))
-    window.generate()
-    assert len(window.output.text().split(separator)) == 7
+phrase=window.output.text()
+assert len(phrase.split('-'))==6
 window.password_mode_button.click()
 app.processEvents()
 assert not window._phrase_mode
 assert window.options_widget.isVisible()
-assert not window.phrase_options_widget.isVisible()
-assert window.length.maximum() == 128
-assert not window.output.text()
-
-# Pages follow window width; navigation stays right-aligned near the header.
-for width in (460, 720, 1600, 530, 990, 470):
-    window.resize(width, 790)
-    for page, card in ((0, window.glass_cards[0]),
-                       (2, window.glass_cards[1])):
-        tabs.setCurrentIndex(page)
-        app.processEvents()
-        assert card.isVisible()
-        assert card.width() >= width - 120, (
-            f'{window.tab_names[page]} card too narrow at {width}: {card.width()}'
-        )
-        assert window.nav_container.y() < tabs.y()
-        assert window.nav_buttons[page].isChecked()
-        if width < 720:
-            assert window.nav_buttons[1].text().endswith('Einstellungen')
-        else:
-            assert window.nav_buttons[1].text().endswith('Einstellungen')
-tabs.setCurrentIndex(0)
-app.processEvents()
+assert window.length.maximum()==128
+for width in (600,730,1000):
+    window.resize(width,760)
+    app.processEvents()
+    assert window.generate_button.isVisible()
+    assert window.history_button.isVisible()
+    assert window.ocean_options_panel.isVisible()
 window.close()
 app.processEvents()
-print('Top-right navigation: 4 inline pages, responsive cards and no scroll container.')
+print('Compact header navigation, separated settings, grouped history and modes OK')

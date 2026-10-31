@@ -52,12 +52,12 @@ assert not window.background_surface.has_background_image()
 assert window.background_surface._ocean_enabled
 assert all(c._ocean_enabled for c in window.glass_cards + window.secondary_cards)
 assert 'Ocean Glass' in window.styleSheet()
-assert window.info_nav_button.isVisible()
+assert window.settings_button.isVisible()
 
 # The concise Info page is inline, with scalable illustrated help in the same tab.
 window.show_info()
 app.processEvents()
-assert window.tabs.currentIndex() == 3
+assert window._settings_views.currentIndex() == 4
 assert window.info_credit.text() == 'Made by Jon Bovi'
 assert window.info_card is not window.info_help_card
 assert window.info_card.isVisible()
@@ -79,6 +79,8 @@ graphic_button.click()
 assert window.info_detail_stack.currentIndex() == 0
 
 # No network calls: feed a deterministic GitHub response to the real GUI.
+window._settings_dialog.close()
+app.processEvents()
 window.tabs.setCurrentIndex(2)
 app.processEvents()
 payload = [

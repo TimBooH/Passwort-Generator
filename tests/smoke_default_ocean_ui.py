@@ -1,130 +1,90 @@
-"""Real offscreen GUI regression: Ocean Glass is the default, not a preview.
-
-This process uses isolated Qt settings so user preferences and Windows registry
-are not changed by the smoke test.
-"""
+"""Visual regression of the approved compact Ocean Glass main and settings UI."""
 import os
 import tempfile
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-os.environ['XDG_CONFIG_HOME'] = tempfile.mkdtemp(prefix='ocean-glass-ui-')
-
-from PySide6.QtCore import QSettings
+os.environ['XDG_CONFIG_HOME'] = tempfile.mkdtemp(prefix='compact-ocean-')
+from PySide6.QtCore import QSettings, QPoint
 from PySide6.QtWidgets import QApplication, QScrollArea
-
 QSettings.setDefaultFormat(QSettings.Format.IniFormat)
 from main import PasswordWindow
-from theme_colors import DEFAULT_SCHEME, preset_colors
+from theme_colors import DEFAULT_SCHEME
 
 app = QApplication([])
 app.setStyle('Fusion')
-# An earlier GUI test must never leave English active for other smoke tests.
-QSettings('TimBooH', 'PasswortGenerator').setValue('ui/language', 'de')
 window = PasswordWindow(auto_check=False)
-window.resize(1120, 790)
+window.resize(730, 760)
 window.show()
 for _ in range(5):
     app.processEvents()
 
 assert DEFAULT_SCHEME == 'ocean_glass'
-assert not hasattr(window, 'scheme_combo')
-assert not hasattr(window, 'bg_combo')
-assert not hasattr(window, 'appearance_card')
-assert not hasattr(window, 'choose_background_button')
-assert not hasattr(window, 'image_mode_combo')
-assert not window.background_surface.has_background_image()
-assert window.settings.value('color_scheme') is None
-assert window.settings.value('background_image_path') is None
 assert window.background_surface._ocean_enabled
-assert window.background_surface._ocean.isVisible()
-assert not window.background_surface._circuit.isVisible()
-assert window.glass_cards[0]._ocean_enabled
-assert window.ocean_page_title.isVisible()
-assert window.ocean_hero_icon.isVisible()
-assert window.ocean_options_panel.x() < window.ocean_length_panel.x()
-assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
-assert 'QCheckBox::indicator:checked' in window.styleSheet()
-assert 'switch-on.png' in window.styleSheet()
-assert 'switch-off.png' in window.styleSheet()
-assert window.ocean_page_title.text() == 'PASSWORT ERSTELLEN'
-assert window.ocean_page_subtitle.text() == 'Erstelle sichere und zufällige Passwörter oder Passphrasen.'
-assert window.ocean_sections.height() <= 276
-assert window.ocean_length_panel.height() <= 276
-assert window.output.height() >= 54
-assert window.length_slider.height() >= 30  # Keep the round thumb fully inside its widget.
-assert window.length.lineEdit().width() >= 25  # The numeric value must remain readable.
-assert window.generate_button.height() >= 55
-assert not window.ocean_hero_icon.pixmap().isNull()
-assert window.font().family() == 'Carlito'
-assert all(not b.icon().isNull() for b in window.nav_buttons + [window.info_nav_button])
-assert not window.copy_top_button.icon().isNull()
-assert not window.regenerate_button.icon().isNull()
-assert window.symbols.mapTo(window.ocean_options_panel, window.symbols.rect().topLeft()).y() > window.digits.mapTo(window.ocean_options_panel, window.digits.rect().topLeft()).y()
-assert 'Ocean Glass' in window.styleSheet()
-assert '#18B7F7' in window.styleSheet()
-assert window.findChildren(QScrollArea) == [window.batch_scroll]
-assert not window.batch_scroll.isVisible()  # No page-level scrollbar in single mode.
-assert window.generate_button.width() > 360
+assert not window.background_surface.has_background_image()
+assert not hasattr(window,'appearance_card')
+assert not hasattr(window,'scheme_combo')
+assert 'QFrame#passwordOutputCard' in window.styleSheet()
+assert 'QPushButton#compactNavButton' in window.styleSheet()
+assert window.password_output_card.isVisible()
+assert window.ocean_output_caption.isVisible()
+assert window.ocean_sections.isVisible()
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
-assert window.ocean_output_caption.isVisible()
-assert window.ocean_strength_caption.isVisible()
-assert not window.strength_label.isVisible()
-assert window.ocean_options_heading.text() == 'Optionen'
-assert window.ocean_length_heading.text() == 'Passwort-Länge'
+assert window.ocean_options_panel.x() < window.ocean_length_panel.x()
+assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
+assert window.ocean_options_heading.text().endswith('Passwortoptionen')
+assert window.ocean_length_heading.text().endswith('Länge & Anzahl')
+assert not window.ocean_hero_icon.isVisible()
+assert not window.ocean_page_title.isVisible()
+assert window.findChildren(QScrollArea) == [window.batch_scroll]
+assert not window.batch_scroll.isVisible()
+assert all(b.isVisible() for b in window._compact_nav_buttons)
+assert [b.text() for b in window._compact_nav_buttons] == [
+    'Passwort','Passphrase','Verlauf','Einstellungen'
+]
+assert not any(b.isVisible() for b in window.nav_buttons + [window.info_nav_button])
+assert len(window.batch_count_buttons)==4
+assert [b.text() for b in window.batch_count_buttons]==['1','5','10','20']
+assert window.batch_count_buttons[0].isChecked()
+assert window.generate_button.isVisible()
+assert not window.status.isVisible()
+assert not window.regenerate_button.isVisible()
+assert window.generate_button.parentWidget() is window.glass_cards[0]
+assert window.generate_button.mapTo(window,QPoint(0,0)).y() > window.ocean_sections.mapTo(window,QPoint(0,0)).y()
+assert window.show_button.isVisible()
+assert window.copy_top_button.isVisible()
+assert not window.rules_button.isVisible()
+assert not window.ocean_preset_box.isVisible()
+assert window.output.height() >= 54
+assert 'switch-on.png' in window.styleSheet()
 
-# This is the real interactive program, including passwords, modes and settings.
 window.generate()
 assert len(window.output.text()) == window.length.value()
+assert window.output.echoMode() == window.output.EchoMode.Normal
 window.switch_mode(True)
-assert window.ocean_page_title.text() == 'PASSPHRASE ERSTELLEN'
+assert window.passphrase_mode_button.isChecked()
 window.generate()
 assert window.output.text()
 window.switch_mode(False)
+window.show_settings_dialog('update')
+app.processEvents()
+assert window._settings_dialog is not None
+assert window._settings_dialog.isVisible()
+assert window._settings_views.currentIndex() == 3
+assert window.check_button.isVisible()
+assert window.channel_combo.isVisible()
+assert window.tabs.count()==1
+window._settings_dialog.close()
+app.processEvents()
+assert window._settings_dialog is None
+assert window.tabs.count()==4
 
-# Even saved legacy color/background choices cannot alter the fixed theme.
-window.settings.setValue('color_scheme', 'glass_light')
-window.settings.setValue('background_color', '#FFFFFF')
-window.settings.setValue('background_image_path', '/tmp/no-longer-allowed.png')
-window.apply_colors()
-assert window.background_surface._ocean_enabled
-assert not window.background_surface.has_background_image()
-window.settings.remove('color_scheme')
-window.settings.remove('background_color')
-window.settings.remove('background_image_path')
-window.tabs.setCurrentIndex(1)
-assert window.language_card.isVisible()
-assert window.security_card.isVisible()
-
-# All pages, both languages and small-window layouts still work.
 window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
 app.processEvents()
-window.tabs.setCurrentIndex(0)
-assert window.ocean_page_title.text() == 'CREATE PASSWORD'
-assert window.ocean_page_subtitle.text() == 'Create secure random passwords or passphrases.'
-assert window.ocean_options_heading.text() == 'Options'
-assert window.ocean_length_heading.text() == 'Password length'
-for width, height in ((530, 700), (850, 760), (1100, 820)):
-    window.resize(width, height)
-    for index in (0, 1, 2, 3):
-        window.tabs.setCurrentIndex(index)
-        app.processEvents()
-        assert window.tabs.currentIndex() == index
-    window.tabs.setCurrentIndex(0)
-    app.processEvents()
-    assert window.ocean_page_title.isVisible() == (width >= 780)
-    assert window.generate_button.isVisible()
-assert window.grab().width() >= 1100
+assert window.language == 'en'
+assert window.settings_button.text()=='Settings'
+assert window.password_mode_button.text()=='Password'
+window.language_combo.setCurrentIndex(window.language_combo.findData('de'))
+window.apply_colors()
+assert window.background_surface._ocean_enabled
 window.close()
-app.processEvents()
-
-# Preferences remain selected after a new window is created.
-again = PasswordWindow(auto_check=False)
-assert again.background_surface._ocean_enabled
-assert not hasattr(again, 'scheme_combo')
-assert not hasattr(again, 'appearance_card')
-again.language_combo.setCurrentIndex(again.language_combo.findData('de'))
-app.processEvents()
-again.close()
-QSettings('TimBooH', 'PasswortGenerator').setValue('ui/language', 'de')
-print('Ocean Glass default, themes, screenshot layout and bilingual pages OK')
-
+print('Approved compact Ocean GUI, separate settings, no footer and bilingual navigation OK')

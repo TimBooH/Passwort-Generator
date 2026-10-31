@@ -129,7 +129,7 @@ with tempfile.TemporaryDirectory() as state_dir:
     assert 'Update öffnen' in actions
     actions['Update öffnen'].click()
     app.processEvents()
-    assert window.tabs.currentIndex() == 2
+    assert window._settings_views.currentIndex() == 3
     assert window._update_popup_dialog is None
 
     # Reopening with the persisted setting must not show the introduction.
@@ -138,17 +138,17 @@ with tempfile.TemporaryDirectory() as state_dir:
 
     # "Tour mit Pfeilen" is a button in the fourth built-in Info page.
     window.show_info()
-    assert window.tabs.currentIndex() == 3
+    assert window._settings_views.currentIndex() == 4
     restart = window.repeat_tour_button
     assert restart is not None and 'Pfeilen' in restart.text()
     restart.click()
     tour = window._first_run_tour
     assert tour is not None
-    assert tour.original_page == 3
+    assert tour.original_page == 0
     tour.skip_button.click()
     app.processEvents()
     assert window._first_run_tour is None
-    assert window.tabs.currentIndex() == 3
+    assert window.tabs.currentIndex() == 0
     assert window._update_popup_dialog is None
 
     # Periodic update checks must not repeat the startup popup.
@@ -158,6 +158,8 @@ with tempfile.TemporaryDirectory() as state_dir:
     app.processEvents()
     assert repeat_reply.deleted
     assert window._update_popup_dialog is None
+    if window._settings_dialog is not None:
+        window._settings_dialog.close()
     window.close()
     app.processEvents()
 

@@ -101,11 +101,10 @@ for width, height in ((610, 700), (530, 700), (850, 760)):
 
 window.resize(850, 760)
 app.processEvents()
-top_labels = [button.text() for button in window.nav_buttons]
-assert 'Update' in top_labels[2]
-assert all(len(label) <= 23 for label in top_labels)
-assert window.info_nav_button.height() <= 42
-assert all(button.height() <= 42 for button in window.nav_buttons)
+top_labels = [button.text() for button in window._compact_nav_buttons]
+assert top_labels[:3] == ['Passwort', 'Passphrase', 'Verlauf']
+assert top_labels[-1] == 'Einstellungen'
+assert all(button.height() >= 36 for button in window._compact_nav_buttons)
 
 fake_network = FakeNetwork()
 window.network = fake_network
@@ -141,12 +140,12 @@ app.processEvents()
 assert window._available_update == latest
 assert 'NEU' in window.nav_buttons[2].text()
 assert window.nav_buttons[2].property('updateAvailable') is True
+assert window.settings_button.property('updateAvailable') is True
 assert latest in window.nav_buttons[2].toolTip()
 assert window.check_button.isEnabled()
 assert not window.download_button.isVisible(), 'The parent Updates page is hidden'
-# Note: QWidget.hide() set before its parent page is shown; show() afterwards
-# must remain available once the Updates page is opened.
-window.tabs.setCurrentIndex(2)
+# New placement: the Update page is reached from Settings.
+window.show_settings_dialog('update')
 app.processEvents()
 assert 'NEU' in window.nav_buttons[2].text()
 assert window.download_button.isVisible()
@@ -154,16 +153,16 @@ assert window.update_compare.isVisible()
 assert f'v{APP_VERSION}' in window.update_compare.text()
 assert latest in window.update_compare.text()
 assert 'Verbesserter Update-Bereich' in window.update_preview.text()
-window.tabs.setCurrentIndex(1)
+window._settings_views.setCurrentIndex(0)
 window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
 app.processEvents()
-window.tabs.setCurrentIndex(2)
+window._settings_views.setCurrentIndex(3)
 assert 'Installed:' in window.update_compare.text()
 assert 'Improved update area' in window.update_preview.text()
-window.tabs.setCurrentIndex(1)
+window._settings_views.setCurrentIndex(0)
 window.language_combo.setCurrentIndex(window.language_combo.findData('de'))
 app.processEvents()
-window.tabs.setCurrentIndex(0)
+window._settings_views.setCurrentIndex(3)
 window.resize(620, 720)
 app.processEvents()
 assert 'NEU' in window.nav_buttons[2].text()
@@ -174,14 +173,14 @@ complete_check(window, f'v{APP_VERSION}')
 app.processEvents()
 assert window._available_update is None
 assert window.nav_buttons[2].property('updateAvailable') is False
+assert window.settings_button.property('updateAvailable') is False
 assert 'NEU' not in window.nav_buttons[2].text()
 window.update_timer.stop()
 
-# Info is embedded in the main page, and the visual explanation is inline.
+# Info is embedded in the separate Settings window.
 window.show_info()
 app.processEvents()
-assert window.tabs.currentIndex() == 3
-assert window.info_nav_button.isChecked()
+assert window._settings_views.currentIndex() == 4
 assert window.info_credit.text() == 'Made by Jon Bovi'
 assert not hasattr(window, 'build_info_dialog')
 assert not hasattr(window, 'build_visual_guide_dialog')
@@ -196,6 +195,7 @@ for i in range(3):
     assert not screenshot.pixmap().isNull()
 window.visual_guide_button.click()
 assert window.info_detail_stack.currentIndex() == 0
+window._settings_dialog.close()
 window.close()
 app.processEvents()
 print('UI update-badge / 2h timer / compact navigation / graphical Info guide OK')
