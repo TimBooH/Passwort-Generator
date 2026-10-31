@@ -2678,11 +2678,14 @@ if __name__ == '__main__':
         healthy = (
             window.tabs.count() == 4
             and window.info_page is window.tabs.widget(3)
-            and window.info_nav_button.isVisible()
+            and window.history_button.isVisible()
+            and window.settings_button.isVisible()
+            and window.password_output_card.isVisible()
+            and not window.info_nav_button.isVisible()
             and len(window.glass_cards) == 2
             and window.length.value() == 20
             and window.font().family() == 'Carlito'
-            and not window.nav_buttons[0].icon().isNull()
+            and all(not button.icon().isNull() for button in window._compact_nav_buttons)
         )
         window.close()
         reporter.close()
