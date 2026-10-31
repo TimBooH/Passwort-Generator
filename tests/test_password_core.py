@@ -109,6 +109,27 @@ class PasswordGeneratorTests(unittest.TestCase):
         for _ in range(20):
             self.assertTrue(set(make_password(128, exclude_similar=True)).isdisjoint(SIMILAR_CHARS))
 
+    def test_approved_ambiguous_characters(self):
+        self.assertEqual(set(SIMILAR_CHARS), set('0Oo1IlL|'))
+        for _ in range(15):
+            secret = make_password(128, exclude_similar=True)
+            self.assertFalse(set(secret) & set(SIMILAR_CHARS))
+
+    def test_unique_password_batch_and_failed_atomic_generation(self):
+        from password_core import make_password_batch
+        for count in (1, 5, 10, 20):
+            group = make_password_batch(count, 16, exclude_similar=True)
+            self.assertEqual(len(group), count)
+            self.assertEqual(len(set(group)), count)
+            self.assertTrue(all(len(p) == 16 for p in group))
+            self.assertTrue(all(not (set(p) & set(SIMILAR_CHARS)) for p in group))
+        for count in (0, 2, 50, True):
+            with self.assertRaises(ValueError):
+                make_password_batch(count, 16)
+        with mock.patch('password_core.make_password', return_value='A'*20):
+            with self.assertRaises(ValueError):
+                make_password_batch(5, 20)
+
     def test_numeric_password(self):
         result = make_password(15, use_lower=False, use_upper=False, use_symbols=False)
         self.assertEqual(len(result), 15)

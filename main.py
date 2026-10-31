@@ -1,6 +1,7 @@
 """PasswortGenerator: lokale Passworterzeugung mit Update-Download von GitHub."""
 
 import hashlib
+from datetime import datetime
 import math
 import json
 import os
@@ -32,6 +33,7 @@ from updater import (install_staged_appimage, restart_updated_app,
                      restore_previous_appimage, previous_path, staging_path)
 from windows_support import WINDOWS_INSTALLER_NAME, start_verified_windows_installer
 from password_core import (PHRASE_SEPARATORS, SYMBOLS, make_password,
+                            make_password_batch, BATCH_CHOICES,
                             make_passphrase, estimate_strength,
                             password_entropy_bits, parse_version)
 from version import APP_VERSION, is_newer_release, version_status
@@ -162,7 +164,11 @@ class PasswordWindow(QMainWindow):
         self._rollback_pending = False
         self._applying_preset = False
         self._clipboard_secret = None
-        self._history = []  # Session-only, never persisted to QSettings or disk.
+        self._history = []  # Flattened compatibility view: (kind, secret).
+        self._history_groups = []  # Private in-memory list, newest appended.
+        self._current_batch = []
+        self._batch_edits = []
+        self._history_countdown_label = None
 
         channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
@@ -339,7 +345,9 @@ class PasswordWindow(QMainWindow):
         group_layout.addWidget(self.ocean_output_caption)
         self.ocean_output_caption.hide()
 
-        password_row = QHBoxLayout()
+        self.single_output_widget = QWidget()
+        password_row = QHBoxLayout(self.single_output_widget)
+        password_row.setContentsMargins(0, 0, 0, 0)
         password_row.setSpacing(7)
         self.output = QLineEdit()
         self.output.setObjectName('passwordOutput')
@@ -369,7 +377,29 @@ class PasswordWindow(QMainWindow):
         regenerate.setMinimumSize(41, 43)
         regenerate.clicked.connect(self.generate)
         password_row.addWidget(regenerate)
-        group_layout.addLayout(password_row)
+        group_layout.addWidget(self.single_output_widget)
+
+        # Only multi-password generations use this capped scrollable result
+        # list. Single mode and all passphrases keep their existing output.
+        self.batch_scroll = QScrollArea()
+        self.batch_scroll.setObjectName('batchResultsScroll')
+        self.batch_scroll.setWidgetResizable(True)
+        self.batch_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.batch_scroll.setFixedHeight(164)
+        self.batch_results_container = QWidget()
+        self.batch_results_layout = QVBoxLayout(self.batch_results_container)
+        self.batch_results_layout.setContentsMargins(0, 0, 6, 0)
+        self.batch_results_layout.setSpacing(4)
+        self.batch_scroll.setWidget(self.batch_results_container)
+        self.batch_scroll.hide()
+        group_layout.addWidget(self.batch_scroll)
+
+        # Shown only while our original clipboard text has a live expiry.
+        self.clipboard_countdown_label = QLabel('')
+        self.clipboard_countdown_label.setObjectName('clipboardCountdownLabel')
+        self.clipboard_countdown_label.setWordWrap(True)
+        self.clipboard_countdown_label.hide()
+        group_layout.addWidget(self.clipboard_countdown_label)
 
         strength_row = QHBoxLayout()
         self.strength_label = QLabel('🛡  Stärke: --')
@@ -469,6 +499,21 @@ class PasswordWindow(QMainWindow):
         range_layout.addStretch()
         range_layout.addWidget(self.ocean_max_label)
         length_col.addWidget(self.ocean_length_range)
+        batch_row = QHBoxLayout()
+        self.batch_count_label = QLabel('Anzahl Passwörter:')
+        self.batch_count_label.setObjectName('batchCountLabel')
+        self.batch_count_combo = QComboBox()
+        self.batch_count_combo.setObjectName('batchCountCombo')
+        for value in BATCH_CHOICES:
+            self.batch_count_combo.addItem(str(value), value)
+        saved_count = self.settings.value('password/batch_count', 1, type=int)
+        self.batch_count_combo.setCurrentIndex(
+            max(0, self.batch_count_combo.findData(saved_count))
+        )
+        self.batch_count_combo.currentIndexChanged.connect(self.change_batch_count)
+        batch_row.addWidget(self.batch_count_label)
+        batch_row.addWidget(self.batch_count_combo)
+        length_col.addLayout(batch_row)
         length_col.addStretch(1)
 
         # Compact password profiles: settings only, never generated secrets.
@@ -506,10 +551,17 @@ class PasswordWindow(QMainWindow):
         self.lower = QCheckBox('Kleinbuchstaben (a–z)')
         self.digits = QCheckBox('Zahlen (0–9)')
         self.symbols = QCheckBox('Sonderzeichen')
-        self.exclude = QCheckBox('Ähnliche Zeichen vermeiden')
-        self.exclude.setToolTip('I, l, 1, O und 0 ausschließen')
-        for control in (self.upper, self.lower, self.digits, self.symbols, self.exclude):
+        self.exclude = QCheckBox('Verwechslungszeichen ausschließen')
+        self.exclude.setObjectName('excludeAmbiguousCharacters')
+        self.exclude.setToolTip('0, O, o, 1, I, l, L und | ausschließen')
+        for control in (self.upper, self.lower, self.digits, self.symbols):
             control.setChecked(True)
+        self.exclude.setChecked(
+            self.settings.value('password/exclude_ambiguous', False, type=bool)
+        )
+        self.exclude.toggled.connect(
+            lambda enabled: self.settings.setValue('password/exclude_ambiguous', enabled)
+        )
         check_layout.addWidget(self.upper, 0, 0)
         check_layout.addWidget(self.lower, 1, 0)
         check_layout.addWidget(self.digits, 2, 0)
@@ -689,6 +741,9 @@ class PasswordWindow(QMainWindow):
         self.clipboard_timer = QTimer(self)
         self.clipboard_timer.setSingleShot(True)
         self.clipboard_timer.timeout.connect(self.clear_copied_password)
+        self.clipboard_countdown_timer = QTimer(self)
+        self.clipboard_countdown_timer.setInterval(1000)
+        self.clipboard_countdown_timer.timeout.connect(self.refresh_clipboard_countdown)
         self.clear_clipboard_checkbox.toggled.connect(self.configure_clipboard_clear)
         self.clipboard_timeout_combo.currentIndexChanged.connect(self.configure_clipboard_clear)
 
@@ -999,7 +1054,8 @@ class PasswordWindow(QMainWindow):
         if not hasattr(self, '_i18n_combo_sources'):
             self._i18n_combo_sources = {}
         for combo in (self.phrase_separator, self.preset_combo,
-                      self.clipboard_timeout_combo, self.channel_combo):
+                      self.clipboard_timeout_combo, self.channel_combo,
+                      self.batch_count_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -1109,21 +1165,53 @@ class PasswordWindow(QMainWindow):
         )
         if not enabled:
             self.clipboard_timer.stop()
+            self.clipboard_countdown_timer.stop()
             self._clipboard_secret = None
         elif self._clipboard_secret:
             self.clipboard_timer.start(self.clipboard_timeout_combo.currentData() * 1000)
+            self.clipboard_countdown_timer.start()
+        self.refresh_clipboard_countdown()
 
     def remember_copied_password(self, secret):
         """Track only our clipboard content, never overwrite newer user copies."""
         self.clipboard_timer.stop()
+        self.clipboard_countdown_timer.stop()
         self._clipboard_secret = None
         if self.clear_clipboard_checkbox.isChecked() and secret:
             self._clipboard_secret = secret
             self.clipboard_timer.start(self.clipboard_timeout_combo.currentData() * 1000)
+            self.clipboard_countdown_timer.start()
+        self.refresh_clipboard_countdown()
+
+    def refresh_clipboard_countdown(self):
+        """Only show the countdown while our own clipboard copy is pending."""
+        active = (self.clear_clipboard_checkbox.isChecked()
+                  and bool(self._clipboard_secret) and self.clipboard_timer.isActive())
+        if not active:
+            self.clipboard_countdown_timer.stop()
+            self.clipboard_countdown_label.hide()
+            if self._history_countdown_label is not None:
+                self._history_countdown_label.hide()
+            return
+        seconds = max(0, (self.clipboard_timer.remainingTime() + 999) // 1000)
+        remaining = f'{seconds // 60:02d}:{seconds % 60:02d}'
+        message = self._t('Zwischenablage wird geleert in') + ' ' + remaining
+        self.clipboard_countdown_label.setText(message)
+        self.clipboard_countdown_label.show()
+        if self._history_countdown_label is not None:
+            self._history_countdown_label.setText(message)
+            self._history_countdown_label.show()
+
+    def copy_secret(self, secret):
+        """One clipboard entry point for single, batch and history copies."""
+        QApplication.clipboard().setText(secret)
+        self.remember_copied_password(secret)
+        self._set_ui(self.status, 'In die Zwischenablage kopiert.')
 
     def clear_copied_password(self):
         secret = self._clipboard_secret
         self._clipboard_secret = None
+        self.refresh_clipboard_countdown()
         if secret and self.clear_clipboard_checkbox.isChecked():
             clipboard = QApplication.clipboard()
             if clipboard.text() == secret:
@@ -1193,10 +1281,11 @@ class PasswordWindow(QMainWindow):
         super().changeEvent(event)
         if (event.type() == QEvent.Type.WindowDeactivate
                 and hasattr(self, 'privacy_focus_checkbox')
-                and self.privacy_focus_checkbox.isChecked()
-                and hasattr(self, 'show_button')
-                and self.show_button.isChecked()):
-            self.show_button.setChecked(False)
+                and self.privacy_focus_checkbox.isChecked()):
+            if hasattr(self, 'show_button') and self.show_button.isChecked():
+                self.show_button.setChecked(False)
+            for field in self._batch_edits:
+                field.setEchoMode(QLineEdit.EchoMode.Password)
 
     def switch_mode(self, use_passphrase):
         """Switch between a random-character password and a word passphrase."""
@@ -1208,6 +1297,11 @@ class PasswordWindow(QMainWindow):
         self.phrase_options_widget.setVisible(self._phrase_mode)
         self.preset_combo.setEnabled(not self._phrase_mode)
         self.save_preset_button.setEnabled(not self._phrase_mode)
+        self.batch_count_combo.setVisible(not self._phrase_mode)
+        self.batch_count_label.setVisible(not self._phrase_mode)
+        self._current_batch.clear()  # mode switches discard the active view
+        self._clear_batch_widgets()
+        self._refresh_batch_presentation()
         if self._phrase_mode:
             self._set_ui(self.length_label, 'Wörter:')
             self.length.setRange(4, 10)
@@ -1225,7 +1319,7 @@ class PasswordWindow(QMainWindow):
             self.length.setRange(8, 128)
             self.length_slider.setRange(8, 128)
             self.length.setValue(20)
-            self._set_ui(self.generate_button, 'Passwort generieren')
+            self.update_batch_button_label()
             self._set_ui(self.ocean_page_title, 'PASSWORT ERSTELLEN')
             self._set_ui(self.ocean_output_caption, 'Generiertes Passwort')
             self._set_ui(self.ocean_length_heading, 'Passwort-Länge')
@@ -1247,8 +1341,107 @@ class PasswordWindow(QMainWindow):
         )
         self._set_ui(self.show_button, 'Verbergen' if visible else 'Anzeigen')
 
+    def change_batch_count(self, *_):
+        # Merely changing the next requested quantity never erases results.
+        count = self.batch_count_combo.currentData()
+        if count in BATCH_CHOICES:
+            self.settings.setValue('password/batch_count', count)
+        self.update_batch_button_label()
+
+    def update_batch_button_label(self):
+        if self._phrase_mode:
+            return
+        count = self.batch_count_combo.currentData()
+        self._set_ui(self.generate_button,
+                     'Passwort generieren' if count == 1
+                     else f'{count} Passwörter generieren')
+
+    def _clear_batch_widgets(self):
+        self._batch_edits.clear()
+        while self.batch_results_layout.count():
+            item = self.batch_results_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+
+    def _refresh_batch_presentation(self):
+        many = not self._phrase_mode and len(self._current_batch) > 1
+        self.single_output_widget.setVisible(not many)
+        self.batch_scroll.setVisible(many)
+        self.show_button.setVisible(not many)
+        self.batch_scroll.setFixedHeight(164 if many else 0)
+
+    def _select_batch_password(self, secret):
+        self.output.setText(secret)
+        entropy = self._last_entropy_bits
+        label, score = estimate_strength(
+            secret, pool_size=max(2, round(2 ** (entropy / max(1, len(secret)))))
+        )
+        self._set_ui(self.strength_label, f'🛡  Stärke: {label}')
+        self._set_ui(self.ocean_strength_value, label)
+        self.strength_bar.setValue(score)
+
+    def _show_batch(self, secrets):
+        self._clear_batch_widgets()
+        self._current_batch = list(secrets)
+        if len(secrets) > 1:
+            for index, secret in enumerate(secrets, 1):
+                row = QWidget(self.batch_results_container)
+                row_layout = QHBoxLayout(row)
+                row_layout.setContentsMargins(1, 1, 1, 1)
+                row_layout.setSpacing(5)
+                number = QLabel(f'{index:02d}')
+                row_layout.addWidget(number)
+                field = QLineEdit(secret)
+                field.setObjectName('batchPasswordText')
+                field.setReadOnly(True)
+                field.setEchoMode(QLineEdit.EchoMode.Normal)
+                self._batch_edits.append(field)
+                row_layout.addWidget(field, 1)
+                analyse = QPushButton()
+                analyse.setIcon(vector_icon('info', 18))
+                analyse.setToolTip(self._t('Passwortstärke anzeigen'))
+                analyse.clicked.connect(lambda _=False, s=secret: self._select_batch_password(s))
+                row_layout.addWidget(analyse)
+                eye = QPushButton()
+                eye.setObjectName('batchVisibilityToggle')
+                eye.setIcon(vector_icon('eye', 18))
+                eye.setCheckable(True)
+                eye.setChecked(True)
+                eye.setToolTip(self._t('Verbergen'))
+                eye.toggled.connect(
+                    lambda shown, e=field: e.setEchoMode(
+                        QLineEdit.EchoMode.Normal if shown else QLineEdit.EchoMode.Password
+                    )
+                )
+                row_layout.addWidget(eye)
+                copy_btn = QPushButton()
+                copy_btn.setObjectName('batchCopyButton')
+                copy_btn.setIcon(vector_icon('copy', 18))
+                copy_btn.setToolTip(self._t('Passwort kopieren'))
+                copy_btn.clicked.connect(lambda _=False, s=secret: self.copy_secret(s))
+                row_layout.addWidget(copy_btn)
+                self.batch_results_layout.addWidget(row)
+        self._refresh_batch_presentation()
+
+    def _remember_generation(self, kind, secrets):
+        """Keep complete generation groups, capped at 100 secrets in RAM."""
+        self._history_groups.append({
+            'kind': kind,
+            'secrets': list(secrets),
+            'time': datetime.now().strftime('%H:%M'),
+        })
+        count = sum(len(group['secrets']) for group in self._history_groups)
+        while count > 100:
+            oldest = self._history_groups.pop(0)
+            count -= len(oldest['secrets'])
+        self._history[:] = [
+            (group['kind'], secret)
+            for group in self._history_groups for secret in group['secrets']
+        ]
+
     def show_history(self):
-        """Show only passwords from this session; never persist history."""
+        """Grouped, expandable session-only password history; no disk writes."""
         if self.history_confirm_checkbox.isChecked():
             answer = QMessageBox.question(
                 self, self._t('Privatsphäre'),
@@ -1259,41 +1452,111 @@ class PasswordWindow(QMainWindow):
             if answer != QMessageBox.StandardButton.Yes:
                 return
         dialog = QDialog(self)
+        dialog.setObjectName('groupedHistoryDialog')
         dialog.setWindowTitle(self._t('Verlauf – nur diese Sitzung'))
-        dialog.resize(560, 360)
-        dialog.setModal(True)
+        dialog.resize(690, 500)
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
         layout = QVBoxLayout(dialog)
-        explanation = QLabel(
-            self._t('Maximal 20 Einträge. Der Verlauf wird beim Schließen der App gelöscht.')
-        )
+        explanation = QLabel(self._t(
+            'Maximal 100 Passwörter. Älteste vollständige Gruppen werden entfernt.'
+        ))
         explanation.setWordWrap(True)
         layout.addWidget(explanation)
-        entries = QListWidget()
-        for kind, secret in reversed(self._history):
-            entries.addItem(f'{self._t(kind)}: {secret}')
-        layout.addWidget(entries, 1)
+        total = QLabel()
+        total.setObjectName('sessionHistoryCount')
+        layout.addWidget(total)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        content = QWidget()
+        groups_layout = QVBoxLayout(content)
+        groups_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        scroll.setWidget(content)
+        layout.addWidget(scroll, 1)
+
+        def render_groups():
+            while groups_layout.count():
+                item = groups_layout.takeAt(0)
+                if item.widget() is not None:
+                    item.widget().deleteLater()
+            total.setText(
+                f'{len(self._history_groups)} {self._t("Generierungen")} · '
+                f'{len(self._history)} / 100 {self._t("Passwörter")}'
+            )
+            for index, group in enumerate(reversed(self._history_groups)):
+                wrapper = QWidget(content)
+                wrap = QVBoxLayout(wrapper)
+                wrap.setContentsMargins(0, 0, 0, 0)
+                toggle = QPushButton(
+                    f'{"▾" if index == 0 else "▸"} '
+                    f'{self._t(group["kind"])} · {group["time"]} · '
+                    f'{len(group["secrets"])} {self._t("Passwörter")}'
+                )
+                toggle.setObjectName('historyGroupToggle')
+                wrap.addWidget(toggle)
+                details = QWidget(wrapper)
+                details_layout = QVBoxLayout(details)
+                details_layout.setContentsMargins(6, 1, 4, 5)
+                for secret in group['secrets']:
+                    row = QWidget(details)
+                    line = QHBoxLayout(row)
+                    line.setContentsMargins(0, 0, 0, 0)
+                    field = QLineEdit(secret)
+                    field.setObjectName('historyPasswordText')
+                    field.setReadOnly(True)
+                    field.setEchoMode(QLineEdit.EchoMode.Normal)
+                    line.addWidget(field, 1)
+                    eye = QPushButton()
+                    eye.setIcon(vector_icon('eye', 18))
+                    eye.setCheckable(True)
+                    eye.setChecked(True)
+                    eye.setToolTip(self._t('Verbergen'))
+                    eye.toggled.connect(
+                        lambda visible, e=field: e.setEchoMode(
+                            QLineEdit.EchoMode.Normal if visible
+                            else QLineEdit.EchoMode.Password
+                        )
+                    )
+                    line.addWidget(eye)
+                    copy_btn = QPushButton()
+                    copy_btn.setIcon(vector_icon('copy', 18))
+                    copy_btn.setToolTip(self._t('Passwort kopieren'))
+                    copy_btn.clicked.connect(
+                        lambda _=False, value=secret: self.copy_secret(value)
+                    )
+                    line.addWidget(copy_btn)
+                    details_layout.addWidget(row)
+                details.setVisible(index == 0)
+                toggle.clicked.connect(
+                    lambda _=False, d=details: d.setVisible(not d.isVisible())
+                )
+                wrap.addWidget(details)
+                groups_layout.addWidget(wrapper)
+
+        render_groups()
+        self._history_countdown_label = QLabel()
+        self._history_countdown_label.setObjectName('historyClipboardCountdown')
+        layout.addWidget(self._history_countdown_label)
+        self.refresh_clipboard_countdown()
+
         actions = QHBoxLayout()
-        copy_button = QPushButton(self._t('Ausgewähltes kopieren'))
-        copy_button.setEnabled(bool(self._history))
-
-        def copy_selected():
-            item = entries.currentRow()
-            if item < 0:
-                return
-            secret = self._history[-1 - item][1]
-            QApplication.clipboard().setText(secret)
-            self.remember_copied_password(secret)
-            dialog.accept()
-            self._set_ui(self.status, 'Eintrag aus dem Verlauf kopiert.')
-
-        copy_button.clicked.connect(copy_selected)
-        actions.addWidget(copy_button)
         clear_button = QPushButton(self._t('Verlauf löschen'))
+        clear_button.setObjectName('clearSessionHistory')
+        clear_button.setEnabled(bool(self._history_groups))
 
         def clear_history():
+            answer = QMessageBox.question(
+                dialog, self._t('Verlauf löschen'),
+                self._t('Alle Passwörter dieser Sitzung aus dem Verlauf entfernen?'),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+            self._history_groups.clear()
             self._history.clear()
-            entries.clear()
-            copy_button.setEnabled(False)
+            render_groups()
+            clear_button.setEnabled(False)
 
         clear_button.clicked.connect(clear_history)
         actions.addWidget(clear_button)
@@ -1301,7 +1564,10 @@ class PasswordWindow(QMainWindow):
         close_button.clicked.connect(dialog.accept)
         actions.addWidget(close_button)
         layout.addLayout(actions)
-        dialog.exec()
+        try:
+            dialog.exec()
+        finally:
+            self._history_countdown_label = None
 
     def show_info(self):
         """Open Info as the fourth page inside the existing main window."""
@@ -1424,7 +1690,7 @@ class PasswordWindow(QMainWindow):
             # Prevent the enormous empty panels from the previous design.
             # Cap panel growth instead of resetting QWidget min/max heights
             # on every resize, avoiding Qt binding invalidation under stress.
-            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 232)
+            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 258)
             self.output.setFixedHeight(64)
             self.copy_top_button.setFixedHeight(64)
             self.regenerate_button.setFixedHeight(64)
@@ -1494,7 +1760,11 @@ class PasswordWindow(QMainWindow):
         """Keep only window geometry, never secrets or session history."""
         if event.isAccepted():
             self.clipboard_timer.stop()
+            self.clipboard_countdown_timer.stop()
             self._clipboard_secret = None
+            self._history.clear()
+            self._history_groups.clear()
+            self._current_batch.clear()
             self.settings.setValue('window/geometry', self.saveGeometry())
             self.settings.sync()
         super().closeEvent(event)
@@ -1566,25 +1836,28 @@ class PasswordWindow(QMainWindow):
                     self.length.value() * 10.0
                     + (math.log2(90) if self.phrase_two_digits.isChecked() else 0)
                 )
-                kind = 'Passphrase'
+                kind, results = 'Passphrase', [generated]
             else:
-                generated = make_password(
-                    self.length.value(), use_lower=self.lower.isChecked(),
-                    use_upper=self.upper.isChecked(), use_digits=self.digits.isChecked(),
-                    use_symbols=self.symbols.isChecked(),
-                    exclude_similar=self.exclude.isChecked(),
-                    **self._advanced_rules,
-                )
-                self._last_entropy_bits = password_entropy_bits(
-                    self.length.value(), use_lower=self.lower.isChecked(),
+                rules = dict(
+                    use_lower=self.lower.isChecked(),
                     use_upper=self.upper.isChecked(),
                     use_digits=self.digits.isChecked(),
                     use_symbols=self.symbols.isChecked(),
                     exclude_similar=self.exclude.isChecked(),
-                    excluded_chars=self._advanced_rules['excluded_chars'],
+                    **self._advanced_rules,
                 )
-                # Upper-bound estimate; constrained generation reduces the
-                # effective search space, so never claim a crack-time guarantee.
+                count = self.batch_count_combo.currentData()
+                results = make_password_batch(count, self.length.value(), **rules)
+                generated = results[0]
+                self._last_entropy_bits = password_entropy_bits(
+                    self.length.value(),
+                    use_lower=rules['use_lower'],
+                    use_upper=rules['use_upper'],
+                    use_digits=rules['use_digits'],
+                    use_symbols=rules['use_symbols'],
+                    exclude_similar=rules['exclude_similar'],
+                    excluded_chars=rules['excluded_chars'],
+                )
                 label, score = estimate_strength(
                     generated,
                     pool_size=max(2, round(2 ** (
@@ -1596,21 +1869,20 @@ class PasswordWindow(QMainWindow):
             QMessageBox.warning(self, self._t('Auswahl fehlt'), self._t(str(error)))
             return
 
+        # Commit results only after the entire requested batch succeeded.
         self.output.setText(generated)
+        self._show_batch(results if not self._phrase_mode else [])
         self._set_ui(self.strength_label, f'🛡  Stärke: {label}')
         self._set_ui(self.ocean_strength_value, label)
         self.strength_bar.setValue(score)
         self._set_ui(self.status, f'{kind} erstellt.')
-        self._history.append((kind, generated))
-        del self._history[:-20]
+        self._remember_generation(kind, results)
         if self.reporter is not None:
-            self.reporter.note('GENERATED', f'mode={kind.lower()}', force=True)
+            self.reporter.note('GENERATED', f'mode={kind.lower()} count={len(results)}', force=True)
 
     def copy(self):
         if self.output.text():
-            QApplication.clipboard().setText(self.output.text())
-            self.remember_copied_password(self.output.text())
-            self._set_ui(self.status, 'In die Zwischenablage kopiert.')
+            self.copy_secret(self.output.text())
 
     @staticmethod
     def make_request(url):

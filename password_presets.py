@@ -7,7 +7,7 @@ FIELDS = ('upper', 'lower', 'digits', 'symbols', 'exclude')
 # Profile IDs and data stay stable across German and English UI languages.
 PRESETS = {
     'standard': {'length': 20, 'upper': True, 'lower': True,
-                 'digits': True, 'symbols': True, 'exclude': True},
+                 'digits': True, 'symbols': True, 'exclude': False},
     'strong': {'length': 32, 'upper': True, 'lower': True,
                'digits': True, 'symbols': True, 'exclude': True},
     'simple': {'length': 16, 'upper': True, 'lower': True,

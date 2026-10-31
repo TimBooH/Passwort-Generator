@@ -6,7 +6,7 @@ import string
 import math
 
 SYMBOLS = "!@#$%&*()-_=+[]{}:,.?"
-SIMILAR_CHARS = "Il1O0"
+SIMILAR_CHARS = "0Oo1IlL|"  # Approved eight visually ambiguous characters.
 
 
 def parse_version(value):
@@ -82,6 +82,38 @@ def make_password(length, *, use_lower=True, use_upper=True, use_digits=True,
     result = required + [secrets.choice(alphabet) for _ in range(length - len(required))]
     secrets.SystemRandom().shuffle(result)
     return ''.join(result)
+
+
+BATCH_CHOICES = (1, 5, 10, 20)
+
+
+def make_password_batch(count, length, **rules):
+    """Generate 1/5/10/20 unique passwords; fail atomically for bad rules.
+
+    Uses the same secrets-backed generator and constraints as single mode.
+    Retrying duplicates has a finite bound even with mocked/broken RNGs.
+    """
+    if type(count) is not int or count not in BATCH_CHOICES:
+        raise ValueError('Es sind nur 1, 5, 10 oder 20 Passwörter möglich.')
+    groups = password_groups(
+        use_lower=rules.get('use_lower', True),
+        use_upper=rules.get('use_upper', True),
+        use_digits=rules.get('use_digits', True),
+        use_symbols=rules.get('use_symbols', True),
+        exclude_similar=rules.get('exclude_similar', False),
+        excluded_chars=rules.get('excluded_chars', ''),
+    )
+    if len(''.join(groups)) ** length < count:
+        raise ValueError('Mit diesen Regeln sind nicht genügend verschiedene Passwörter möglich.')
+    result, seen = [], set()
+    for _ in range(max(100, count * 100)):
+        value = make_password(length, **rules)
+        if value not in seen:
+            seen.add(value)
+            result.append(value)
+            if len(result) == count:
+                return result
+    raise ValueError('Nicht genügend unterschiedliche Passwörter erzeugbar. Regeln anpassen.')
 
 
 def password_entropy_bits(length, *, use_lower=True, use_upper=True,
