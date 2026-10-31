@@ -61,7 +61,8 @@ assert not window.regenerate_button.icon().isNull()
 assert window.symbols.mapTo(window.ocean_options_panel, window.symbols.rect().topLeft()).y() > window.digits.mapTo(window.ocean_options_panel, window.digits.rect().topLeft()).y()
 assert 'Ocean Glass' in window.styleSheet()
 assert '#18B7F7' in window.styleSheet()
-assert not window.findChildren(QScrollArea)
+assert window.findChildren(QScrollArea) == [window.batch_scroll]
+assert not window.batch_scroll.isVisible()  # No page-level scrollbar in single mode.
 assert window.generate_button.width() > 360
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()

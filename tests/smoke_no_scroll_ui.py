@@ -19,7 +19,8 @@ window.show()
 app.processEvents()  # Let Qt apply the fixed-size Glass button styling.
 
 assert window.centralWidget() is window.background_surface
-assert not window.findChildren(QScrollArea)
+assert window.findChildren(QScrollArea) == [window.batch_scroll]
+assert not window.batch_scroll.isVisible()  # No page-level scrollbar in single mode.
 assert not hasattr(window, 'scroll_area')
 assert window.tabs.count() == 4
 assert window.check_button.text() == '↻ Auf Update prüfen'

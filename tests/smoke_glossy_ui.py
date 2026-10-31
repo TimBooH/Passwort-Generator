@@ -30,7 +30,8 @@ assert window.background_surface._ocean.isVisible()
 assert not window.background_surface.has_background_image()
 assert isinstance(window.tabs, QStackedWidget)
 assert window.tabs.count() == 4
-assert not window.findChildren(QScrollArea)
+assert window.findChildren(QScrollArea) == [window.batch_scroll]
+assert not window.batch_scroll.isVisible()  # No page-level scrollbar in single mode.
 assert len(window.findChildren(QSlider)) == 1
 assert window.length_slider.minimum() == 8
 assert window.length_slider.maximum() == 128
