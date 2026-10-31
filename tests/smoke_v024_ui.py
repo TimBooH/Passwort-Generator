@@ -64,7 +64,8 @@ secret = window._current_batch[0]
 window.copy_secret(secret)
 assert window.clipboard_timer.isActive()
 assert window.clipboard_countdown_label.isVisible()
-assert '00:' in window.clipboard_countdown_label.text()
+assert ':' in window.clipboard_countdown_label.text()
+assert window.clipboard_countdown_label.text().startswith('Zwischenablage wird geleert in')
 app.clipboard().setText('other clipboard data')
 window.clear_copied_password()
 assert app.clipboard().text() == 'other clipboard data'

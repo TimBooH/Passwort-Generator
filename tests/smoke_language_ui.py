@@ -24,7 +24,8 @@ assert window.nav_buttons[0].text().endswith('Passwort')
 assert not hasattr(window, 'appearance_card')
 assert window.language_card.header.text() == 'SPRACHE'
 assert window.check_button.text() == '↻ Auf Update prüfen'
-assert not window.findChildren(QScrollArea)
+assert window.findChildren(QScrollArea) == [window.batch_scroll]
+assert not window.batch_scroll.isVisible()
 
 window.tabs.setCurrentIndex(1)
 window.language_combo.setCurrentIndex(window.language_combo.findData('en'))
@@ -133,7 +134,8 @@ assert not hasattr(second, 'appearance_card')
 assert second.language_card.header.text() == 'SPRACHE'
 assert second.check_button.text() == '↻ Auf Update prüfen'
 assert second.nav_buttons[0].text().endswith('Passwort')
-assert not second.findChildren(QScrollArea)
+assert second.findChildren(QScrollArea) == [second.batch_scroll]
+assert not second.batch_scroll.isVisible()
 second.close()
 if previous is None:
     settings.remove('ui/language')
