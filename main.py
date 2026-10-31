@@ -1940,6 +1940,7 @@ class PasswordWindow(QMainWindow):
         else:
             self.ocean_sections.setMaximumHeight(16777215)
             self.output.setFixedHeight(54)
+            self.output.setMinimumHeight(54)  # Qt Windows stylesheet must not compress field.
             self.copy_top_button.setFixedHeight(54)
             self.show_button.setFixedHeight(54)
             self.regenerate_button.setFixedHeight(54)
