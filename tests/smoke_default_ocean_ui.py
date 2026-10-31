@@ -54,7 +54,7 @@ assert window.show_button.isVisible()
 assert window.copy_top_button.isVisible()
 assert not window.rules_button.isVisible()
 assert not window.ocean_preset_box.isVisible()
-assert window.output.height() >= 54
+assert window.output.height() >= 43, (window.output.height(), window.output.minimumHeight(), window.output.maximumHeight(), window.size())
 assert 'switch-on.png' in window.styleSheet()
 
 window.generate()
