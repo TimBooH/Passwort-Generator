@@ -29,14 +29,14 @@ with tempfile.TemporaryDirectory(prefix='passwort-window-geometry-') as director
 
     first = PasswordWindow(auto_check=False)
     first.show()
-    first.resize(700, 700)
+    first.resize(700, 760)
     first.move(32, 38)
     for _ in range(4):
         app.processEvents()
 
     original_size = first.size()
     original_position = first.pos()
-    assert original_size.width() == 700 and original_size.height() == 700
+    assert original_size.width() == 700 and original_size.height() == 760
     first.generate()
     secret = first.output.text()
     assert secret
