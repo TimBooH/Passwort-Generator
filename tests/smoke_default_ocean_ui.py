@@ -83,6 +83,8 @@ app.processEvents()
 assert window.language == 'en'
 assert window.settings_button.text()=='Settings'
 assert window.password_mode_button.text()=='Password'
+assert window.ocean_options_heading.text().endswith('Password options')
+assert window.ocean_length_heading.text().endswith('Length & quantity')
 window.language_combo.setCurrentIndex(window.language_combo.findData('de'))
 window.apply_colors()
 assert window.background_surface._ocean_enabled
