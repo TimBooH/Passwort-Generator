@@ -12,7 +12,7 @@ from theme_colors import DEFAULT_SCHEME
 app = QApplication([])
 app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
-window.resize(730, 760)
+window.resize(730, 830)
 window.show()
 for _ in range(5):
     app.processEvents()

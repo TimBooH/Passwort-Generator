@@ -177,13 +177,13 @@ class PasswordWindow(QMainWindow):
         channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
         # Widescreen proportions as in the reference; saved geometry still wins.
-        self.resize(730, 760)  # Compact Ocean reference: narrow, resizable desktop window.
+        self.resize(730, 830)  # Narrow, taller reference window; resizable.
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
             icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
             if icon_path.is_file():
                 self.setWindowIcon(QIcon(str(icon_path)))
-        self.setMinimumSize(580, 650)
+        self.setMinimumSize(580, 720)
 
         # Compact native window: no page-level scroll area; batch results scroll.
         # Long release histories are navigated in short pages below.
