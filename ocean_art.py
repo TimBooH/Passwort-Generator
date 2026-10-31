@@ -61,12 +61,14 @@ def icon_pixmap(name, size=28, color='#EDF7FF'):
         p.drawLine(21, 9, 27, 9)
         for y in (14, 19, 24):
             p.drawLine(12, y, 22, y)
-    elif name == 'eye':
+    elif name in ('eye', 'eye-off'):
         path = QPainterPath(QPointF(2, 16))
         path.cubicTo(10, 4, 22, 4, 30, 16)
         path.cubicTo(22, 28, 10, 28, 2, 16)
         p.drawPath(path)
         p.drawEllipse(QRectF(12, 12, 8, 8))
+        if name == 'eye-off':
+            p.drawLine(4, 28, 28, 4)
     elif name == 'history':
         for y in (8, 16, 24):
             p.drawPoint(5, y)

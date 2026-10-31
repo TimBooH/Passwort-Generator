@@ -27,8 +27,8 @@ SCREENS = (
     (
         '3 · Update',
         'Updateprüfung und Versionen',
-        'Neue Versionen erscheinen oben als „Update • NEU“. '
-        'Wähle eine Version im Dropdown, um ihre Änderungen darunter zu lesen.',
+        'Updateprüfung und Versionshistorie findest du in Einstellungen > Update. '
+        'Im Dropdown kannst du frühere Versionen und ihre Änderungen lesen.',
     ),
 )
 
@@ -75,11 +75,21 @@ def create_visual_guide_panel(window, parent=None):
 
     original = window.tabs.currentIndex()
     previous_block = window.tabs.blockSignals(True)
+    settings_views = getattr(window, '_settings_views', None)
+    original_settings_index = (
+        settings_views.currentIndex() if settings_views is not None else None
+    )
+    real_pages = (window.password_page, window.settings_page, window.updates_page)
     try:
         for index, (tab_name, title, description) in enumerate(SCREENS):
-            window.tabs.setCurrentIndex(index)
+            # Settings/Update/Info live in a secondary window in Compact Ocean.
+            # Preview the real widgets in whichever stack currently owns them.
+            if settings_views is not None:
+                settings_views.setCurrentIndex((0, 0, 3)[index])
+            else:
+                window.tabs.setCurrentIndex(index)
             QApplication.processEvents()
-            image = window.tabs.widget(index).grab()
+            image = real_pages[index].grab()
             if image.isNull():
                 raise RuntimeError(f'Empty screen preview: {tab_name}')
             page = QWidget()
@@ -101,7 +111,10 @@ def create_visual_guide_panel(window, parent=None):
             page_layout.addWidget(image_label, 1)
             tabs.addTab(page, translate(tab_name, window.language))
     finally:
-        window.tabs.setCurrentIndex(original)
+        if settings_views is not None:
+            settings_views.setCurrentIndex(original_settings_index)
+        else:
+            window.tabs.setCurrentIndex(original)
         window.tabs.blockSignals(previous_block)
         QApplication.processEvents()
 
