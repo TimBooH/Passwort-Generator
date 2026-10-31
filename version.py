@@ -1,5 +1,6 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.23.0 introduces one fixed Ocean Glass design, compact selection switches, and persisted update-channel selection after restart.
 Version 0.22.0 adds a persistent Stable/Unstable updater with verified prerelease
 assets and isolated installation paths on both supported platforms.
 Version 0.21.1 matches the Ocean Glass picture with a real two-card
@@ -68,7 +69,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.22.0"
+APP_VERSION = "0.23.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

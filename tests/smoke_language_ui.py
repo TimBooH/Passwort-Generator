@@ -21,7 +21,7 @@ app.processEvents()
 assert window.language == 'de'
 assert window.language_combo.currentData() == 'de'
 assert window.nav_buttons[0].text().endswith('Passwort')
-assert window.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
+assert not hasattr(window, 'appearance_card')
 assert window.language_card.header.text() == 'SPRACHE'
 assert window.check_button.text() == '↻ Auf Update prüfen'
 assert not window.findChildren(QScrollArea)
@@ -32,16 +32,15 @@ app.processEvents()
 assert window.language == 'en'
 assert window.settings.value('ui/language') == 'en'
 assert window.language_combo.currentData() == 'en'
-assert window.appearance_card.header.text() == 'APPEARANCE'
+assert not hasattr(window, 'appearance_card')
 assert window.language_card.header.text() == 'LANGUAGE'
 assert window.nav_buttons[0].text().endswith('Password')
 assert window.nav_buttons[1].text().endswith('Settings')
 assert window.check_button.text() == '↻ Check for updates'
-assert window.scheme_combo.itemText(window.scheme_combo.findData('glass')) == 'Glass (transparent)'
-assert window.scheme_combo.currentData()
-assert window.accent_preview.text().startswith('●  Automatic')
+assert window.background_surface._ocean_enabled
+assert not hasattr(window, 'scheme_combo')
 assert 'Development' in window.info_version.text()
-assert window.background_file_label.text() == 'No background image selected'
+assert not window.background_surface.has_background_image()
 assert window.info_help_card.header.text() == 'GUIDE & HELP'
 # Changelog local loading and failure texts also obey the one global setting.
 window._set_changelog_ui('Keine veröffentlichten Versionen gefunden.')
@@ -52,7 +51,7 @@ window._set_changelog_ui(
 )
 assert window.changelog_view.toPlainText().startswith('Could not load release history.')
 assert window.language_card.isAncestorOf(window.language_combo)
-assert not window.appearance_card.isAncestorOf(window.language_combo)
+assert not hasattr(window, 'appearance_card')
 assert window.updates_page.findChild(type(window.language_combo), 'languageCombo') is None
 
 # The entire application shares ONE language setting, including GitHub notes
@@ -130,7 +129,7 @@ second.tabs.setCurrentIndex(1)
 second.language_combo.setCurrentIndex(second.language_combo.findData('de'))
 app.processEvents()
 assert second.language == 'de'
-assert second.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
+assert not hasattr(second, 'appearance_card')
 assert second.language_card.header.text() == 'SPRACHE'
 assert second.check_button.text() == '↻ Auf Update prüfen'
 assert second.nav_buttons[0].text().endswith('Passwort')

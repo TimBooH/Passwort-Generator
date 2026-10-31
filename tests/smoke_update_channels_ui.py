@@ -52,7 +52,7 @@ assert UNSTABLE_APPIMAGE.parent != INSTALLED_APPIMAGE.parent
 fake = FakeNetwork()
 window.network = fake
 
-# An explicit switch requests only the dedicated prerelease endpoint.
+# An explicit switch requests the rolling GitHub Unstable prerelease.
 window.channel_combo.setCurrentIndex(window.channel_combo.findData('unstable'))
 assert window.update_channel == 'unstable'
 assert fake.urls[-1] == channel_api('unstable')

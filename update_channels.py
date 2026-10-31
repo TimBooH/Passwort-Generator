@@ -1,8 +1,8 @@
 """Validation and selection for the two independent update channels.
 
-Stable uses GitHub's latest non-prerelease endpoint. Unstable uses a public,
-explicitly labelled prerelease with a stable tag, so no GitHub login and no
-ZIP extraction is needed. Never trust arbitrary release URLs or filenames.
+Stable uses the latest non-prerelease endpoint. Unstable uses the verified,
+rolling public GitHub prerelease tagged 'unstable' in the SAME repository.
+The legacy download tag remains available for older Unstable clients.
 """
 
 import re
@@ -30,10 +30,10 @@ def unstable_asset_name(platform, build_sha):
 
 
 def select_unstable_asset(release, platform):
-    """Require a real prerelease, valid build ID and exact release URL."""
+    """Require the real prerelease, exact build SHA, checksum and download URL."""
     if (not isinstance(release, dict) or release.get('tag_name') != 'unstable'
             or release.get('draft') or release.get('prerelease') is not True):
-        raise ValueError('Kein gültiges öffentliches Unstable-Prerelease vorhanden.')
+        raise ValueError('Keine gültige öffentliche Unstable-Testversion vorhanden.')
     name = release.get('name', '')
     if not isinstance(name, str):
         raise ValueError('Unstable-Buildkennung fehlt.')

@@ -43,57 +43,16 @@ window = PasswordWindow(auto_check=False)
 window.show()
 window.tabs.setCurrentIndex(1)
 app.processEvents()
-assert window.scheme_combo.count() == 8
-assert window.scheme_combo.findData('ocean_glass') >= 0
-assert window.scheme_combo.findData('glass_dark') >= 0
-assert window.scheme_combo.findData('glass_light') >= 0
-assert window.scheme_combo.findData('custom') >= 0
-initial_circuit_key = window.background_surface._circuit.pixmap().cacheKey()
-
-def apply_scheme(scheme):
-    window.scheme_combo.setCurrentIndex(window.scheme_combo.findData(scheme))
-    app.processEvents()
-    bg, _unused_text = preset_colors(scheme)
-    assert window.bg_combo.currentData() == bg
-    assert not hasattr(window, 'fg_combo')
-    assert not window.settings.contains('text_color')
-    assert contrast_ratio(accessible_text_color(bg), bg) >= 4.5
-    assert window.settings.value('color_scheme') == scheme
-    expected_accent = accent_for_background(bg)
-    assert expected_accent in window.accent_preview.text()
-    assert window.glass_cards[0]._accent.name().upper() == expected_accent
-    assert window.background_surface._circuit.pixmap().cacheKey() == initial_circuit_key, (
-        'Recreating QPainter circuit texture during color changes can crash Qt'
-    )
-    return expected_accent
-
-
-glass_accent = apply_scheme('glass')
-assert window.background_surface._clear_glass
-assert all(card._clear_glass for card in window.glass_cards + window.secondary_cards)
-window.glass_cards[0]._refresh_style()
-assert ', 48)' in window.glass_cards[0].styleSheet()
-dark_accent = apply_scheme('glass_dark')
-assert not window.background_surface._clear_glass
-assert all(not card._clear_glass for card in window.glass_cards + window.secondary_cards)
-light_accent = apply_scheme('glass_light')
-assert dark_accent != light_accent
-violet_accent = apply_scheme('violet_glass')
-forest_accent = apply_scheme('forest_glass')
-assert violet_accent != forest_accent
-assert window.background_surface._circuit.pixmap() is not None
+# The old theme switch is deliberately absent in the reference-only build.
+assert not hasattr(window, 'scheme_combo')
+assert not hasattr(window, 'appearance_card')
+assert not hasattr(window, 'bg_combo')
+assert not hasattr(window, 'choose_background_button')
+assert not window.background_surface.has_background_image()
+assert window.background_surface._ocean_enabled
+assert all(c._ocean_enabled for c in window.glass_cards + window.secondary_cards)
+assert 'Ocean Glass' in window.styleSheet()
 assert window.info_nav_button.isVisible()
-assert not hasattr(window, 'info_button')
-assert not hasattr(window, 'open_crash_log')
-
-# Changing a single color means it is no longer a named preset.
-red_idx = window.bg_combo.findData('#351A23')
-assert red_idx >= 0
-window.bg_combo.setCurrentIndex(red_idx)
-app.processEvents()
-assert window.scheme_combo.currentData() == 'custom'
-assert window.settings.value('color_scheme') == 'custom'
-assert window.accent_preview.text().endswith(accent_for_background('#351A23'))
 
 # The concise Info page is inline, with scalable illustrated help in the same tab.
 window.show_info()

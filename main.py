@@ -7,12 +7,12 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, Qt, QTimer, QUrl, QSaveFile
+from PySide6.QtCore import QByteArray, QEvent, QIODevice, QSettings, QStandardPaths, QSize, Qt, QTimer, QUrl, QSaveFile
 from PySide6.QtGui import QColor, QFont, QIcon, QKeySequence, QShortcut
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
-    QApplication, QButtonGroup, QCheckBox, QColorDialog, QComboBox, QDialog,
-    QFileDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
+    QApplication, QButtonGroup, QCheckBox, QComboBox, QDialog,
+    QFrame, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QListWidget,
     QListWidgetItem, QMainWindow, QMessageBox, QProgressBar, QPushButton,
     QScrollArea, QSizePolicy, QSlider, QSpinBox, QStackedWidget, QTabWidget,
     QTextBrowser, QVBoxLayout, QWidget,
@@ -21,10 +21,11 @@ from PySide6.QtWidgets import (
 from localization import LANGUAGES, translate
 from password_presets import PRESETS, FIELDS, decode_profile, encode_profile, validate_profile
 from diagnostics import CrashReporter
-from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet, IMAGE_MODES
+from glass_ui import GlassBackground, GlossyGlassCard, build_glass_stylesheet
 from neon_style import neon_stylesheet
-from theme_colors import (COLOR_SCHEMES, SCHEME_MAP, DEFAULT_SCHEME, accent_for_background,
-                          accessible_text_color, preset_colors)
+from ocean_art import icon_pixmap, vector_icon
+from ocean_fonts import reference_font
+from theme_colors import DEFAULT_SCHEME, preset_colors
 from release_history import normalized_releases
 from release_notes_i18n import release_changelog
 from updater import (install_staged_appimage, restart_updated_app,
@@ -49,12 +50,32 @@ APPIMAGE_NAME = 'PasswortGenerator-x86_64.AppImage'
 INSTALLED_APPIMAGE = Path.home() / '.local/opt/passwort-generator/PasswortGenerator.AppImage'
 UNSTABLE_APPIMAGE = Path.home() / '.local/opt/passwort-generator-unstable/PasswortGenerator.AppImage'
 
-BACKGROUND_COLORS = [
-    ('Nachtblau', '#101827'), ('Anthrazit', '#20242C'), ('Schwarz', '#111111'),
-    ('Dunkelgrün', '#123329'), ('Dunkelrot', '#351A23'), ('Violett', '#2A1D45'),
-    ('Hellgrau', '#F1F4F8'), ('Weiß', '#FFFFFF'), ('Sand', '#F5EDDB'),
-    ('Eisblau', '#E5F3FA'),
-]
+
+def persist_installed_update_channel(channel):
+    """Transfer only the chosen update channel to the target installation.
+
+    Stable and Unstable deliberately use separate QSettings namespaces for
+    private UI, security and password settings. When installing the other
+    build, its previously stored update-channel preference must not override
+    the user's explicit selection after the application restarts.
+    """
+    if channel not in ('stable', 'unstable'):
+        raise ValueError('Ungültiger Update-Kanal.')
+    target_name = ('PasswortGenerator-Unstable' if channel == 'unstable'
+                   else 'PasswortGenerator')
+    target_settings = QSettings('TimBooH', target_name)
+    target_settings.setValue('updates/channel', channel)
+    target_settings.sync()
+    if target_settings.status() != QSettings.Status.NoError:
+        raise OSError('Update-Kanal konnte nicht dauerhaft gespeichert werden.')
+
+
+# Ocean Glass is the only selectable appearance in this experimental build.
+# Legacy saved theme/wallpaper settings are discarded at startup.
+FIXED_BG, FIXED_FG = preset_colors(DEFAULT_SCHEME)
+FIXED_ACCENT = '#3EBCF7'
+
+
 def contrast_color(hex_color):
     color = QColor(hex_color)
     luminance = 0.2126 * color.redF() + 0.7152 * color.greenF() + 0.0722 * color.blueF()
@@ -90,11 +111,16 @@ class CurrentPageStack(QStackedWidget):
 class PasswordWindow(QMainWindow):
     def __init__(self, auto_check=True, reporter=None):
         super().__init__()
+        self.setFont(reference_font())
         self.reporter = reporter
         # Preview builds must never overwrite stable settings.
         app_settings_name = ('PasswortGenerator-Unstable' if CHANNEL == 'unstable'
                              else 'PasswortGenerator')
         self.settings = QSettings('TimBooH', app_settings_name)
+        for obsolete in ('color_scheme', 'background_color',
+                         'background_image_path', 'background_image_mode',
+                         'text_color', 'glass_opacity'):
+            self.settings.remove(obsolete)
         self.language = self.settings.value('ui/language', 'de', type=str)
         if self.language not in ('de', 'en'):
             self.language = 'de'
@@ -140,7 +166,8 @@ class PasswordWindow(QMainWindow):
 
         channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
-        self.resize(850, 760)
+        # Widescreen proportions as in the reference; saved geometry still wins.
+        self.resize(1120, 790)
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
             icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
@@ -164,8 +191,8 @@ class PasswordWindow(QMainWindow):
         content.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         outer_layout.addWidget(content, 1)
         content_layout = QVBoxLayout(content)
-        content_layout.setSpacing(8)
-        content_layout.setContentsMargins(16, 10, 16, 8)
+        content_layout.setSpacing(10)
+        content_layout.setContentsMargins(18, 12, 18, 9)
         self.glass_cards = []
         self.secondary_cards = []
         self._compact_options = None
@@ -176,7 +203,8 @@ class PasswordWindow(QMainWindow):
         # Header: compact branding, with four navigation actions at top right.
         header = QHBoxLayout()
         header.setSpacing(12)
-        lock = QLabel('🔑')
+        lock = QLabel()
+        lock.setPixmap(icon_pixmap('key', 30, '#39DEFF'))
         self.brand_icon = lock
         lock.setObjectName('brandLock')
         lock.setFixedSize(53, 53)
@@ -200,8 +228,8 @@ class PasswordWindow(QMainWindow):
         self.nav_container = QFrame(content)
         self.nav_container.setObjectName('topNav')
         nav_layout = QHBoxLayout(self.nav_container)
-        nav_layout.setContentsMargins(7, 5, 7, 5)
-        nav_layout.setSpacing(6)
+        nav_layout.setContentsMargins(8, 6, 8, 6)
+        nav_layout.setSpacing(8)
         self.nav_group = QButtonGroup(self)
         self.nav_group.setExclusive(True)
         self.nav_buttons = []
@@ -209,10 +237,12 @@ class PasswordWindow(QMainWindow):
         for index, (label, symbol) in enumerate((
             ('Passwort', '⌑'), ('Einstellungen', '⚙'), ('Update', '↻'),
         )):
-            button = QPushButton(f'{symbol}  {label}')
+            button = QPushButton(label)
+            button.setIcon(vector_icon({'Passwort': 'key', 'Einstellungen': 'settings', 'Update': 'update'}[label]))
+            button.setIconSize(QSize(25, 25))
             button.setObjectName('navButton')
             button.setCheckable(True)
-            button.setMinimumHeight(41)
+            button.setMinimumHeight(44)
             button.setToolTip(label)
             button.setAccessibleName(label)
             self.nav_group.addButton(button)
@@ -226,11 +256,13 @@ class PasswordWindow(QMainWindow):
         nav_layout.removeWidget(self.nav_buttons[1])
         nav_layout.addWidget(self.nav_buttons[1], 1)
         self.nav_buttons[0].setChecked(True)
-        self.info_nav_button = QPushButton('ⓘ  Info')
+        self.info_nav_button = QPushButton('Info')
+        self.info_nav_button.setIcon(vector_icon('info'))
+        self.info_nav_button.setIconSize(QSize(25, 25))
         self.info_nav_button.setObjectName('infoNavButton')
         self.info_nav_button.setToolTip('Über PasswortGenerator')
         self.info_nav_button.setAccessibleName('Info')
-        self.info_nav_button.setMinimumHeight(41)
+        self.info_nav_button.setMinimumHeight(44)
         self.info_nav_button.setCheckable(True)
         self.nav_group.addButton(self.info_nav_button)
         self.info_nav_button.clicked.connect(self.show_info)
@@ -255,16 +287,17 @@ class PasswordWindow(QMainWindow):
         group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         group_layout = group.body
         self.password_group_layout = group_layout
-        group_layout.setSpacing(6)
-        group.layout().setContentsMargins(16, 8, 16, 8)
+        group_layout.setSpacing(9)
+        group.layout().setContentsMargins(19, 14, 19, 14)
         group.layout().setSpacing(3)
 
         mode_row = QHBoxLayout()
-        mode_row.setSpacing(8)
-        self.ocean_hero_icon = QLabel('🔑')
+        mode_row.setSpacing(14)
+        self.ocean_hero_icon = QLabel()
+        self.ocean_hero_icon.setPixmap(icon_pixmap('key', 37))
         self.ocean_hero_icon.setObjectName('oceanHeroIcon')
         self.ocean_hero_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.ocean_hero_icon.setFixedSize(43, 43)
+        self.ocean_hero_icon.setFixedSize(58, 58)
         mode_row.addWidget(self.ocean_hero_icon)
         self.ocean_hero_icon.hide()
         # The real screenshot-inspired header shares a row with the mode
@@ -274,20 +307,25 @@ class PasswordWindow(QMainWindow):
         ocean_heading_layout.setContentsMargins(0, 0, 0, 0)
         ocean_heading_layout.setSpacing(1)
         self.ocean_page_title = QLabel('PASSWORT ERSTELLEN')
+        self.ocean_page_title.setMinimumHeight(28)
         self.ocean_page_title.setObjectName('oceanPageTitle')
-        self.ocean_page_subtitle = QLabel('Sichere Passwörter und Passphrasen')
+        self.ocean_page_subtitle = QLabel('Erstelle sichere und zufällige Passwörter oder Passphrasen.')
         self.ocean_page_subtitle.setObjectName('oceanPageSubtitle')
+        self.ocean_page_subtitle.setWordWrap(True)
         ocean_heading_layout.addWidget(self.ocean_page_title)
         ocean_heading_layout.addWidget(self.ocean_page_subtitle)
         mode_row.addWidget(self.ocean_heading, 1)
         self.mode_group = QButtonGroup(self)
         self.mode_group.setExclusive(True)
         self.password_mode_button = QPushButton('Passwort')
+        self.password_mode_button.setIcon(vector_icon('key'))
         self.passphrase_mode_button = QPushButton('Passphrase')
+        self.passphrase_mode_button.setIcon(vector_icon('document'))
         for button in (self.password_mode_button, self.passphrase_mode_button):
             button.setObjectName('modeButton')
+            button.setIconSize(QSize(25, 25))
             button.setCheckable(True)
-            button.setMinimumHeight(29)
+            button.setMinimumHeight(38)
             self.mode_group.addButton(button)
             mode_row.addWidget(button, 0)
         self.password_mode_button.setChecked(True)
@@ -308,19 +346,27 @@ class PasswordWindow(QMainWindow):
         self.output.setReadOnly(True)
         self.output.setEchoMode(QLineEdit.EchoMode.Password)
         self._set_placeholder(self.output, 'Generiertes Passwort')
-        self.output.setMinimumHeight(37)
+        self.output.setMinimumHeight(43)
         self.output.setFont(QFont('Monospace', 12))
         password_row.addWidget(self.output, 1)
-        copy_top = QPushButton('⧉')
+        copy_top = QPushButton()
+        copy_top.setIcon(vector_icon('copy', 32))
+        copy_top.setIconSize(QSize(29, 29))
+        copy_top.setAccessibleName('Passwort kopieren')
+        self.copy_top_button = copy_top
         copy_top.setObjectName('squareAction')
         copy_top.setToolTip('Passwort kopieren')
-        copy_top.setMinimumSize(36, 38)
+        copy_top.setMinimumSize(41, 43)
         copy_top.clicked.connect(self.copy)
         password_row.addWidget(copy_top)
-        regenerate = QPushButton('↻')
+        regenerate = QPushButton()
+        regenerate.setIcon(vector_icon('update', 32))
+        regenerate.setIconSize(QSize(29, 29))
+        regenerate.setAccessibleName('Neues Passwort erzeugen')
+        self.regenerate_button = regenerate
         regenerate.setObjectName('squareAction')
         regenerate.setToolTip('Neues Passwort erzeugen')
-        regenerate.setMinimumSize(36, 38)
+        regenerate.setMinimumSize(41, 43)
         regenerate.clicked.connect(self.generate)
         password_row.addWidget(regenerate)
         group_layout.addLayout(password_row)
@@ -336,7 +382,8 @@ class PasswordWindow(QMainWindow):
         self.strength_bar.setRange(0, 100)
         self.strength_bar.setValue(0)
         self.strength_bar.setTextVisible(False)
-        self.analysis_button = QPushButton('ⓘ Analyse')
+        self.analysis_button = QPushButton('Analyse')
+        self.analysis_button.setIcon(vector_icon('info', 18))
         self.analysis_button.setObjectName('analysisButton')
         self.analysis_button.setToolTip('Geschätzte Entropie und Sicherheitsbewertung anzeigen')
         self.analysis_button.clicked.connect(self.show_security_analysis)
@@ -362,13 +409,13 @@ class PasswordWindow(QMainWindow):
         self.ocean_sections.setObjectName('oceanSections')
         sections_row = QHBoxLayout(self.ocean_sections)
         sections_row.setContentsMargins(0, 0, 0, 0)
-        sections_row.setSpacing(10)
+        sections_row.setSpacing(12)
         self.ocean_options_panel = QFrame(self.ocean_sections)
         self.ocean_options_panel.setObjectName('oceanOptionPanel')
         self.ocean_options_panel.setMinimumWidth(250)
         options_col = QVBoxLayout(self.ocean_options_panel)
         self.ocean_options_layout = options_col
-        options_col.setContentsMargins(16, 15, 16, 14)
+        options_col.setContentsMargins(18, 12, 18, 12)
         options_col.setSpacing(10)
         self.ocean_options_heading = QLabel('Optionen')
         self.ocean_options_heading.setObjectName('oceanPanelHeading')
@@ -381,7 +428,7 @@ class PasswordWindow(QMainWindow):
         self.ocean_length_panel.setObjectName('oceanLengthPanel')
         self.ocean_length_panel.setMinimumWidth(150)
         length_col = QVBoxLayout(self.ocean_length_panel)
-        length_col.setContentsMargins(16, 15, 16, 14)
+        length_col.setContentsMargins(18, 15, 18, 14)
         length_col.setSpacing(11)
         self.ocean_length_heading = QLabel('Passwort-Länge')
         self.ocean_length_heading.setObjectName('oceanPanelHeading')
@@ -395,15 +442,17 @@ class PasswordWindow(QMainWindow):
         self.length_value = QLabel('20')
         self.length_value.setObjectName('lengthValue')
         length_row.addWidget(self.length_value)
-        length_row.addStretch()
         self.length = QSpinBox()
         self.length.setRange(8, 128)
         self.length.setValue(20)
-        self.length.setFixedWidth(76)
+        self.length.setFixedWidth(78)
+        self.length.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.length.setAccessibleName('Länge des Passworts')
         length_row.addWidget(self.length)
         length_col.addLayout(length_row)
         self.length_slider = QSlider(Qt.Orientation.Horizontal)
+        self.length_slider.setObjectName('oceanLengthSlider')
+        self.length_slider.setMinimumHeight(34)
         self.length_slider.setRange(8, 128)
         self.length_slider.setValue(20)
         self.length_slider.setAccessibleName('Länge einstellen')
@@ -464,13 +513,14 @@ class PasswordWindow(QMainWindow):
         check_layout.addWidget(self.upper, 0, 0)
         check_layout.addWidget(self.lower, 1, 0)
         check_layout.addWidget(self.digits, 2, 0)
-        check_layout.addWidget(self.symbols, 0, 1)
-        check_layout.addWidget(self.exclude, 1, 1)
+        check_layout.addWidget(self.symbols, 3, 0)
+        check_layout.addWidget(self.exclude, 0, 1)
         options_col.addWidget(self.options_widget)
-        self.rules_button = QPushButton('⚙ Erweiterte Regeln')
+        self.rules_button = QPushButton('Erweiterte Regeln')
+        self.rules_button.setIcon(vector_icon('settings', 18))
         self.rules_button.setObjectName('advancedPasswordRulesButton')
         self.rules_button.clicked.connect(self.show_advanced_rules)
-        check_layout.addWidget(self.rules_button, 2, 1)
+        check_layout.addWidget(self.rules_button, 1, 1)
 
         # These controls only appear in Passphrase mode. The checkbox adds
         # one cryptographically random 10–99 number, separated as selected.
@@ -509,14 +559,16 @@ class PasswordWindow(QMainWindow):
         options_col.addWidget(self.phrase_options_widget)
         options_col.addStretch(1)
         options_col.addWidget(self.ocean_preset_box)
-        sections_row.addWidget(self.ocean_options_panel, 19)
+        sections_row.addWidget(self.ocean_options_panel, 18)
         sections_row.addWidget(self.ocean_length_panel, 11)
         group_layout.addWidget(self.ocean_sections, 1)
 
-        self.generate_button = QPushButton('🔑  Passwort generieren')
+        self.generate_button = QPushButton('Passwort generieren')
         # Compact, glossy call-to-action; do not stretch to the card width.
         # The update installer keeps the existing #primaryButton design.
         self.generate_button.setObjectName('generatePasswordButton')
+        self.generate_button.setIcon(vector_icon('key', 34, '#FFD534'))
+        self.generate_button.setIconSize(QSize(32, 32))
         self.generate_button.setFixedHeight(40)
         self.generate_button.setMaximumWidth(360)
         self.generate_button.setMinimumWidth(235)
@@ -525,12 +577,14 @@ class PasswordWindow(QMainWindow):
 
         footer = QHBoxLayout()
         footer.setSpacing(5)
-        self.show_button = QPushButton('◉  Anzeigen')
+        self.show_button = QPushButton('Anzeigen')
+        self.show_button.setIcon(vector_icon('eye', 18))
         self.show_button.setObjectName('bottomAction')
         self.show_button.setCheckable(True)
         self.show_button.toggled.connect(self.toggle_visibility)
         footer.addWidget(self.show_button, 1)
-        self.history_button = QPushButton('☷  Verlauf')
+        self.history_button = QPushButton('Verlauf')
+        self.history_button.setIcon(vector_icon('history', 18))
         self.history_button.setObjectName('bottomAction')
         self.history_button.clicked.connect(self.show_history)
         footer.addWidget(self.history_button, 1)
@@ -554,78 +608,9 @@ class PasswordWindow(QMainWindow):
         settings_page_layout.setSpacing(5)
         settings_page_layout.setContentsMargins(3, 4, 3, 3)
 
-        colors = GlossyGlassCard('ERSCHEINUNGSBILD')
-        self.appearance_card = colors
-        self.glass_cards.append(colors)
-        colors.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # Tight, top-aligned controls instead of vertically stretched gaps.
-        colors.layout().setContentsMargins(13, 6, 13, 7)
-        colors.layout().setSpacing(2)
-        colors_layout = colors.body
-        colors_layout.setSpacing(3)
-        scheme_row = QHBoxLayout()
-        scheme_row.addWidget(QLabel('Farbschema:'))
-        self.scheme_combo = QComboBox()
-        self.scheme_combo.setObjectName('colorSchemeCombo')
-        for scheme_id, scheme_name, _background, _foreground in COLOR_SCHEMES:
-            self.scheme_combo.addItem(scheme_name, scheme_id)
-        scheme_row.addWidget(self.scheme_combo, 1)
-        colors_layout.addLayout(scheme_row)
-        self.scheme_combo.setToolTip(
-            'Glass (Hintergrund sichtbar), Glass Dark, Glass Light und weitere Vorlagen.'
-        )
-        bg_row = QHBoxLayout()
-        bg_row.addWidget(QLabel('Hintergrund:'))
-        self.bg_combo = QComboBox()
-        for label, color in BACKGROUND_COLORS:
-            self.bg_combo.addItem(label, color)
-        bg_row.addWidget(self.bg_combo, 1)
-        bg_custom = QPushButton('Eigene Farbe …')
-        bg_custom.clicked.connect(lambda: self.pick_color(self.bg_combo))
-        colors_layout.addLayout(bg_row)
-        colors_layout.addWidget(bg_custom, 0, Qt.AlignmentFlag.AlignRight)
-        accent_label = QLabel('Akzentfarbe – passt sich automatisch dem Hintergrund an:')
-        accent_label.setWordWrap(True)
-        colors_layout.addWidget(accent_label)
-        self.accent_preview = QLabel('Automatisch')
-        self.accent_preview.setObjectName('accentPreview')
-        self.accent_preview.setMinimumHeight(25)
-        colors_layout.addWidget(self.accent_preview)
-        # Text and accent colors already explain themselves in the preview.
-        # Avoid an extra wrapped line so Security fits without page scrolling.
-        # Colors and wallpaper now share a single appearance tile.
-        image_heading = QLabel('HINTERGRUNDBILD')
-        image_heading.setObjectName('supportText')
-        image_heading.setStyleSheet('font-weight: 700;')
-        colors_layout.addWidget(image_heading)
-        image_layout = colors_layout
-        # The chosen image stays on disk; only its path and display mode are stored.
-        # Vertical actions avoid cramped/overlapping buttons in narrow windows.
-        picture_actions = QVBoxLayout()
-        picture_actions.setSpacing(2)
-        self.choose_background_button = QPushButton('Bild auswählen …')
-        self.choose_background_button.clicked.connect(self.choose_background_image)
-        picture_actions.addWidget(self.choose_background_button)
-        self.clear_background_button = QPushButton('Bild entfernen')
-        self.clear_background_button.clicked.connect(self.remove_background_image)
-        picture_actions.addWidget(self.clear_background_button)
-        image_layout.addLayout(picture_actions)
-        self.background_file_label = QLabel('Kein Hintergrundbild ausgewählt')
-        self.background_file_label.setObjectName('supportText')
-        self.background_file_label.setWordWrap(True)
-        image_layout.addWidget(self.background_file_label)
-        mode_row = QHBoxLayout()
-        mode_row.addWidget(QLabel('Bilddarstellung:'))
-        self.image_mode_combo = QComboBox()
-        for label, mode in IMAGE_MODES:
-            self.image_mode_combo.addItem(label, mode)
-        mode_row.addWidget(self.image_mode_combo, 1)
-        image_layout.addLayout(mode_row)
-        colors_layout.addStretch(1)
+        # No appearance card: only the fixed reference design is available.
 
-        settings_page_layout.addWidget(colors, 1)
-
-        # Language has its own glass tile immediately below Appearance.
+        # Language remains independently configurable.
         # There is only one language selector for the entire application.
         language_card = GlossyGlassCard('SPRACHE')
         self.language_card = language_card
@@ -699,6 +684,7 @@ class PasswordWindow(QMainWindow):
             'Nur löschen, solange das kopierte Passwort noch in der Zwischenablage steht.'
         )
         settings_page_layout.addWidget(security_card, 0)
+        settings_page_layout.addStretch(1)
 
         self.clipboard_timer = QTimer(self)
         self.clipboard_timer.setSingleShot(True)
@@ -913,12 +899,8 @@ class PasswordWindow(QMainWindow):
         self.status.setWordWrap(True)
         content_layout.addWidget(self.status)
 
-        self.scheme_combo.currentIndexChanged.connect(self.apply_color_scheme)
-        self.bg_combo.currentIndexChanged.connect(self.on_manual_color_change)
-        self.image_mode_combo.currentIndexChanged.connect(self.update_image_mode)
         self.language_combo.currentIndexChanged.connect(self.change_language)
-        self.restore_colors()
-        self.restore_background_image()
+        self.apply_colors()
         self.tabs.currentChanged.connect(self.on_tab_changed)
         # The startup check and repeating 2-hour timer are both disabled in
         # CI/screenshot modes, so these runs never contact GitHub.
@@ -935,6 +917,10 @@ class PasswordWindow(QMainWindow):
         self._translate_interface()
         self.update_navigation_labels()
         self.restore_window_geometry()
+        # The first Qt style pass can precede window geometry restoration.
+        # Re-evaluate final dimensions once all child widgets are constructed.
+        self._ocean_presentation_state = None
+        self.update_ocean_presentation()
         self._shortcuts = []
         for key, callback in (
             ('Ctrl+G', self.generate),
@@ -1012,10 +998,8 @@ class PasswordWindow(QMainWindow):
         # Keep itemData unchanged so saved schemes and separators still work.
         if not hasattr(self, '_i18n_combo_sources'):
             self._i18n_combo_sources = {}
-        for combo in (self.scheme_combo, self.bg_combo,
-                      self.image_mode_combo, self.phrase_separator,
-                      self.preset_combo, self.clipboard_timeout_combo,
-                      self.channel_combo):
+        for combo in (self.phrase_separator, self.preset_combo,
+                      self.clipboard_timeout_combo, self.channel_combo):
             originals = self._i18n_combo_sources.get(combo)
             if originals is None or len(originals) != combo.count():
                 originals = [combo.itemText(i) for i in range(combo.count())]
@@ -1229,7 +1213,7 @@ class PasswordWindow(QMainWindow):
             self.length.setRange(4, 10)
             self.length_slider.setRange(4, 10)
             self.length.setValue(6)
-            self._set_ui(self.generate_button, '🔑  Passphrase generieren')
+            self._set_ui(self.generate_button, 'Passphrase generieren')
             self._set_ui(self.ocean_page_title, 'PASSPHRASE ERSTELLEN')
             self._set_ui(self.ocean_output_caption, 'Generierte Passphrase')
             self._set_ui(self.ocean_length_heading, 'Passphrase-Wörter')
@@ -1241,7 +1225,7 @@ class PasswordWindow(QMainWindow):
             self.length.setRange(8, 128)
             self.length_slider.setRange(8, 128)
             self.length.setValue(20)
-            self._set_ui(self.generate_button, '🔑  Passwort generieren')
+            self._set_ui(self.generate_button, 'Passwort generieren')
             self._set_ui(self.ocean_page_title, 'PASSWORT ERSTELLEN')
             self._set_ui(self.ocean_output_caption, 'Generiertes Passwort')
             self._set_ui(self.ocean_length_heading, 'Passwort-Länge')
@@ -1261,7 +1245,7 @@ class PasswordWindow(QMainWindow):
         self.output.setEchoMode(
             QLineEdit.EchoMode.Normal if visible else QLineEdit.EchoMode.Password
         )
-        self._set_ui(self.show_button, '◉  Verbergen' if visible else '◉  Anzeigen')
+        self._set_ui(self.show_button, 'Verbergen' if visible else 'Anzeigen')
 
     def show_history(self):
         """Show only passwords from this session; never persist history."""
@@ -1414,88 +1398,9 @@ class PasswordWindow(QMainWindow):
         if self.reporter is not None:
             self.reporter.note('NAVIGATE', f'tab={self.tab_names[index]}', force=True)
 
-    def select_color(self, combo, color, default):
-        if not QColor(color).isValid():
-            color = default
-        normalized = QColor(color).name().upper()
-        for index in range(combo.count()):
-            if combo.itemData(index).upper() == normalized:
-                combo.setCurrentIndex(index)
-                return
-        source = f'Eigene Farbe ({normalized})'
-        combo.addItem(self._t(source), normalized)
-        if hasattr(self, '_i18n_combo_sources') and combo in self._i18n_combo_sources:
-            self._i18n_combo_sources[combo].append(source)
-        combo.setCurrentIndex(combo.count() - 1)
-
-    def restore_colors(self):
-        self._restoring = True
-        try:
-            stored_background = self.settings.value(
-                'background_color', preset_colors(DEFAULT_SCHEME)[0], type=str
-            )
-            saved_scheme = self.settings.value('color_scheme', '', type=str)
-            # Upgrade legacy untouched default to the new standard once.
-            # All manually selected non-default themes and custom colors stay.
-            previous_default = ('neon_blue', '#071322')
-            if (not self.settings.value('ui/ocean_default_migrated', False, type=bool)
-                    and (saved_scheme, stored_background.upper())
-                    == (previous_default[0], previous_default[1].upper())):
-                saved_scheme = DEFAULT_SCHEME
-                self.settings.setValue('ui/ocean_default_migrated', True)
-            if saved_scheme not in SCHEME_MAP:
-                default_background = preset_colors(DEFAULT_SCHEME)[0]
-                saved_scheme = (DEFAULT_SCHEME if
-                                stored_background.upper() == default_background.upper()
-                                else 'custom')
-            index = self.scheme_combo.findData(saved_scheme)
-            self.scheme_combo.setCurrentIndex(max(0, index))
-            preset = preset_colors(saved_scheme)
-            background = preset[0] if preset else stored_background
-            self.select_color(self.bg_combo, background, '#071322')
-        finally:
-            self._restoring = False
-        # Text is selected automatically for contrast; old manual preference is obsolete.
-        self.settings.remove('text_color')
-        self.settings.remove('glass_opacity')
-        self.settings.setValue('color_scheme', self.scheme_combo.currentData())
-        self.apply_colors()
-
-    def apply_color_scheme(self, *_):
-        if self._restoring:
-            return
-        scheme = self.scheme_combo.currentData() or DEFAULT_SCHEME
-        preset = preset_colors(scheme)
-        if preset:
-            self._restoring = True
-            try:
-                self.select_color(self.bg_combo, preset[0], '#071322')
-            finally:
-                self._restoring = False
-        self.settings.setValue('color_scheme', scheme)
-        self.apply_colors()
-
-    def on_manual_color_change(self, *_):
-        if self._restoring:
-            return
-        custom_index = self.scheme_combo.findData('custom')
-        if custom_index >= 0 and self.scheme_combo.currentIndex() != custom_index:
-            self._restoring = True
-            try:
-                self.scheme_combo.setCurrentIndex(custom_index)
-            finally:
-                self._restoring = False
-        self.settings.setValue('color_scheme', 'custom')
-        self.apply_colors()
-
-    def pick_color(self, combo):
-        selected = QColorDialog.getColor(QColor(combo.currentData()), self, self._t('Farbe auswählen'))
-        if selected.isValid():
-            self.select_color(combo, selected.name(), '#101827')
-
     def update_ocean_presentation(self):
         """Keep the real two-panel layout usable in all schemes and sizes."""
-        ocean = self.scheme_combo.currentData() == 'ocean_glass'
+        ocean = True  # Fixed reference design on every page.
         wide = self.width() >= 780
         state = (ocean, wide, self._phrase_mode)
         # Avoid repeatedly changing Qt child geometry while its parent
@@ -1515,17 +1420,35 @@ class PasswordWindow(QMainWindow):
         self.length_label.setVisible(not ocean)
         self.length_value.setVisible(not ocean)
         self.ocean_preset_box.setVisible(not self._phrase_mode)
+        if ocean and wide:
+            # Prevent the enormous empty panels from the previous design.
+            # Cap panel growth instead of resetting QWidget min/max heights
+            # on every resize, avoiding Qt binding invalidation under stress.
+            self.ocean_sections.setMaximumHeight(276 if self._phrase_mode else 232)
+            self.output.setFixedHeight(64)
+            self.copy_top_button.setFixedHeight(64)
+            self.regenerate_button.setFixedHeight(64)
+        else:
+            self.ocean_sections.setMaximumHeight(16777215)
+            self.output.setFixedHeight(43)
+            self.copy_top_button.setFixedHeight(43)
+            self.regenerate_button.setFixedHeight(43)
         # Give the choices more breathing room on large screens without
         # forcing a scrollbar when the same app is resized narrowly.
-        self.check_layout.setVerticalSpacing(13 if ocean and wide else 2)
-        self.ocean_options_layout.setSpacing(11 if ocean and wide else 5)
+        self.check_layout.setVerticalSpacing(10 if ocean and wide else 2)
+        self.ocean_options_layout.setSpacing(7 if ocean and wide else 5)
         self.brand_subtitle.setVisible(not ocean)
-        self.brand_icon.setFixedSize(44 if ocean else 53, 44 if ocean else 53)
+        self.brand_icon.setFixedSize(32, 36)
+        desktop = self.width() >= 960
+        for button in self.nav_buttons + [self.info_nav_button]:
+            button.setMinimumHeight(48 if desktop else 36)
+        for button in (self.password_mode_button, self.passphrase_mode_button):
+            button.setMinimumHeight(44 if desktop else 30)
         self._set_ui(
             self.brand_title,
             'PasswortGenerator' if ocean else 'Passwort-Generator',
         )
-        self.generate_button.setFixedHeight(46 if ocean and wide else 40)
+        self.generate_button.setFixedHeight(57 if self.width() >= 960 else 40)
         self.generate_button.setMaximumWidth(16777215 if ocean else 360)
         self.password_group_layout.setAlignment(
             self.generate_button,
@@ -1535,11 +1458,13 @@ class PasswordWindow(QMainWindow):
     def update_navigation_labels(self):
         """Compact top-right text without hiding an available-update marker."""
         compact = self.width() < 720
-        labels = ('⌑ Passwort', '⚙ Einstellungen', '↻ Update')
+        labels = ('Passwort', 'Einstellungen', 'Update')
         for index, (button, label) in enumerate(zip(self.nav_buttons, labels)):
             if index == 2 and self._available_update:
                 label += ' • NEU'
             localized = self._t(label)
+            if index == 2 and self._available_update:
+                localized = self._t('Update') + (' • NEW' if self.language == 'en' else ' • NEU')
             if button.text() != localized:
                 button.setText(localized)
 
@@ -1581,7 +1506,7 @@ class PasswordWindow(QMainWindow):
             self._first_run_tour.update()
         if hasattr(self, 'nav_buttons'):
             self.update_navigation_labels()
-        if hasattr(self, 'ocean_sections') and hasattr(self, 'scheme_combo'):
+        if hasattr(self, 'ocean_sections'):
             self.update_ocean_presentation()
         if hasattr(self, 'check_layout') and hasattr(self, 'upper'):
             compact = self.width() < 680
@@ -1592,104 +1517,36 @@ class PasswordWindow(QMainWindow):
                     self.check_layout.removeWidget(checkbox)
                 for index, checkbox in enumerate(boxes):
                     row, column = (index, 0) if compact else (
-                        (index, 0) if index < 3 else (index - 3, 1)
+                        (index, 0) if index < 4 else (0, 1)
                     )
                     self.check_layout.addWidget(checkbox, row, column)
+        if (self._applied_palette is not None and
+                self._applied_palette != ('fixed-ocean-glass', self.width() < 960)):
+            self.apply_colors()
         if self.reporter is not None:
             self.reporter.note('RESIZE', f'{self.width()}x{self.height()}')
 
     def apply_colors(self, *_):
-        if self._restoring:
-            return
-        base_background = self.bg_combo.currentData() or '#071322'
-        image_color = self.background_surface.wallpaper_color
-        actual_background = image_color or base_background
-        fg = accessible_text_color(actual_background)
-        accent = accent_for_background(actual_background)
-        scheme = self.scheme_combo.currentData()
-        ocean_mode = scheme == 'ocean_glass'
-        glass_mode = scheme in ('glass', 'ocean_glass')
-        self.background_surface.set_base_color(base_background)
-        self.background_surface.set_ocean_mode(ocean_mode)
-        self.background_surface.set_transparent_glass(glass_mode)
+        """Enforce the single design regardless of older saved preferences."""
+        self.background_surface.clear_background_image()
+        self.background_surface.set_base_color(FIXED_BG)
+        self.background_surface.set_ocean_mode(True)
+        self.background_surface.set_transparent_glass(True)
         for card in self.glass_cards + self.secondary_cards + [self.info_card]:
-            card.set_glass_color(actual_background, accent)
-            card.set_glass_mode(glass_mode)
-            card.set_ocean_mode(ocean_mode)
+            card.set_glass_color(FIXED_BG, FIXED_ACCENT)
+            card.set_glass_mode(True)
+            card.set_ocean_mode(True)
         if hasattr(self, 'ocean_sections'):
             self.update_ocean_presentation()
-        source = 'Bild' if image_color else 'Hintergrund'
-        self._set_ui(self.accent_preview, f'●  Automatisch ({source}): {accent}')
-        self.accent_preview.setToolTip(self._t(
-            'Kontrastgeprüft und passend zum Hintergrundbild oder zur Hintergrundfarbe.'
-        ))
-        palette_key = (base_background, actual_background, fg, accent, glass_mode,
-                       ocean_mode)
-        if self._applied_palette != palette_key:
-            self._applied_palette = palette_key
+        palette = ('fixed-ocean-glass', self.width() < 960)
+        if self._applied_palette != palette:
+            self._applied_palette = palette
             self.setStyleSheet(
-                build_glass_stylesheet(actual_background, fg)
-                + '\n' + neon_stylesheet(actual_background, fg, accent,
-                                         ocean_theme=ocean_mode)
+                build_glass_stylesheet(FIXED_BG, FIXED_FG) + '\n'
+                + neon_stylesheet(FIXED_BG, FIXED_FG, FIXED_ACCENT,
+                                  ocean_theme=True, compact=self.width() < 960)
             )
-            self.settings.setValue('background_color', base_background)
-            if self.reporter is not None:
-                self.reporter.note(
-                    'PALETTE_CHANGED',
-                    f'background={base_background}, image={"yes" if image_color else "no"}',
-                    force=True,
-                )
-
-    def restore_background_image(self):
-        mode = self.settings.value('background_image_mode', 'cover', type=str)
-        index = self.image_mode_combo.findData(mode)
-        self.image_mode_combo.setCurrentIndex(index if index >= 0 else 0)
-        path = self.settings.value('background_image_path', '', type=str)
-        if path:
-            try:
-                self.background_surface.set_background_image(path)
-                self._set_ui(self.background_file_label, Path(path).name)
-            except (OSError, ValueError):
-                self._set_ui(self.background_file_label, 'Gespeichertes Bild nicht gefunden oder ungültig.')
-                self.background_surface.clear_background_image()
-        self.clear_background_button.setEnabled(self.background_surface.has_background_image())
-        self.apply_colors()
-
-    def choose_background_image(self):
-        selected, _ = QFileDialog.getOpenFileName(
-            self, self._t('Hintergrundbild auswählen'), str(Path.home()),
-            self._t('Bilder (*.png *.jpg *.jpeg *.webp *.bmp)'),
-        )
-        if not selected:
-            return
-        try:
-            self.background_surface.set_background_image(selected)
-        except (ValueError, OSError) as error:
-            QMessageBox.warning(self, self._t('Hintergrundbild nicht geladen'), self._t(str(error)))
-            return
-        self._set_ui(self.background_file_label, Path(selected).name)
-        self.clear_background_button.setEnabled(True)
-        self.settings.setValue('background_image_path', selected)
-        self.apply_colors()
-        self._set_ui(self.status, 'Hintergrundbild geladen.')
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_LOADED', f'format={Path(selected).suffix.lower()}', force=True)
-
-    def remove_background_image(self):
-        self.background_surface.clear_background_image()
-        self._set_ui(self.background_file_label, 'Kein Hintergrundbild ausgewählt')
-        self.clear_background_button.setEnabled(False)
-        self.settings.remove('background_image_path')
-        self.apply_colors()
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_REMOVED', force=True)
-
-    def update_image_mode(self, *_):
-        mode = self.image_mode_combo.currentData() or 'cover'
-        self.background_surface.set_image_mode(mode)
-        self.settings.setValue('background_image_mode', mode)
-        if self.reporter is not None:
-            self.reporter.note('BACKGROUND_MODE', f'mode={mode}', force=True)
+        self.generate_button.setFixedHeight(57 if self.width() >= 960 else 40)
 
     def generate(self):
         try:
@@ -1770,6 +1627,7 @@ class PasswordWindow(QMainWindow):
             return
         self.update_channel = selected
         self.settings.setValue('updates/channel', selected)
+        self.settings.sync()
         self.latest_asset = None
         self.latest_version = None
         self._new_update_note = ''
@@ -1843,8 +1701,8 @@ class PasswordWindow(QMainWindow):
             if not isinstance(response, dict):
                 raise ValueError('Ungültige GitHub-Antwort.')
             if self.update_channel == 'unstable':
-                # GitHub prereleases are deliberately excluded from /latest.
-                # The prerelease asset is named with its own build SHA.
+                # Unstable uses a dedicated rolling GitHub prerelease (never /latest).
+                # Assets are named with the tested build SHA.
                 build_sha, asset = select_unstable_asset(response, os.name)
                 latest_version = 'UNSTABLE ' + build_sha
                 update_ready = has_channel_update(
@@ -2190,6 +2048,12 @@ class PasswordWindow(QMainWindow):
                 raise ValueError('Die SHA-256-Prüfsumme stimmt nicht überein!')
             if not self.save_file.commit():
                 raise OSError(self.save_file.errorString())
+            # Stable and Unstable use separate settings stores. Copy only the
+            # explicitly chosen target channel before handing off to the
+            # installed build, so old target preferences cannot reset it.
+            self.settings.setValue('updates/channel', self.update_channel)
+            self.settings.sync()
+            persist_installed_update_channel(self.update_channel)
             if os.name == 'nt':
                 # The Inno installer closes old files and restarts the updated
                 # application after successful installation.
@@ -2291,8 +2155,10 @@ if __name__ == '__main__':
             window.tabs.count() == 4
             and window.info_page is window.tabs.widget(3)
             and window.info_nav_button.isVisible()
-            and len(window.glass_cards) == 3
+            and len(window.glass_cards) == 2
             and window.length.value() == 20
+            and window.font().family() == 'Carlito'
+            and not window.nav_buttons[0].icon().isNull()
         )
         window.close()
         reporter.close()
@@ -2308,3 +2174,4 @@ if __name__ == '__main__':
         sys.exit(app.exec())
     finally:
         reporter.close()
+

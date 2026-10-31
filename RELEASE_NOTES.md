@@ -1,27 +1,27 @@
-# PasswortGenerator v0.22.0 – Stable / Unstable direkt im Updater
+# PasswortGenerator v0.23.0 – Oberfläche und Updates
 
-**Entwicklungsschritt 22 von 100.** Eine gemeinsame Stable-Veröffentlichung nach erfolgreichen Tests auf beiden Plattformen.
+**Entwicklungsschritt 23 von 100.** Gemeinsamer Stable-Release der getesteten Änderungen aus `unstable` für Linux und Windows.
 
 ## Deutsch
 
-- **Update-Kanal auswählbar:** In der bestehenden Kachel „Update & Version“ direkt zwischen **Stable** und **Unstable (Test)** wechseln. Die Auswahl wird gespeichert; die Updateprüfung erfolgt beim Start und anschließend alle zwei Stunden.
-- **Unstable ohne ZIP:** Die App erkennt den zuletzt erfolgreichen Test-Build direkt anhand einer Git-Commit-Kennung. Download und Installation erfolgen wie normale Updates mit einem Klick und einer ausdrücklichen Bestätigung für unfertige Testversionen.
-- **GitHub-Prerelease:** Unstable-Builds sind öffentlich erreichbare, als **TESTVERSION** gekennzeichnete Prereleases, nicht offizielle Stable-Releases. Erst wenn Linux und Windows beide Tests/Builds bestehen, veröffentlicht GitHub Actions die geprüften Dateien. Stable bleibt bei `/releases/latest` unverändert.
-- **Getrennte Installationen:** Unter Linux liegt Unstable neben Stable in `~/.local/opt/passwort-generator-unstable/` und aktualisiert sich künftig selbst. Unter Windows nutzt Unstable eine andere Installer-App-ID, einen separaten Program-Files-Ordner und eigene Verknüpfungen. Stable wird nicht überschrieben.
-- **Sichere Downloads:** Strikt geprüfte GitHub-URLs, erwartete Dateinamen, Dateigrößen und SHA-256-Prüfsummen. Keine ausführbare Datei wird installiert, wenn die Verifikation scheitert.
-- **Kanal zurückwechseln:** Beim Auswählen von Stable installiert die App den normalen, geprüften Stable-Installer/AppImage. Die andere Installation bleibt bestehen.
-- **Zweisprachig:** Deutsch und Englisch im gesamten Update-Bereich. Alle bisherigen Passwortfunktionen, das Ocean-Glass-Design und Einstellungen bleiben erhalten.
+- **Festes Ocean-Glass-Design:** Einheitliches dunkles Qt-Design mit blau-cyanfarbenen Akzenten. Die frühere Erscheinungsbild- und Hintergrundauswahl wurde entfernt.
+- **Switches statt Häkchen:** Alle neun Passwort-, Passphrase- und Sicherheitseinstellungen nutzen kleine Ein-/Aus-Schalter. Die zwei Darstellungszustände und die Funktion der Sicherheitsschalter wurden mit grafischen Qt-Tests überprüft.
+- **Modernisierte Oberfläche:** Einheitliche Schriftarten, Icons, Abstände und grafische Darstellung unter Linux und Windows.
+- **Update-Kanal bleibt gespeichert:** Die Auswahl **Stable** oder **Unstable** überlebt Download, Installation und Neustart. Sonstige Einstellungen beider Installationen bleiben voneinander getrennt.
+- **Automatische Unstable-Veröffentlichung:** Nach erfolgreichen Linux- und Windows-Tests aktualisiert GitHub Actions den Unstable-Prerelease ohne zusätzliche Tokens. Die einzigen Branches bleiben `main` und `unstable`.
+- **Sichere Updates:** Separate Stable-/Unstable-Installationsorte, Sicherung der vorherigen AppImage-Version, Windows-UAC und Prüfung von Dateiname, Dateigröße und SHA-256.
+- **Weitere Funktionen erhalten:** Passwort-/Passphrase-Generierung, Profile und erweiterte Regeln, Sprache Deutsch/Englisch, Sitzungshistorie, Zwischenablageschutz, Versionsvergleich und Changelog.
 
-**Hinweis:** Unstable-Test-Builds sind bewusst öffentlich abrufbar, aber nicht als offizielle stabile Version freigegeben.
+**Stable** ist unter `/releases/latest` verfügbar. **Unstable** bleibt ausdrücklich eine separate Testversion.
 
 ## English
 
-- **Choose update channel:** Switch between **Stable** and **Unstable (test)** directly on the Update page. The choice persists, with startup and two-hour checks.
-- **No ZIP downloads:** The app discovers the newest successful test build by its Git commit ID and installs it from GitHub after user confirmation.
-- **GitHub prerelease:** The build is clearly labelled **TEST VERSION** and is never the official Stable `/releases/latest`. Both platform builds must pass before preview publication.
-- **Separate installations:** Independent Linux AppImage directories and Windows installer app IDs, Program Files paths, and shortcuts; Stable is preserved.
-- **Verified downloads:** Exact GitHub release URLs, expected asset names, published byte lengths, and SHA-256 digests are all validated.
-- **Return to Stable:** Switching back installs the normal verified Stable package without removing the preview installation.
-- **Bilingual interface:** German and English UI, with all existing features and Ocean Glass retained.
+- **Fixed Ocean Glass appearance:** A consistent dark blue/cyan Qt theme with removed appearance and wallpaper selectors.
+- **Compact on/off switches:** All nine password, passphrase and security checkboxes use switches, tested in both states.
+- **Refined presentation:** Fonts, icons and spacing updated for Linux and Windows.
+- **Persistent update channel:** The chosen Stable/Unstable channel survives installation and restart; other preferences remain separate.
+- **Automatic Unstable publication:** GitHub Actions updates the rolling prerelease after Linux and Windows pass, without extra tokens. Only `main` and `unstable` branches remain.
+- **Safe, isolated updates:** Separate installers and settings, backups, UAC, size and SHA-256 verification.
+- **Existing features preserved:** Local password generation, passphrases, profiles, advanced rules, bilingual UI, clipboard privacy and changelog.
 
-**Note:** Preview builds are publicly downloadable, but explicitly experimental and separate from public Stable updates.
+**v0.23.0 is a Stable release.** Unstable remains an explicitly labelled experimental channel.

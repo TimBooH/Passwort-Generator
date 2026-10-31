@@ -1,6 +1,6 @@
 # PasswortGenerator
 
-**Secure passwords and passphrases for Windows and Linux, with a customizable glass-style interface.**
+**Secure passwords and passphrases for Windows and Linux, with one consistent Ocean Glass interface.**
 
 **Language / Sprache:** [Deutsch](README.md) | **English**
 
@@ -12,7 +12,7 @@
 
 | Windows 10/11 (64-bit) | Linux (x86_64, e.g. CachyOS) |
 | --- | --- |
-| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.22.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.22.0/PasswortGenerator-x86_64.AppImage) |
+| [**Windows installer (.exe)**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.23.0/PasswortGenerator-Setup-x64.exe) | [**Linux AppImage**](https://github.com/TimBooH/Passwort-Generator/releases/download/v0.23.0/PasswortGenerator-x86_64.AppImage) |
 
 [All releases and installation scripts](https://github.com/TimBooH/Passwort-Generator/releases/latest)
 
@@ -26,8 +26,8 @@
 
 - **Passwords:** 8–128 characters, profiles and advanced minimum digit/symbol and excluded-character rules.
 - **Passphrases:** 4–10 words using independent German or English offline word lists, separators and optional two-digit number.
-- **Ocean Glass default theme:** Bright blue/cyan navigation, separate **Options** and **Password length** glass panels, visible checkbox ticks and a full-width Generate button. Earlier themes and custom wallpapers remain available.
-- **Language:** Its own **Language** glass card directly below **Appearance** in Settings; German/English still applies throughout the app and is saved.
+- **Ocean Glass default theme:** Bright blue/cyan navigation, separate **Options** and **Password length** glass panels, compact on/off switches and a full-width Generate button. The appearance is fixed: there is no theme picker or custom wallpaper setting. Bundled fonts and vector icons keep the interface consistent on Linux and Windows.
+- **Language:** Its own **Language** glass card in Settings; German/English still applies throughout the app and is saved.
 - **Updates:** Choose **Stable** or **Unstable** in-app. Test builds auto-update without downloading ZIP archives, installing separately from Stable; downloads are SHA-256 verified. Changelog and rollback remain available.
 - **Security:** entropy-based strength explanation, privacy mode on focus loss and optional clipboard clearing after 30, 60 or 120 seconds.
 - **Usability:** keyboard shortcuts (Ctrl+G, Ctrl+Shift+C, Ctrl+H, Ctrl+1–4), session history, guided tour and saved window geometry. Navigation: Password → Update → Settings → Info.
@@ -69,3 +69,4 @@ Windows installers and Linux AppImages are built using [GitHub Actions](https://
 [Release notes](RELEASE_NOTES.md) · [Releases](https://github.com/TimBooH/Passwort-Generator/releases)
 
 *Made by Jon Bovi*
+

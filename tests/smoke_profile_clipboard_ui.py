@@ -25,7 +25,7 @@ app.processEvents()
 
 # Button labels and order: Password -> Update -> Settings -> Info.
 assert [window.nav_buttons[i].text() for i in (0, 2, 1)] == [
-    '⌑ Passwort', '↻ Update', '⚙ Einstellungen'
+    'Passwort', 'Update', 'Einstellungen'
 ]
 assert window.nav_buttons[0].x() < window.nav_buttons[2].x()
 assert window.nav_buttons[2].x() < window.nav_buttons[1].x()
@@ -117,3 +117,4 @@ for key, value in old.items():
         settings.setValue(key, value)
 settings.sync()
 print('Profiles, safe clipboard timer, bilingual controls, and navigation order OK')
+

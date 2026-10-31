@@ -9,6 +9,13 @@ LANGUAGES = (('Deutsch', 'de'), ('English', 'en'))
 
 EN = {
     'Stark. Sicher. Einzigartig.': 'Strong. Secure. Unique.',
+    'Passwort generieren': 'Generate password',
+    'Passphrase generieren': 'Generate passphrase',
+    'Anzeigen': 'Show',
+    'Verbergen': 'Hide',
+    'Verlauf': 'History',
+    'Analyse': 'Analysis',
+    'Erweiterte Regeln': 'Advanced rules',
     'Passwort': 'Password',
     'Einstellungen': 'Settings',
     'Design': 'Design',
@@ -27,6 +34,9 @@ EN = {
     'ANLEITUNG & HILFE': 'GUIDE & HELP',
     'ERSCHEINUNGSBILD': 'APPEARANCE',
     'SPRACHE': 'LANGUAGE',
+    '2 · Einstellungen': '2 · Settings',
+    'Sprache und Sicherheit': 'Language and security',
+    'Unter Einstellungen wechselst du zwischen Deutsch und Englisch und legst den Zwischenablageschutz und die Privatsphäre fest.': 'In Settings, switch between German and English and configure clipboard protection and privacy.',
     'HINTERGRUNDBILD': 'BACKGROUND IMAGE',
     'UPDATE & VERSION': 'UPDATE & VERSION',
     'CHANGELOG': 'CHANGELOG',
@@ -39,6 +49,7 @@ EN = {
     'Passwort-Stärke': 'Password strength',
     'Passphrase-Wörter': 'Passphrase words',
     'Sichere Passwörter und Passphrasen': 'Secure passwords and passphrases',
+    'Erstelle sichere und zufällige Passwörter oder Passphrasen.': 'Create secure random passwords or passphrases.',
     'Ocean Glass · Standard': 'Ocean Glass · Default',
     'Passphrase': 'Passphrase',
     'Generiertes Passwort': 'Generated password',
@@ -303,3 +314,4 @@ def translate(text, language='de'):
             out = out.replace(reason, translate(reason, language))
         return out
     return text
+

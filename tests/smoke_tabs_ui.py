@@ -34,6 +34,8 @@ assert window.nav_container.y() < tabs.y()
 assert window.nav_buttons[0].x() > 0, 'Navigation buttons should align to the right'
 assert window.nav_buttons[0].isChecked()
 assert len(window.secondary_cards) == 4
+assert len(window.glass_cards) == 2
+assert not hasattr(window, 'appearance_card')
 assert window.nav_buttons[2].x() < window.nav_buttons[1].x() < window.info_nav_button.x()
 assert window.glass_cards[0].parentWidget() is window.password_page
 assert window.nav_buttons[1].isVisible()
@@ -48,21 +50,16 @@ assert not hasattr(window, 'info_button')
 assert not hasattr(window, 'open_crash_log')
 assert not hasattr(window, 'fg_combo')
 assert not window.settings.contains('text_color')
-assert window.glass_cards[1].parentWidget() is window.settings_page
-assert window.glass_cards[2].parentWidget() is window.updates_page
-assert window.appearance_card is window.glass_cards[1]
-assert window.appearance_card.header.text() == 'ERSCHEINUNGSBILD'
-assert window.appearance_card.isAncestorOf(window.scheme_combo)
-assert window.appearance_card.isAncestorOf(window.choose_background_button)
-assert window.appearance_card.isAncestorOf(window.image_mode_combo)
+assert window.glass_cards[1].parentWidget() is window.updates_page
+assert not hasattr(window, 'scheme_combo')
+assert not hasattr(window, 'bg_combo')
+assert not hasattr(window, 'choose_background_button')
+assert not hasattr(window, 'image_mode_combo')
 assert window.language_card is window.secondary_cards[0]
 assert window.language_card.parentWidget() is window.settings_page
 assert window.language_card.header.text() == 'SPRACHE'
 assert window.language_card.isAncestorOf(window.language_combo)
-assert not window.appearance_card.isAncestorOf(window.language_combo)
-assert window.settings_page.layout().indexOf(window.language_card) == (
-    window.settings_page.layout().indexOf(window.appearance_card) + 1
-)
+assert window.settings_page.layout().indexOf(window.language_card) == 0
 assert window.security_card is window.secondary_cards[1]
 assert window.security_card.parentWidget() is window.settings_page
 assert window.settings_page.layout().indexOf(window.security_card) == (
@@ -96,12 +93,10 @@ window.nav_buttons[1].click()
 app.processEvents()
 assert tabs.currentIndex() == 1
 assert window.nav_buttons[1].isChecked()
-assert window.bg_combo.isVisible()
-assert window.choose_background_button.isVisible()
-window.bg_combo.setCurrentIndex(1)
-app.processEvents()
-chosen_background = window.bg_combo.currentData()
-assert window.background_surface._base_color.upper() == chosen_background.upper()
+assert window.language_combo.isVisible()
+assert window.security_card.isVisible()
+assert window.background_surface._ocean_enabled
+assert not window.background_surface.has_background_image()
 
 window.nav_buttons[2].click()
 app.processEvents()
@@ -110,7 +105,7 @@ assert window.nav_buttons[2].isChecked()
 assert window.check_button.isVisible()
 assert window.update_status.isVisible()
 assert not window.output.isVisible()
-assert not window.bg_combo.isVisible()
+assert not window.language_combo.isVisible()
 
 # Info is now a regular fourth page, never a new window.
 window.info_nav_button.click()
@@ -134,7 +129,6 @@ assert window.output.text() == password
 assert window.length.value() == 44
 assert window.glass_cards[0].isVisible()
 assert not window.glass_cards[1].isVisible()
-assert not window.glass_cards[2].isVisible()
 
 # Passphrase mode generates six words, then returns to original password mode.
 window.passphrase_mode_button.click()
@@ -177,15 +171,16 @@ assert not window.output.text()
 # Pages follow window width; navigation stays right-aligned near the header.
 for width in (460, 720, 1600, 530, 990, 470):
     window.resize(width, 790)
-    for index, card in enumerate(window.glass_cards):
-        tabs.setCurrentIndex(index)
+    for page, card in ((0, window.glass_cards[0]),
+                       (2, window.glass_cards[1])):
+        tabs.setCurrentIndex(page)
         app.processEvents()
         assert card.isVisible()
         assert card.width() >= width - 120, (
-            f'{window.tab_names[index]} card too narrow at {width}: {card.width()}'
+            f'{window.tab_names[page]} card too narrow at {width}: {card.width()}'
         )
         assert window.nav_container.y() < tabs.y()
-        assert window.nav_buttons[index].isChecked()
+        assert window.nav_buttons[page].isChecked()
         if width < 720:
             assert window.nav_buttons[1].text().endswith('Einstellungen')
         else:

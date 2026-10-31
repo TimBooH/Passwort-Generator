@@ -19,10 +19,10 @@ SCREENS = (
         'Eine zweistellige Zahl und das Trennzeichen kannst du bei Passphrase wählen.',
     ),
     (
-        '2 · Design',
-        'Farben und Glas',
-        'Unter Einstellungen kannst du „Glass“ für gut sichtbare '
-        'Hintergrundbilder oder andere Farbschemas auswählen.',
+        '2 · Einstellungen',
+        'Sprache und Sicherheit',
+        'Unter Einstellungen wechselst du zwischen Deutsch und Englisch und '
+        'legst den Zwischenablageschutz und die Privatsphäre fest.',
     ),
     (
         '3 · Update',

@@ -54,7 +54,7 @@ def circuit_texture(width=1100, height=1450, accent='#178CFF'):
     return texture
 
 
-def neon_stylesheet(background, foreground, accent=None, ocean_theme=False):
+def neon_stylesheet(background, foreground, accent=None, ocean_theme=False, compact=False):
     """Auto-accent styling, matching the background or a sampled wallpaper."""
     dark = is_dark_background(background)
     fg = QColor(foreground).name() if QColor(foreground).isValid() else ('#EDF6FF' if dark else '#142436')
@@ -72,197 +72,27 @@ def neon_stylesheet(background, foreground, accent=None, ocean_theme=False):
     primary_bottom = color.darker(172).name()
     tab_selected = color.darker(205).name() if dark else color.lighter(200).name()
 
-    ocean_css = """
-/* Ocean Glass: screenshot-inspired, native Qt controls (no HTML or fake UI). */
-QLabel#brandTitle { color: #F2FAFF; font-size: 21px; font-weight: 800; }
-QLabel#brandSubtitle { color: #A7C9E9; font-size: 11px; }
-QLabel#brandLock {
-    color: #72E5FF; background: rgba(9,51,103,195);
-    border: 1px solid rgba(100,203,255,160); border-radius: 13px;
-}
-QFrame#topNav {
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 rgba(6,26,61,231), stop:1 rgba(5,22,51,228));
-    border: 1px solid rgba(81,173,238,80);
-    border-radius: 14px;
-}
-QPushButton#navButton, QPushButton#infoNavButton {
-    color: #DBEDFF; background: rgba(12,39,77,80);
-    border: 1px solid transparent; border-radius: 10px;
-    font-size: 12px; font-weight: 720;
-    padding: 5px 9px;
-}
-QPushButton#navButton:hover, QPushButton#infoNavButton:hover {
-    color: #FFFFFF; background: rgba(27,105,185,155);
-    border: 1px solid rgba(80,203,255,170);
-}
-QPushButton#navButton:checked, QPushButton#infoNavButton:checked {
-    color: #FFFFFF;
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-        stop:0 #18B7F7, stop:0.52 #086BF4, stop:1 #0572F1);
-    border: 1px solid #55D8FF;
-}
-QPushButton#modeButton {
-    color: #D8E9FF; background: rgba(7,28,59,204);
-    border: 1px solid rgba(69,147,217,126);
-    border-radius: 11px; font-size: 12px;
-}
-QPushButton#modeButton:checked {
-    color: #FFFFFF;
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-        stop:0 #13C5FB, stop:1 #0463ED);
-    border: 1px solid #57DDFF;
-}
-QLabel#oceanPageTitle {
-    color: #F4F9FF; font-size: 16px; font-weight: 800;
-}
-QLabel#oceanPageSubtitle { color: #B9D4EE; font-size: 10px; }
-QLabel#strengthCaption { color: #D8EBFC; font-weight: 750; }
-QLabel#lengthValue { color: #79DBFF; font-weight: 800; }
-QLineEdit#passwordOutput {
-    color: #F8FCFF; font-size: 14px;
-    background: rgba(4,20,48,198);
-    border: 1px solid rgba(85,174,245,137);
-    border-radius: 11px; padding: 7px 12px;
-    selection-background-color: #126AE5;
-}
-QLineEdit, QSpinBox, QComboBox {
-    color: #F1F8FF; background: rgba(5,23,52,186);
-    border: 1px solid rgba(63,143,206,133);
-    border-radius: 10px; selection-background-color: #0D71E8;
-}
-QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
-    border: 1px solid #49D6FF;
-}
-QCheckBox { color: #E5F3FF; }
-/* Let Qt Fusion draw actual check marks in checked indicators. */
-QCheckBox::indicator { width: 17px; height: 17px; }
-QPushButton#squareAction {
-    color: #B6E9FF;
-    background: rgba(21,68,118,193);
-    border: 1px solid rgba(92,175,241,145);
-    border-radius: 11px;
-}
-QPushButton#squareAction:hover {
-    color: #FFFFFF; background: rgba(26,104,185,221);
-    border: 1px solid #7BE5FF;
-}
-QPushButton#generatePasswordButton, QPushButton#primaryButton {
-    color: #FFFFFF;
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 #0863F2, stop:0.58 #078CF5, stop:1 #1BD7ED);
-    border: 1px solid #57DFFF;
-    border-radius: 13px;
-    font-size: 13px; font-weight: 850;
-}
-QPushButton#generatePasswordButton:hover, QPushButton#primaryButton:hover {
-    color: #FFFFFF;
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 #167EFF, stop:1 #4BEFFF);
-    border: 1px solid #B5F3FF;
-}
-QPushButton#generatePasswordButton:pressed, QPushButton#primaryButton:pressed {
-    background: #0756C7; border: 1px solid #46BCFF;
-}
-QPushButton#generatePasswordButton:focus {
-    border: 2px solid #B4F5FF;
-}
-QProgressBar#strengthBar {
-    background: rgba(2,25,57,210);
-    border: 1px solid rgba(79,159,216,118);
-    border-radius: 7px;
-    min-height: 12px;
-}
-QProgressBar#strengthBar::chunk {
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:0,
-        stop:0 #16DFA5, stop:1 #43EAA7);
-    border-radius: 6px;
-}
-QSlider::groove:horizontal {
-    height: 7px; background: rgba(74,129,189,140);
-    border-radius: 3px;
-}
-QSlider::sub-page:horizontal {
-    background: #078EEA; border-radius: 3px;
-}
-QSlider::handle:horizontal {
-    width: 15px; margin: -6px 0;
-    background: #E5FAFF; border: 2px solid #36ABFF;
-    border-radius: 8px;
-}
-QLabel#glassCardTitle { color: #F5FAFF; font-size: 13px; font-weight: 800; }
-QLabel#supportText { color: #B4D0EB; }
-QFrame#oceanOptionPanel, QFrame#oceanLengthPanel {
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-        stop:0 rgba(11,39,78,225), stop:1 rgba(6,24,51,230));
-    border: 1px solid rgba(72,156,232,158);
-    border-radius: 13px;
-}
-QLabel#oceanPanelHeading {
-    color: #F4F9FF; font-size: 13px; font-weight: 780;
-}
-QLabel#oceanOutputCaption {
-    color: #EAF5FF; font-size: 12px; font-weight: 720;
-}
-QLabel#oceanStrengthCaption {
-    color: #E7F5FF; font-size: 12px; font-weight: 700;
-}
-QLabel#oceanStrengthValue {
-    color: #20EAA5; font-size: 12px; font-weight: 800;
-}
-QLabel#oceanHeroIcon {
-    color: #E8F8FF; font-size: 20px;
-    background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
-        stop:0 rgba(39,105,166,225), stop:1 rgba(14,47,94,229));
-    border: 1px solid rgba(113,190,248,170);
-    border-radius: 11px;
-}
-QLabel#oceanPageTitle {
-    color: #FFFFFF; font-size: 19px; font-weight: 850;
-}
-QLabel#oceanPageSubtitle {
-    color: #B5D3ED; font-size: 11px;
-}
-QLineEdit#passwordOutput {
-    color: #FCFEFF; font-size: 16px;
-    background: rgba(3,18,42,221);
-    border: 1px solid rgba(87,164,233,150);
-    border-radius: 12px;
-    padding: 8px 12px;
-}
-QPushButton#generatePasswordButton {
-    color: #FFFFFF; font-size: 15px; font-weight: 850;
-}
-QLabel#brandTitle { color: #F8FBFF; font-size: 18px; font-weight: 800; }
-QFrame#topNav { border-radius: 14px; }
-QWidget#contentColumn {
-    border: 1px solid rgba(58,154,233,154);
-    border-radius: 17px;
-    background: rgba(4,18,43,50);
-}
-QPushButton#navButton, QPushButton#infoNavButton {
-    font-size: 13px; font-weight: 730;
-}
-QCheckBox { color: #E7F4FF; font-size: 12px; spacing: 9px; }
-QPushButton#squareAction {
-    font-size: 19px; min-width: 37px; min-height: 35px;
-}
-QLineEdit#passwordOutput { font-size: 18px; }
-QLabel#oceanPanelHeading { font-size: 14px; }
-QLabel#oceanOutputCaption { font-size: 13px; }
-QLabel#oceanStrengthCaption { font-size: 12px; }
-QLabel#oceanStrengthValue { font-size: 13px; }
-""" if ocean_theme else ""
+    from reference_style import reference_stylesheet
+    ocean_css = reference_stylesheet(compact=compact) if ocean_theme else ''
+    # The base stylesheet previously overwrote checked switch icons with a
+    # square checkbox. Apply the switch indicators LAST for every checkbox
+    # (including Security settings, not just the Password page).
+    switch_css = ''
     if ocean_theme:
-        from ocean_checkmark import checkmark_png_path
-        check_path = checkmark_png_path()
-        if check_path:
-            # Qt draws the icon itself: no Python callbacks on every repaint.
-            ocean_css += (
-                '\nQCheckBox::indicator:checked { '
-                f'image: url("{check_path}"); '
-                'background: transparent; border: none; }'
-            )
+        from ocean_checkmark import switch_png_paths
+        switch_off, switch_on = switch_png_paths()
+        switch_css = f"""
+QCheckBox::indicator {{
+    width: 32px; height: 18px;
+    background: transparent; border: none;
+    image: url("{switch_off}");
+}}
+QCheckBox::indicator:checked {{
+    background: transparent; border: none;
+    image: url("{switch_on}");
+}}
+"""
+
     return f"""
 QMainWindow {{ background-color: {background}; }}
 QLabel#brandTitle {{
@@ -530,4 +360,5 @@ QLabel#supportText {{ color: {muted}; font-size: 11px; }}
 QLabel {{
     color: {fg}; background: transparent;
 }}
-""".strip() + ocean_css
+""".strip() + ocean_css + switch_css
+

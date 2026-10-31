@@ -27,11 +27,11 @@ window.resize(1120, 790)
 window.show()
 window.tabs.setCurrentIndex(0)
 
-# Capture the actual default UI, now Ocean Glass (not a mockup).
-theme_index = window.scheme_combo.findData('ocean_glass')
-assert theme_index >= 0, 'Ocean Glass must exist as a real application theme.'
-window.scheme_combo.setCurrentIndex(theme_index)
+# Genuine Qt app capture with the sole fixed reference design.
 assert window.background_surface._ocean_enabled
+assert not hasattr(window, 'appearance_card')
+assert not hasattr(window, 'scheme_combo')
+assert not window.background_surface.has_background_image()
 
 # Generate a one-use demonstration password through the application itself.
 # Showing it makes the real strength indicator and new compact button visible.
@@ -51,13 +51,21 @@ assert window.generate_button.isVisible()
 assert window.generate_button.objectName() == 'generatePasswordButton'
 assert window.generate_button.width() >= 600
 print(f'CTA metrics: width={window.generate_button.width()}, height={window.generate_button.height()}')
-assert 34 <= window.generate_button.height() <= 52
+assert 55 <= window.generate_button.height() <= 60
+assert window.ocean_sections.height() <= 276
+assert window.output.height() >= 54
+assert not window.ocean_hero_icon.pixmap().isNull()
+assert window.font().family() == 'Carlito'
+assert all(not b.icon().isNull() for b in window.nav_buttons + [window.info_nav_button])
+assert not window.copy_top_button.icon().isNull()
+assert not window.regenerate_button.icon().isNull()
 assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
 assert window.check_layout.verticalSpacing() >= 10
 assert all(c.isChecked() for c in (window.upper, window.lower, window.digits, window.symbols))
 assert 'QCheckBox::indicator:checked' in window.styleSheet()
-assert 'checked.png' in window.styleSheet()
+assert 'switch-on.png' in window.styleSheet()
+assert 'switch-off.png' in window.styleSheet()
 assert window.ocean_hero_icon.isVisible()
 assert window.ocean_page_title.isVisible()
 assert window.language == 'de'
@@ -76,3 +84,4 @@ print(
     f'PasswortGenerator v{APP_VERSION}, '
     f'{image.width()}x{image.height()}, {filename.stat().st_size} bytes'
 )
+

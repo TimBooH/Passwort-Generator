@@ -1,6 +1,6 @@
 name: Unstable Preview - Linux & Windows
 
-# Preview is published ONLY as a GitHub prerelease (never latest Stable).
+# Preview packages are published via a Git tag, not another branch or Release.
 # Linux and Windows must both pass before publishing.
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements.txt
       - name: Install minimal Linux/Qt dependencies
@@ -57,6 +57,19 @@ jobs:
           PYTHONPATH=. python tests/smoke_window_geometry_ui.py
           PYTHONPATH=. python tests/smoke_update_gui.py
           PYTHONPATH=. python tests/smoke_update_channels_ui.py
+          PYTHONPATH=. python tests/smoke_channel_persistence_ui.py
+          PYTHONPATH=. python tests/smoke_switches_ui.py
+          PYTHONPATH=. python tests/capture_readme_screenshot.py
+          PYTHONPATH=. python tests/capture_settings_switches.py
+      - name: Upload genuine Linux application design screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: PasswortGenerator-UNSTABLE-Designvorschau
+          path: |
+            readme-screenshot.png
+            settings-switches.png
+          if-no-files-found: error
+          retention-days: 14
       - name: Embed UNSTABLE build identity and verify isolation
         shell: bash
         run: |
@@ -64,7 +77,11 @@ jobs:
           printf "CHANNEL = 'unstable'\nBUILD_SHA = '%s'\n" "${GITHUB_SHA:0:12}" > release_channel.py
           python - <<'PY'
           import os
+          import tempfile
           os.environ['QT_QPA_PLATFORM'] = 'offscreen'
+          # Keep the installed-build identity test separate from all earlier
+          # smoke tests' QSettings; they intentionally exercise both channels.
+          os.environ['XDG_CONFIG_HOME'] = tempfile.mkdtemp(prefix='passwort-ci-identity-')
           from PySide6.QtWidgets import QApplication
           from main import PasswordWindow
           from release_channel import CHANNEL
@@ -78,7 +95,7 @@ jobs:
           from release_channel import BUILD_SHA
           assert BUILD_SHA == os.environ['GITHUB_SHA'][:12]
           from update_channels import channel_api
-          assert channel_api(window.update_channel).endswith('releases/tags/unstable')
+          assert channel_api(window.update_channel).endswith('/releases/tags/unstable')
           window.close()
           print('UNSTABLE isolated identity, settings, and updates verified')
           PY
@@ -86,7 +103,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator main.py
+          pyinstaller --noconfirm --clean --windowed --name PasswortGenerator --add-data "assets/fonts:assets/fonts" main.py
           mkdir -p AppDir/usr/bin AppDir/usr/share/applications AppDir/usr/share/icons/hicolor/scalable/apps
           cp -r dist/PasswortGenerator AppDir/usr/bin/
           cp assets/de.timbooh.passwortgenerator.svg AppDir/de.timbooh.passwortgenerator.svg
@@ -134,7 +151,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: pip
           cache-dependency-path: requirements.txt
       - name: Install Windows/Qt dependencies
@@ -153,7 +170,7 @@ jobs:
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test $test" }
           }
-          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py')) {
+          foreach ($test in @('smoke_default_ocean_ui.py', 'smoke_tabs_ui.py', 'smoke_theme_history_ui.py', 'smoke_update_navigation_ui.py', 'smoke_no_scroll_ui.py', 'smoke_language_ui.py', 'smoke_profile_clipboard_ui.py', 'smoke_v020_ui.py', 'smoke_window_geometry_ui.py', 'smoke_update_channels_ui.py', 'smoke_channel_persistence_ui.py')) {
             python "tests/$test"
             if ($LASTEXITCODE -ne 0) { throw "Failed GUI smoke $test" }
           }
@@ -170,7 +187,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           python tools/make_windows_icon.py
           if ($LASTEXITCODE -ne 0) { throw 'Icon generator failed' }
-          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" main.py
+          pyinstaller --noconfirm --clean --windowed --onedir --name PasswortGenerator --icon assets/passwortgenerator.ico --add-data "assets/passwortgenerator.ico;assets" --add-data "assets/fonts;assets/fonts" main.py
           if ($LASTEXITCODE -ne 0) { throw 'Windows PyInstaller preview failed' }
           $exe = Join-Path $PWD 'dist\PasswortGenerator\PasswortGenerator.exe'
           $smoke = Start-Process -FilePath $exe -ArgumentList '--verify-bundle' -Wait -PassThru
@@ -215,13 +232,12 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  publish-unstable-prerelease:
-    # This is a PUBLIC PRERELEASE, never /releases/latest (Stable). The
-    # GitHub API exposes its assets without a user token, unlike Actions ZIPs.
+  publish-unstable-downloads:
+    # No PAT or GitHub Releases: use built-in GITHUB_TOKEN on THIS repository.
     needs: [linux-preview, windows-preview]
     if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    timeout-minutes: 12
     permissions:
       contents: write
     env:
@@ -232,7 +248,7 @@ jobs:
           pattern: PasswortGenerator-UNSTABLE-*
           path: preview-assets
           merge-multiple: true
-      - name: Publish both verified builds only after both jobs succeed
+      - name: Publish tested downloads to branch without GitHub Release
         shell: bash
         run: |
           set -euo pipefail
@@ -241,26 +257,158 @@ jobs:
           windows="PasswortGenerator-UNSTABLE-${short}-Setup-x64.exe"
           test -s "preview-assets/$linux"
           test -s "preview-assets/$windows"
-          # PowerShell's ASCII output on Windows can contain CRLF endings.
-          # Normalize the checksum manifest, not the signed installer bytes.
+          sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
+          (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
+          linux_sha="$(sha256sum "preview-assets/$linux" | cut -d' ' -f1)"
+          windows_sha="$(sha256sum "preview-assets/$windows" | cut -d' ' -f1)"
+          linux_size="$(wc -c < "preview-assets/$linux" | tr -d '[:space:]')"
+          windows_size="$(wc -c < "preview-assets/$windows" | tr -d '[:space:]')"
+          base="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/unstable-downloads"
+          folder="$(mktemp -d)"
+          trap 'rm -rf "$folder"' EXIT
+          cp "preview-assets/$linux" "preview-assets/$windows" "$folder/"
+          cat > "$folder/latest.json" <<EOF
+          {
+            "tag_name": "unstable",
+            "name": "PasswortGenerator Unstable $short",
+            "prerelease": true,
+            "draft": false,
+            "body": "Unstable / Testversion: Linux- und Windows-Builds erfolgreich getestet.",
+            "assets": [
+              {
+                "name": "$linux",
+                "browser_download_url": "$base/$linux",
+                "digest": "sha256:$linux_sha",
+                "size": $linux_size
+              },
+              {
+                "name": "$windows",
+                "browser_download_url": "$base/$windows",
+                "digest": "sha256:$windows_sha",
+                "size": $windows_size
+              }
+            ]
+          }
+          EOF
+          python -m json.tool "$folder/latest.json" >/dev/null
+          (
+            cd "$folder"
+            git init -q -b snapshot
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add latest.json "$linux" "$windows"
+            git commit -qm "Verified Unstable $short"
+            git tag unstable-downloads
+            git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+            auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $auth" \
+              push --force origin refs/tags/unstable-downloads:refs/tags/unstable-downloads
+            git rev-parse HEAD > "$folder/snapshot.sha"
+            git rev-parse HEAD:latest.json > "$folder/manifest.sha"
+          )
+          # Verify the new tag before deleting any branches.
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/unstable-downloads" --jq '.object.sha')"
+          test "$tag_sha" = "$(cat "$folder/snapshot.sha")"
+
+          # Archive the unique history of the older promotion branch as a TAG.
+          promotion_ref="repos/$GITHUB_REPOSITORY/git/ref/heads/stable-channel-promotion"
+          archive_api="repos/$GITHUB_REPOSITORY/git/ref/tags/archive/stable-channel-promotion-20261025"
+          if gh api "$promotion_ref" >/dev/null 2>&1; then
+            promotion_sha="$(gh api "$promotion_ref" --jq '.object.sha')"
+            if ! gh api "$archive_api" >/dev/null 2>&1; then
+              gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+                -f ref="refs/tags/archive/stable-channel-promotion-20261025" \
+                -f sha="$promotion_sha" >/dev/null
+            fi
+            test "$promotion_sha" = "$(gh api "$archive_api" --jq '.object.sha')"
+            test "$promotion_sha" = "$(gh api "$promotion_ref" --jq '.object.sha')"
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/stable-channel-promotion"
+          fi
+
+          # The old branch masks the tag of the same name in raw GitHub URLs.
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/unstable-downloads" >/dev/null 2>&1; then
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/git/refs/heads/unstable-downloads"
+          fi
+          manifest_sha="$(gh api "repos/$GITHUB_REPOSITORY/contents/latest.json?ref=unstable-downloads" --jq '.sha')"
+          test "$manifest_sha" = "$(cat "$folder/manifest.sha")"
+          branches="$(gh api --paginate "repos/$GITHUB_REPOSITORY/branches?per_page=100" --jq '.[].name' | sort)"
+          test "$branches" = "$(printf 'main\nunstable')"
+          echo "Verified only main and unstable branches remain."
+          echo "Unstable tag feed: $base/latest.json"
+
+  publish-unstable-prerelease:
+    # Keep a single rolling UNSTABLE prerelease. Never publish /releases/latest.
+    needs: [linux-preview, windows-preview, publish-unstable-downloads]
+    if: github.ref == 'refs/heads/unstable' && github.repository == 'TimBooH/Passwort-Generator'
+    runs-on: ubuntu-22.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: PasswortGenerator-UNSTABLE-*
+          path: preview-assets
+          merge-multiple: true
+      - name: Publish rolling Unstable release after successful Windows and Linux tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          short="${GITHUB_SHA:0:12}"
+          linux="PasswortGenerator-UNSTABLE-${short}-x86_64.AppImage"
+          windows="PasswortGenerator-UNSTABLE-${short}-Setup-x64.exe"
+          test -s "preview-assets/$linux"
+          test -s "preview-assets/$windows"
           sed -i 's/\r$//' preview-assets/SHA256SUMS-unstable-windows.txt
           (cd preview-assets && sha256sum -c SHA256SUMS-unstable-linux.txt && sha256sum -c SHA256SUMS-unstable-windows.txt)
           title="PasswortGenerator Unstable $short"
-          body="**UNSTABLE / TESTVERSION** – Nicht für den Produktiveinsatz!\n\nTest-Build vom Commit \`$GITHUB_SHA\`. Windows und Linux erfolgreich getestet.\n\nDie offizielle Stable-Version bleibt unter /releases/latest und wird davon nicht verändert."
-          if gh release view unstable --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release edit unstable --repo "$GITHUB_REPOSITORY" --title "$title" --notes "$body" --prerelease --latest=false
-          else
-            gh release create unstable --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$title" --notes "$body" --prerelease --latest=false
+          body="$(printf '%s\n\n%s\n\n%s'             '**UNSTABLE / TESTVERSION** – Keine freigegebene Stable-Version.'             "Getesteter Commit: ${GITHUB_SHA}. Linux und Windows erfolgreich gebaut und SHA-256-geprüft."             'Stable v0.22.0 und der Branch main bleiben unverändert.')"
+          if ! gh release view unstable --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create unstable --repo "$GITHUB_REPOSITORY"               --target "$GITHUB_SHA" --title "PasswortGenerator Unstable (initializing)"               --notes "Unstable release in Vorbereitung" --prerelease --latest=false
           fi
-          gh release upload unstable "preview-assets/$linux" "preview-assets/$windows" \
-            --repo "$GITHUB_REPOSITORY"
-          # Discard old preview assets only after both new files were published.
-          # Names contain the build SHA; clients only select the exact pair.
-          assets="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable" --jq '.assets[] | [.id, .name] | @tsv')"
+          # The two new asset names include the commit SHA. Upload first,
+          # then update the visible title only once both uploads are present.
+          gh release upload unstable "preview-assets/$linux" "preview-assets/$windows"             --repo "$GITHUB_REPOSITORY" --clobber
+          linux_sha="$(sha256sum "preview-assets/$linux" | cut -d' ' -f1)"
+          windows_sha="$(sha256sum "preview-assets/$windows" | cut -d' ' -f1)"
+          linux_size="$(wc -c < "preview-assets/$linux" | tr -d '[:space:]')"
+          windows_size="$(wc -c < "preview-assets/$windows" | tr -d '[:space:]')"
+          for attempt in 1 2 3 4 5 6; do
+            release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable")"
+            if RELEASE_JSON="$release" LINUX_NAME="$linux" WINDOWS_NAME="$windows"                LINUX_SHA="$linux_sha" WINDOWS_SHA="$windows_sha"                LINUX_SIZE="$linux_size" WINDOWS_SIZE="$windows_size"                python - <<'PY'
+          import json, os
+          release = json.loads(os.environ["RELEASE_JSON"])
+          assert release.get("tag_name") == "unstable"
+          assert release.get("prerelease") is True
+          assert release.get("draft") is False
+          assets = {a["name"]: a for a in release.get("assets", [])}
+          for prefix, name in (("LINUX", os.environ["LINUX_NAME"]),
+                               ("WINDOWS", os.environ["WINDOWS_NAME"])):
+              asset = assets[name]
+              assert asset["size"] == int(os.environ[prefix + "_SIZE"])
+              assert asset.get("digest") == "sha256:" + os.environ[prefix + "_SHA"]
+              assert asset["browser_download_url"] == (
+                  "https://github.com/" + os.environ["GITHUB_REPOSITORY"]
+                  + "/releases/download/unstable/" + name)
+          PY
+            then
+              break
+            fi
+            if [[ "$attempt" -eq 6 ]]; then
+              echo "::error::Unstable assets: GitHub size/digest/URL check failed."
+              exit 1
+            fi
+            sleep 2
+          done
+          gh release edit unstable --repo "$GITHUB_REPOSITORY"             --title "$title" --notes "$body" --prerelease --latest=false
+          # Old binaries are removed only after both tested new uploads
+          # are checked and the release now points at the new build.
           while IFS=$'\t' read -r id filename; do
             [[ -n "$id" ]] || continue
             if [[ "$filename" != "$linux" && "$filename" != "$windows" ]]; then
               gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/assets/$id"
             fi
-          done <<< "$assets"
-          echo "Preview ready: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"
+          done < <(gh api "repos/$GITHUB_REPOSITORY/releases/tags/unstable"             --jq '.assets[] | [.id, .name] | @tsv')
+          echo "UNSTABLE published: https://github.com/$GITHUB_REPOSITORY/releases/tag/unstable"
