@@ -455,7 +455,7 @@ class PasswordWindow(QMainWindow):
         sections_row.setSpacing(9)
         self.ocean_options_panel = QFrame(self.ocean_sections)
         self.ocean_options_panel.setObjectName('oceanOptionPanel')
-        self.ocean_options_panel.setMinimumWidth(245)
+        self.ocean_options_panel.setMinimumWidth(238)
         options_col = QVBoxLayout(self.ocean_options_panel)
         self.ocean_options_layout = options_col
         options_col.setContentsMargins(11, 12, 11, 9)
@@ -604,6 +604,7 @@ class PasswordWindow(QMainWindow):
         self.rules_button.setObjectName('advancedPasswordRulesButton')
         self.rules_button.clicked.connect(self.show_advanced_rules)
         check_layout.addWidget(self.rules_button, 1, 1)
+        self.rules_button.hide()  # This action moved to Settings > Passwort.
 
         # These controls only appear in Passphrase mode. The checkbox adds
         # one cryptographically random 10–99 number, separated as selected.
@@ -701,6 +702,7 @@ class PasswordWindow(QMainWindow):
         self.show_button.setObjectName('squareAction')
         self.show_button.setCheckable(True)
         self.show_button.toggled.connect(self.toggle_visibility)
+        self.show_button.setChecked(True)  # Approved reference displays generated passwords.
         password_row.insertWidget(1, self.show_button)
         password_row.removeWidget(self.regenerate_button)
         self.regenerate_button.hide()

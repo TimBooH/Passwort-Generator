@@ -22,12 +22,12 @@ TOUR_STEPS = (
      'Mit diesem Dropdown wählst du das Zeichen zwischen Wörtern und Zufallszahl.'),
     (0, 'generate_button', 'Neues Passwort generieren',
      'Klicke hier, um ein Passwort zu erzeugen. Das Symbol am Ergebnis kopiert es.'),
-    (1, 'language_combo', 'Sprache auswählen',
-     'Hier stellst du die Sprache der gesamten Anwendung auf Deutsch oder Englisch.'),
-    (0, 'nav_buttons', 'Update',
-     'Über diesen Button öffnest du die Updateprüfung und den Changelog mit Versionshistorie.'),
-    (0, 'info_nav_button', 'Info',
-     'Info ist jetzt ein eigener Bereich im Fenster. Hier lässt sich die Tour wiederholen.'),
+    (0, 'history_button', 'Sitzungsverlauf',
+     'Hier öffnest du den aufklappbaren Verlauf deiner generierten Passwörter.'),
+    (0, 'settings_button', 'Einstellungen & Update',
+     'Hier findest du Sprache, Sicherheit, Profile und den Update-Bereich.'),
+    (0, 'settings_button', 'Info',
+     'Der Bereich Info liegt innerhalb der Einstellungen. Dort kannst du die Tour erneut starten.'),
 )
 
 
@@ -76,8 +76,6 @@ class FirstRunTour(QWidget):
 
     def target_widget(self):
         _page, name, _title, _explanation = TOUR_STEPS[self.step_index]
-        if name == 'nav_buttons':
-            return self.window.nav_buttons[2]
         return getattr(self.window, name)
 
     def go_to_step(self, index):
@@ -90,7 +88,7 @@ class FirstRunTour(QWidget):
         if target_name in ('phrase_two_digits', 'phrase_separator'):
             if not self.window._phrase_mode:
                 self.window.switch_mode(True)
-        elif page == 0 and target_name not in ('nav_buttons', 'info_nav_button'):
+        elif page == 0 and target_name not in ('settings_button', 'history_button'):
             if self.window._phrase_mode:
                 self.window.switch_mode(False)
         QApplication.processEvents()
