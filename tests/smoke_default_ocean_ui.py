@@ -34,6 +34,8 @@ assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
 assert window.ocean_sections.height() == 323
 assert window.ocean_options_panel.height() < 340
 assert window.password_output_card.height() == 215
+assert len(window._strength_segments) == 5
+assert window.strength_segments.isVisible()
 assert window.analysis_button.isHidden()
 assert window.ocean_options_heading.text().endswith('Passwortoptionen')
 assert window.ocean_length_heading.text().endswith('Länge & Anzahl')
@@ -64,6 +66,7 @@ assert 'switch-on.png' in window.styleSheet()
 
 window.generate()
 assert len(window.output.text()) == window.length.value()
+assert any('#21EFA0' in tile.styleSheet() for tile in window._strength_segments)
 assert window.output.echoMode() == window.output.EchoMode.Normal
 window.switch_mode(True)
 assert window.passphrase_mode_button.isChecked()

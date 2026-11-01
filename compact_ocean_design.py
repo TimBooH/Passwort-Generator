@@ -76,6 +76,7 @@ def compact_ocean_stylesheet():
         color: #30EFCA; font-size: 13px; font-weight: 700;
         background: transparent;
     }
+    QWidget#strengthSegments { background: transparent; border: none; }
     QProgressBar#strengthBar {
         background: #173A60; border: none; border-radius: 6px;
         min-height: 10px; max-height: 10px;

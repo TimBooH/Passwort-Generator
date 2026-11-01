@@ -468,7 +468,24 @@ class PasswordWindow(QMainWindow):
             strength_row.removeWidget(control)
         strength_meter_row = QHBoxLayout()
         strength_meter_row.setSpacing(9)
-        strength_meter_row.addWidget(self.strength_bar, 1)
+        # Five native Qt segments emulate the approved graphic without
+        # an unstable paintEvent or a duplicate strength calculation.
+        self.strength_segments = QWidget(self.password_output_card)
+        self.strength_segments.setObjectName('strengthSegments')
+        segment_row = QHBoxLayout(self.strength_segments)
+        segment_row.setContentsMargins(0, 0, 0, 0)
+        segment_row.setSpacing(4)
+        self._strength_segments = []
+        for index in range(5):
+            segment = QFrame(self.strength_segments)
+            segment.setObjectName('strengthSegment')
+            segment.setFixedHeight(14)
+            segment_row.addWidget(segment, 1)
+            self._strength_segments.append(segment)
+        self.strength_bar.valueChanged.connect(self.update_strength_segments)
+        self.update_strength_segments(self.strength_bar.value())
+        self.strength_bar.hide()  # Retain numeric progress API for tests and logic.
+        strength_meter_row.addWidget(self.strength_segments, 1)
         strength_meter_row.addWidget(self.ocean_strength_value)
         strength_meter_row.addWidget(self.clipboard_countdown_label)
         result_layout.addLayout(strength_meter_row)
@@ -1944,6 +1961,23 @@ class PasswordWindow(QMainWindow):
             self.load_release_history()
         if self.reporter is not None:
             self.reporter.note('NAVIGATE', f'tab={self.tab_names[index]}', force=True)
+
+    def update_strength_segments(self, value):
+        """Synchronize visible rounded blocks with the existing 0–100 score."""
+        filled = max(0, min(5, (int(value) + 19) // 20))
+        bright = ('#21EFA0', '#0FEFC0', '#04EBD3', '#00DAE8', '#00C5FF')
+        for index, tile in enumerate(self._strength_segments):
+            if index < filled:
+                tile.setStyleSheet(
+                    'QFrame#strengthSegment { background: ' + bright[index] +
+                    '; border: 1px solid rgba(81,255,232,120); '
+                    'border-radius: 6px; }'
+                )
+            else:
+                tile.setStyleSheet(
+                    'QFrame#strengthSegment { background: #12365A; '
+                    'border: 1px solid #1B4269; border-radius: 6px; }'
+                )
 
     def update_ocean_presentation(self):
         """Keep the real two-panel layout usable in all schemes and sizes."""
