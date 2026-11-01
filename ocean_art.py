@@ -18,7 +18,11 @@ def icon_pixmap(name, size=28, color='#EDF7FF'):
     pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
     p.setPen(pen)
     p.setBrush(Qt.BrushStyle.NoBrush)
-    if name == 'key':
+    if name == 'lock':
+        p.drawRoundedRect(QRectF(7, 13, 18, 16), 3, 3)
+        p.drawArc(QRectF(10, 3, 12, 20), 0, 180 * 16)
+        p.drawEllipse(QRectF(15, 19, 2, 3))
+    elif name == 'key':
         p.drawEllipse(QRectF(17, 3, 12, 12))
         path = QPainterPath(QPointF(19, 13))
         for x, y in ((5, 27), (5, 22), (9, 22), (9, 18), (13, 18)):

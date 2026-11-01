@@ -8,15 +8,31 @@ Only the real PySide6 widgets are styled here; no browser/mockup layer.
 
 def compact_ocean_stylesheet():
     return """
-    QWidget#contentColumn { background: transparent; }
+    QWidget#contentColumn {
+        background: transparent;
+        border: 1px solid rgba(22,132,211,185);
+        border-radius: 17px;
+    }
+    QLabel#brandLock {
+        background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
+            stop:0 #0BB8FF, stop:1 #0755D6);
+        border: 1px solid #32D7FF;
+        border-radius: 12px;
+        padding: 6px;
+    }
+    QLabel#brandTitle { color: #F4F8FF; font-size: 21px; font-weight: 750; }
+    QWidget#passwordPage { background: transparent; }
+    QWidget#passwordPage QLabel#oceanStrengthCaption {font-size: 13px;}
+    QWidget#passwordPage QLabel#oceanStrengthValue {font-size: 14px;}
+    QWidget#passwordPage QLabel#batchCountLabel {font-size: 13px;}
     QFrame#topNav { background: transparent; border: none; }
     QPushButton#compactNavButton {
-        color: #DDEAFF; font-size: 13px; font-weight: 600;
+        color: #DDEAFF; font-size: 14px; font-weight: 600;
         border: 1px solid #175082; border-radius: 9px;
         background: qlineargradient(x1:0,y1:0,x2:1,y2:1,
             stop:0 rgba(8,36,71,235), stop:1 rgba(4,23,50,230));
-        padding: 5px 7px;
-        min-height: 38px;
+        padding: 7px 7px;
+        min-height: 40px;
     }
     QPushButton#compactNavButton:hover {
         border: 1px solid #34BFFF;
@@ -33,11 +49,11 @@ def compact_ocean_stylesheet():
         border: 1px solid #1975B8; border-radius: 15px;
     }
     QLabel#oceanOutputCaption {
-        color: #F2F7FF; font-size: 16px; font-weight: 700;
+        color: #F2F7FF; font-size: 19px; font-weight: 700;
         background: transparent; border: none;
     }
     QLineEdit#passwordOutput {
-        color: #EAF6FF; font-family: monospace; font-size: 19px;
+        color: #EAF6FF; font-family: monospace; font-size: 20px;
         background: rgba(0,15,36,245);
         border: 1px solid #165A96; border-radius: 9px; padding: 3px 12px;
     }
@@ -79,11 +95,11 @@ def compact_ocean_stylesheet():
         border: 1px solid #136EA9; border-radius: 13px;
     }
     QLabel#oceanPanelHeading {
-        color: #F5F8FF; font-size: 15px; font-weight: 700;
+        color: #F5F8FF; font-size: 17px; font-weight: 700;
         background: transparent;
     }
     QWidget#passwordPage QCheckBox {
-        color: #DBE9FB; font-size: 12px; font-weight: 450; spacing: 8px;
+        color: #DBE9FB; font-size: 14px; font-weight: 500; spacing: 11px;
     }
     QPushButton#batchCountChoice {
         color: #E7F5FF; font-size: 13px;
@@ -99,7 +115,7 @@ def compact_ocean_stylesheet():
             stop:0 #079EFF,stop:1 #0757DB);
     }
     QPushButton#generatePasswordButton {
-        color: #FFFFFF; font-size: 18px; font-weight: 700;
+        color: #FFFFFF; font-size: 19px; font-weight: 750;
         border: 1px solid #3DF2FF; border-radius: 12px;
         padding: 10px 14px;
         background: qlineargradient(x1:0,y1:0,x2:1,y2:0,

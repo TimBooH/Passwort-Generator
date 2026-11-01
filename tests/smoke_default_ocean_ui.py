@@ -12,7 +12,7 @@ from theme_colors import DEFAULT_SCHEME
 app = QApplication([])
 app.setStyle('Fusion')
 window = PasswordWindow(auto_check=False)
-window.resize(730, 830)
+window.resize(700, 775)
 window.show()
 for _ in range(5):
     app.processEvents()
@@ -31,6 +31,10 @@ assert window.ocean_options_panel.isVisible()
 assert window.ocean_length_panel.isVisible()
 assert window.ocean_options_panel.x() < window.ocean_length_panel.x()
 assert window.ocean_options_panel.height() == window.ocean_length_panel.height()
+assert window.ocean_sections.height() == 316
+assert window.ocean_options_panel.height() < 340
+assert window.password_output_card.height() == 190
+assert window.analysis_button.isHidden()
 assert window.ocean_options_heading.text().endswith('Passwortoptionen')
 assert window.ocean_length_heading.text().endswith('Länge & Anzahl')
 assert not window.ocean_hero_icon.isVisible()
@@ -46,6 +50,7 @@ assert len(window.batch_count_buttons)==4
 assert [b.text() for b in window.batch_count_buttons]==['1','5','10','20']
 assert window.batch_count_buttons[0].isChecked()
 assert window.generate_button.isVisible()
+assert window.generate_button.height() >= 66
 assert not window.status.isVisible()
 assert not window.regenerate_button.isVisible()
 assert window.generate_button.parentWidget() is window.glass_cards[0]

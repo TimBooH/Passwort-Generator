@@ -18,7 +18,7 @@ settings.setValue('ui/language','de')
 app=QApplication([])
 app.setStyle('Fusion')
 window=PasswordWindow(auto_check=False)
-window.resize(730,830)
+window.resize(700,775)
 window.show()
 window.tabs.setCurrentIndex(0)
 window.generate()
@@ -32,6 +32,8 @@ assert window.output.text() and window.output.echoMode()==QLineEdit.EchoMode.Nor
 assert window.strength_bar.value()>0
 assert window.password_output_card.isVisible()
 assert window.ocean_options_panel.isVisible()
+assert window.ocean_sections.height()==316
+assert window.password_output_card.height()==190
 assert window.ocean_length_panel.isVisible()
 assert all(b.isVisible() for b in window._compact_nav_buttons)
 assert [b.text() for b in window._compact_nav_buttons]==[
@@ -42,14 +44,14 @@ assert not window.nav_buttons[2].isVisible()
 assert not window.status.isVisible()
 assert window.generate_button.isVisible()
 assert window.generate_button.width()>=480
-assert window.generate_button.height()>=55
+assert window.generate_button.height()>=66
 assert window.check_layout.verticalSpacing()>=5
 assert not window.rules_button.isVisible()
 assert not window.ocean_preset_box.isVisible()
 assert window.ocean_output_caption.isVisible()
 assert 'QFrame#passwordOutputCard' in window.styleSheet()
 image=window.grab()
-assert not image.isNull() and image.width()>=700 and image.height()>=770
+assert not image.isNull() and image.width()>=700 and image.height()>=750
 filename=Path('readme-screenshot.png')
 assert image.save(str(filename),'PNG')
 assert filename.stat().st_size>10000
