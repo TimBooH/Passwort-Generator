@@ -18,7 +18,7 @@ settings.setValue('ui/language','de')
 app=QApplication([])
 app.setStyle('Fusion')
 window=PasswordWindow(auto_check=False)
-window.resize(700,775)
+window.resize(700,810)
 window.show()
 window.tabs.setCurrentIndex(0)
 window.generate()
@@ -32,8 +32,8 @@ assert window.output.text() and window.output.echoMode()==QLineEdit.EchoMode.Nor
 assert window.strength_bar.value()>0
 assert window.password_output_card.isVisible()
 assert window.ocean_options_panel.isVisible()
-assert window.ocean_sections.height()==316
-assert window.password_output_card.height()==190
+assert window.ocean_sections.height()==323
+assert window.password_output_card.height()==215
 assert window.ocean_length_panel.isVisible()
 assert all(b.isVisible() for b in window._compact_nav_buttons)
 assert [b.text() for b in window._compact_nav_buttons]==[

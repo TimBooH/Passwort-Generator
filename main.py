@@ -177,7 +177,7 @@ class PasswordWindow(QMainWindow):
         channel_badge = ' [UNSTABLE]' if CHANNEL == 'unstable' else ''
         self.setWindowTitle(f'Passwort-Generator v{APP_VERSION}{channel_badge}')
         # Widescreen proportions as in the reference; saved geometry still wins.
-        self.resize(700, 775)  # Compact Ocean reference proportions.
+        self.resize(700, 810)  # Compact Ocean reference proportions.
         if os.name == 'nt':
             icon_base = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
             icon_path = icon_base / 'assets' / 'passwortgenerator.ico'
@@ -226,7 +226,14 @@ class PasswordWindow(QMainWindow):
         self.brand_title = brand
         brand.setObjectName('brandTitle')
         brand.setWordWrap(True)
-        heading.addWidget(brand)
+        brand_line = QHBoxLayout()
+        brand_line.setSpacing(12)
+        brand_line.addWidget(brand)
+        version_badge = QLabel(f'v{APP_VERSION}')
+        version_badge.setObjectName('compactVersionLabel')
+        brand_line.addWidget(version_badge)
+        brand_line.addStretch(1)
+        heading.addLayout(brand_line)
         subtitle = QLabel('Stark. Sicher. Einzigartig.')
         self.brand_subtitle = subtitle
         subtitle.setObjectName('brandSubtitle')
@@ -305,7 +312,7 @@ class PasswordWindow(QMainWindow):
         # The screenshot has an independent bordered card for results.
         self.password_output_card = QFrame(group)
         self.password_output_card.setObjectName('passwordOutputCard')
-        self.password_output_card.setFixedHeight(190)
+        self.password_output_card.setFixedHeight(215)
         result_layout = QVBoxLayout(self.password_output_card)
         result_layout.setContentsMargins(17, 14, 17, 15)
         result_layout.setSpacing(12)
@@ -355,7 +362,16 @@ class PasswordWindow(QMainWindow):
 
         self.ocean_output_caption = QLabel('Generiertes Passwort')
         self.ocean_output_caption.setObjectName('oceanOutputCaption')
-        result_layout.addWidget(self.ocean_output_caption)
+        result_heading = QHBoxLayout()
+        result_heading.setContentsMargins(0, 0, 0, 0)
+        result_heading.addWidget(self.ocean_output_caption)
+        result_heading.addStretch(1)
+        shield = QLabel()
+        shield.setPixmap(icon_pixmap('shield', 30, '#34F4C8'))
+        shield.setObjectName('compactShieldIcon')
+        shield.setFixedSize(32, 32)
+        result_heading.addWidget(shield)
+        result_layout.addLayout(result_heading)
         self.ocean_output_caption.hide()
 
         self.single_output_widget = QWidget()
@@ -445,6 +461,17 @@ class PasswordWindow(QMainWindow):
         self.ocean_strength_caption.hide()
         self.ocean_strength_value.hide()
         strength_row.addWidget(self.clipboard_countdown_label)
+        # The reference places the strength caption above the colored meter.
+        # Move real widgets without duplicating any strength state.
+        for control in (self.strength_bar, self.ocean_strength_value,
+                        self.clipboard_countdown_label):
+            strength_row.removeWidget(control)
+        strength_meter_row = QHBoxLayout()
+        strength_meter_row.setSpacing(9)
+        strength_meter_row.addWidget(self.strength_bar, 1)
+        strength_meter_row.addWidget(self.ocean_strength_value)
+        strength_meter_row.addWidget(self.clipboard_countdown_label)
+        result_layout.addLayout(strength_meter_row)
         group_layout.addWidget(self.password_output_card)
         group_layout.addSpacing(2)
 
@@ -590,6 +617,8 @@ class PasswordWindow(QMainWindow):
         self.exclude.setToolTip('0, O, o, 1, I, l, L und | ausschließen')
         for control in (self.upper, self.lower, self.digits, self.symbols):
             control.setChecked(True)
+        for option in (self.upper, self.lower, self.digits, self.symbols, self.exclude):
+            option.setMinimumHeight(34)
         self.exclude.setChecked(
             self.settings.value('password/exclude_ambiguous', False, type=bool)
         )
@@ -650,7 +679,7 @@ class PasswordWindow(QMainWindow):
         sections_row.addWidget(self.ocean_options_panel, 18)
         sections_row.addWidget(self.ocean_length_panel, 11)
         group_layout.addWidget(self.ocean_sections, 0)
-        self.ocean_sections.setFixedHeight(316)
+        self.ocean_sections.setFixedHeight(323)
 
         self.generate_button = QPushButton('Passwort generieren')
         # Compact, glossy call-to-action; do not stretch to the card width.
@@ -1448,7 +1477,7 @@ class PasswordWindow(QMainWindow):
         self.batch_scroll.setVisible(many)
         self.show_button.setVisible(not many)
         self.batch_scroll.setFixedHeight(182 if many else 0)
-        self.password_output_card.setFixedHeight(295 if many else 190)
+        self.password_output_card.setFixedHeight(315 if many else 215)
 
     def _select_batch_password(self, secret):
         self.output.setText(secret)
@@ -1943,13 +1972,13 @@ class PasswordWindow(QMainWindow):
             # Prevent the enormous empty panels from the previous design.
             # Cap panel growth instead of resetting QWidget min/max heights
             # on every resize, avoiding Qt binding invalidation under stress.
-            self.ocean_sections.setFixedHeight(316)
+            self.ocean_sections.setFixedHeight(323)
             self.output.setFixedHeight(60)
             self.copy_top_button.setFixedHeight(60)
             self.show_button.setFixedHeight(60)
             self.regenerate_button.setFixedHeight(60)
         else:
-            self.ocean_sections.setFixedHeight(316)
+            self.ocean_sections.setFixedHeight(323)
             self.output.setFixedHeight(54)
             self.output.setMinimumHeight(54)  # Qt Windows stylesheet must not compress field.
             self.copy_top_button.setFixedHeight(54)
@@ -1957,7 +1986,7 @@ class PasswordWindow(QMainWindow):
             self.regenerate_button.setFixedHeight(54)
         # Give the choices more breathing room on large screens without
         # forcing a scrollbar when the same app is resized narrowly.
-        self.check_layout.setVerticalSpacing(14 if ocean and wide else 12)
+        self.check_layout.setVerticalSpacing(18 if ocean and wide else 17)
         self.ocean_options_layout.setSpacing(13)
         self.brand_subtitle.hide()
         self.brand_icon.setFixedSize(50, 50)

@@ -22,6 +22,8 @@ def compact_ocean_stylesheet():
     }
     QLabel#brandTitle { color: #F4F8FF; font-size: 21px; font-weight: 750; }
     QWidget#passwordPage { background: transparent; }
+    QLabel#compactVersionLabel { color: #32CBFF; font-size: 13px; font-weight: 700; }
+    QLabel#compactShieldIcon { background: transparent; border: none; }
     QWidget#passwordPage QLabel#oceanStrengthCaption {font-size: 13px;}
     QWidget#passwordPage QLabel#oceanStrengthValue {font-size: 14px;}
     QWidget#passwordPage QLabel#batchCountLabel {font-size: 13px;}
