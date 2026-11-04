@@ -1,0 +1,21 @@
+{
+  "tag_name": "unstable",
+  "name": "PasswortGenerator Unstable 8bfc028241b2",
+  "prerelease": true,
+  "draft": false,
+  "body": "Unstable / Testversion: Linux- und Windows-Builds erfolgreich getestet.",
+  "assets": [
+    {
+      "name": "PasswortGenerator-UNSTABLE-8bfc028241b2-x86_64.AppImage",
+      "browser_download_url": "https://raw.githubusercontent.com/TimBooH/Passwort-Generator/unstable-downloads/PasswortGenerator-UNSTABLE-8bfc028241b2-x86_64.AppImage",
+      "digest": "sha256:8660b151e2df46cfd3379360f7f30ea416ccc9cc868efd43f9de3c9df74b7cb4",
+      "size": 73901248
+    },
+    {
+      "name": "PasswortGenerator-UNSTABLE-8bfc028241b2-Setup-x64.exe",
+      "browser_download_url": "https://raw.githubusercontent.com/TimBooH/Passwort-Generator/unstable-downloads/PasswortGenerator-UNSTABLE-8bfc028241b2-Setup-x64.exe",
+      "digest": "sha256:a98d0d2e159816c609a8d41126d71447960a5e7d46f37b1a0524774ed4052d30",
+      "size": 29293701
+    }
+  ]
+}
