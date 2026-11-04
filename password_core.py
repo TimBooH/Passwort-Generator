@@ -118,14 +118,65 @@ def make_password_batch(count, length, **rules):
 
 def password_entropy_bits(length, *, use_lower=True, use_upper=True,
                           use_digits=True, use_symbols=True,
-                          exclude_similar=False, excluded_chars=''):
-    """Theoretical upper bound based on the allowed alphabet (not a guarantee)."""
+                          exclude_similar=False, excluded_chars='',
+                          min_digits=0, min_symbols=0):
+    """Exact Shannon entropy (bits) of make_password's output distribution.
+
+    Mandatory characters make valid passwords unequally likely. This measures
+    the generator distribution, not the strength of an individual password.
+    """
+    if type(length) is not int or not 8 <= length <= 128:
+        raise ValueError('Die Passwortlänge muss zwischen 8 und 128 liegen.')
+    if any(type(n) is not int or n < 0 or n > 20
+           for n in (min_digits, min_symbols)):
+        raise ValueError('Mindestanzahl muss zwischen 0 und 20 liegen.')
+    if (min_digits and not use_digits) or (min_symbols and not use_symbols):
+        raise ValueError('Für Mindestzahlen müssen die zugehörigen Zeichengruppen aktiv sein.')
     groups = password_groups(
         use_lower=use_lower, use_upper=use_upper,
         use_digits=use_digits, use_symbols=use_symbols,
         exclude_similar=exclude_similar, excluded_chars=excluded_chars,
     )
-    return length * math.log2(len(''.join(groups)))
+    # The alphabets are disjoint, so the initial required character from each
+    # group already counts towards its digit/symbol minimum, even after filters.
+    required = [max(1, min_digits) if group[0] in string.digits else
+                max(1, min_symbols) if group[0] in SYMBOLS else 1
+                for group in groups]
+    if sum(required) > length:
+        raise ValueError('Die Passwortlänge ist für die Mindestanforderungen zu kurz.')
+    return _generator_entropy_bits(length, [len(group) for group in groups], required)
+
+
+def _generator_entropy_bits(length, sizes, required):
+    """Evaluate -E[log2 P(s)] using binomial marginals of group counts.
+
+    With M = L - sum(r), K_i = r_i + Binomial(M, s_i/N), and
+    log P(s) = sum(log(K_i!/(K_i-r_i)!) - r_i*log(s_i))
+               - M*log(N) + log(M!) - log(L!).
+    Linearity of expectation needs only the marginals, reducing the exact
+    count-vector sum to O(groups * length) time. lgamma handles factorials.
+    """
+    remaining = length - sum(required)
+    total = sum(sizes)
+    factorials = [math.lgamma(n + 1) for n in range(length + 1)]
+    entropy = (remaining * math.log(total) + factorials[length]
+               - factorials[remaining])
+    for size, minimum in zip(sizes, required):
+        entropy += minimum * math.log(size)
+        if size == total:
+            expectation = factorials[length] - factorials[remaining]
+        else:
+            log_p = math.log(size / total)
+            log_q = math.log1p(-size / total)
+            expectation = math.fsum(
+                math.exp(factorials[remaining] - factorials[j]
+                         - factorials[remaining - j] + j * log_p
+                         + (remaining - j) * log_q)
+                * (factorials[j + minimum] - factorials[j])
+                for j in range(remaining + 1)
+            )
+        entropy -= expectation
+    return entropy / math.log(2)
 
 
 
@@ -198,13 +249,15 @@ def make_passphrase(word_count=6, separator='-', add_two_digit_number=False, lan
 
 
 def estimate_strength(secret, *, phrase_words=None, pool_size=0,
-                      extra_entropy_bits=0):
+                      extra_entropy_bits=0, entropy_bits=None):
     """Return a coarse entropy-based label and progress; not a security audit."""
     import math
 
     if not secret:
         return '--', 0
-    if phrase_words is not None:
+    if entropy_bits is not None:
+        bits = entropy_bits
+    elif phrase_words is not None:
         bits = max(0, phrase_words) * 10 + max(0, extra_entropy_bits)
     else:
         bits = len(secret) * math.log2(max(2, pool_size))

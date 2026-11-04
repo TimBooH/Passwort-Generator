@@ -130,6 +130,9 @@ class PasswordWindow(QMainWindow):
         self.network = QNetworkAccessManager(self)
         self.check_reply = None
         self.download_reply = None
+        self._download_channel = None
+        self._download_asset = None
+        self._download_version = None
         self.save_file = None
         self.download_error = None
         self.download_hash = None
@@ -862,6 +865,7 @@ class PasswordWindow(QMainWindow):
         self.clipboard_countdown_timer = QTimer(self)
         self.clipboard_countdown_timer.setInterval(1000)
         self.clipboard_countdown_timer.timeout.connect(self.refresh_clipboard_countdown)
+        QApplication.instance().aboutToQuit.connect(self.clear_clipboard_on_exit)
         self.clear_clipboard_checkbox.toggled.connect(self.configure_clipboard_clear)
         self.clipboard_timeout_combo.currentIndexChanged.connect(self.configure_clipboard_clear)
 
@@ -1337,6 +1341,20 @@ class PasswordWindow(QMainWindow):
                 clipboard.clear()
                 self._set_ui(self.status, 'Kopiertes Passwort aus der Zwischenablage entfernt.')
 
+    def clear_clipboard_on_exit(self):
+        """Forget our copy on exit without updating widgets or newer clipboard data."""
+        secret = self._clipboard_secret
+        if secret is None:
+            return
+        enabled = self.clear_clipboard_checkbox.isChecked()
+        if enabled and secret:
+            clipboard = QApplication.clipboard()
+            if clipboard.text() == secret:
+                clipboard.clear()
+        self.clipboard_timer.stop()
+        self.clipboard_countdown_timer.stop()
+        self._clipboard_secret = None
+
     def show_advanced_rules(self):
         """Compact modal keeps the password page free from vertical scrolling."""
         dialog = QDialog(self)
@@ -1500,7 +1518,7 @@ class PasswordWindow(QMainWindow):
         self.output.setText(secret)
         entropy = self._last_entropy_bits
         label, score = estimate_strength(
-            secret, pool_size=max(2, round(2 ** (entropy / max(1, len(secret)))))
+            secret, entropy_bits=entropy
         )
         self._set_ui(self.strength_label, f'🛡  Stärke: {label}')
         self._set_ui(self.ocean_strength_value, label)
@@ -2082,6 +2100,7 @@ class PasswordWindow(QMainWindow):
     def closeEvent(self, event):
         """Keep only window geometry, never secrets or session history."""
         if event.isAccepted():
+            self.clear_clipboard_on_exit()
             self.clipboard_timer.stop()
             self.clipboard_countdown_timer.stop()
             self._clipboard_secret = None
@@ -2176,19 +2195,11 @@ class PasswordWindow(QMainWindow):
                 results = make_password_batch(count, self.length.value(), **rules)
                 generated = results[0]
                 self._last_entropy_bits = password_entropy_bits(
-                    self.length.value(),
-                    use_lower=rules['use_lower'],
-                    use_upper=rules['use_upper'],
-                    use_digits=rules['use_digits'],
-                    use_symbols=rules['use_symbols'],
-                    exclude_similar=rules['exclude_similar'],
-                    excluded_chars=rules['excluded_chars'],
+                    self.length.value(), **rules
                 )
                 label, score = estimate_strength(
                     generated,
-                    pool_size=max(2, round(2 ** (
-                        self._last_entropy_bits / self.length.value()
-                    )))
+                    entropy_bits=self._last_entropy_bits,
                 )
                 kind = 'Passwort'
         except ValueError as error:
@@ -2218,8 +2229,24 @@ class PasswordWindow(QMainWindow):
         request.setTransferTimeout(30000)
         return request
 
+    def _refresh_update_channel_enabled(self):
+        self.channel_combo.setEnabled(
+            self.check_reply is None and self.download_reply is None
+            and self._rollback_reply is None and not self._rollback_pending
+        )
+
     def change_update_channel(self, *_):
         """Switch feed only; never silently uninstall or replace an app."""
+        if self.download_reply is not None:
+            blocked = self.channel_combo.blockSignals(True)
+            try:
+                self.channel_combo.setCurrentIndex(
+                    self.channel_combo.findData(self.update_channel)
+                )
+            finally:
+                self.channel_combo.blockSignals(blocked)
+            self._set_ui(self.update_status, 'Kanalwechsel während des Downloads nicht möglich.')
+            return
         selected = self.channel_combo.currentData()
         if selected not in ('stable', 'unstable') or selected == self.update_channel:
             return
@@ -2283,7 +2310,7 @@ class PasswordWindow(QMainWindow):
         reply = self.check_reply
         self.check_reply = None
         self.check_button.setEnabled(True)
-        self.channel_combo.setEnabled(True)
+        self._refresh_update_channel_enabled()
         startup_check = self._startup_update_check_pending
         self._startup_update_check_pending = False
         if reply is None:
@@ -2498,6 +2525,7 @@ class PasswordWindow(QMainWindow):
         request = self.make_request(
             f'https://api.github.com/repos/{REPO}/releases/tags/{selected_tag}'
         )
+        self.channel_combo.setEnabled(False)
         self._rollback_reply = self.network.get(request)
         self._rollback_reply.finished.connect(self.rollback_release_finished)
 
@@ -2541,6 +2569,9 @@ class PasswordWindow(QMainWindow):
                 self, self._t('Wiederherstellung fehlgeschlagen'), self._t(str(error))
             )
         finally:
+            if self.download_reply is None:
+                self._rollback_pending = False
+            self._refresh_update_channel_enabled()
             reply.deleteLater()
 
     def download_update(self):
@@ -2555,13 +2586,16 @@ class PasswordWindow(QMainWindow):
             )
             if answer != QMessageBox.StandardButton.Yes:
                 return
+        self._download_channel = self.update_channel
+        self._download_asset = dict(self.latest_asset)
+        self._download_version = self.latest_version
         if self.reporter is not None:
-            self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self.latest_version}', force=True)
-        install_path = (UNSTABLE_APPIMAGE if self.update_channel == 'unstable'
+            self.reporter.note('UPDATE_DOWNLOAD_START', f'version={self._download_version}', force=True)
+        install_path = (UNSTABLE_APPIMAGE if self._download_channel == 'unstable'
                         else INSTALLED_APPIMAGE)
         self.download_installed = (
             os.name != 'nt' and (
-                self.update_channel == 'unstable'
+                self._download_channel == 'unstable'
                 or (INSTALLED_APPIMAGE.is_file()
                     and os.access(INSTALLED_APPIMAGE.parent, os.W_OK))
             )
@@ -2571,11 +2605,11 @@ class PasswordWindow(QMainWindow):
         )
         download_dir = Path(download_location) if download_location else Path.home() / 'Downloads'
         if os.name == 'nt':
-            target = download_dir / self.latest_asset['name']
+            target = download_dir / self._download_asset['name']
         elif self.download_installed:
             target = install_path
         else:
-            target = download_dir / f'PasswortGenerator-{self.latest_version}-x86_64.AppImage'
+            target = download_dir / f'PasswortGenerator-{self._download_version}-x86_64.AppImage'
         stage = staging_path(target) if self.download_installed else target
         try:
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -2583,6 +2617,9 @@ class PasswordWindow(QMainWindow):
             if not save_file.open(QIODevice.OpenModeFlag.WriteOnly):
                 raise OSError(save_file.errorString())
         except OSError as error:
+            self._download_channel = None
+            self._download_asset = None
+            self._download_version = None
             QMessageBox.warning(self, self._t('Download nicht möglich'), self._t(str(error)))
             return
 
@@ -2594,10 +2631,11 @@ class PasswordWindow(QMainWindow):
         self.download_error = None
         self.download_button.setEnabled(False)
         self.check_button.setEnabled(False)
+        self.channel_combo.setEnabled(False)
         self.progress_bar.setValue(0)
         self.progress_bar.show()
-        self._set_ui(self.update_status, f'Lade {self.latest_version} von GitHub herunter …')
-        self.download_reply = self.network.get(self.make_request(self.latest_asset['browser_download_url']))
+        self._set_ui(self.update_status, f'Lade {self._download_version} von GitHub herunter …')
+        self.download_reply = self.network.get(self.make_request(self._download_asset['browser_download_url']))
         self.download_reply.readyRead.connect(self.read_download_data)
         self.download_reply.downloadProgress.connect(self.on_download_progress)
         self.download_reply.finished.connect(self.download_finished)
@@ -2626,19 +2664,16 @@ class PasswordWindow(QMainWindow):
         reply = self.download_reply
         if reply is None:
             return
-        self.read_download_data()
-        self.download_reply = None
-        self.download_button.setEnabled(True)
-        self.check_button.setEnabled(True)
         installed_successfully = False
         try:
+            self.read_download_data()
             if self.download_error:
                 raise ValueError(self.download_error)
             if reply.error() != QNetworkReply.NetworkError.NoError:
                 raise ValueError(reply.errorString())
-            if self.download_bytes != int(self.latest_asset.get('size', -1)):
+            if self.download_bytes != int(self._download_asset.get('size', -1)):
                 raise ValueError('Die Dateigröße stimmt nicht mit dem GitHub-Release überein.')
-            expected_digest = self.latest_asset.get('digest', '')
+            expected_digest = self._download_asset.get('digest', '')
             if not isinstance(expected_digest, str) or not expected_digest.startswith('sha256:'):
                 raise ValueError('GitHub hat keine SHA-256-Prüfsumme für dieses Release bereitgestellt.')
             actual_digest = self.download_hash.hexdigest()
@@ -2649,9 +2684,9 @@ class PasswordWindow(QMainWindow):
             # Stable and Unstable use separate settings stores. Copy only the
             # explicitly chosen target channel before handing off to the
             # installed build, so old target preferences cannot reset it.
-            self.settings.setValue('updates/channel', self.update_channel)
+            self.settings.setValue('updates/channel', self._download_channel)
             self.settings.sync()
-            persist_installed_update_channel(self.update_channel)
+            persist_installed_update_channel(self._download_channel)
             if os.name == 'nt':
                 # The Inno installer closes old files and restarts the updated
                 # application after successful installation.
@@ -2661,7 +2696,7 @@ class PasswordWindow(QMainWindow):
                 if self.reporter is not None:
                     self.reporter.note(
                         'WINDOWS_UPDATE_SETUP_STARTED',
-                        f'version={self.latest_version}', force=True,
+                        f'version={self._download_version}', force=True,
                     )
                 installed_successfully = True
                 self.set_update_indicator()
@@ -2679,14 +2714,14 @@ class PasswordWindow(QMainWindow):
                 if self.reporter is not None:
                     self.reporter.note(
                         'UPDATE_INSTALLED',
-                        f'version={self.latest_version}, previous={bool(previous)}',
+                        f'version={self._download_version}, previous={bool(previous)}',
                         force=True,
                     )
             else:
                 if self.reporter is not None:
                     self.reporter.note(
                         'UPDATE_DOWNLOADED',
-                        f'version={self.latest_version}, standalone=True',
+                        f'version={self._download_version}, standalone=True',
                         force=True,
                     )
             installed_successfully = True
@@ -2694,7 +2729,7 @@ class PasswordWindow(QMainWindow):
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(100)
             self._set_ui(self.update_status, 
-                f'{self.latest_version} installiert. Die aktualisierte App wird neu gestartet …'
+                f'{self._download_version} installiert. Die aktualisierte App wird neu gestartet …'
             )
             self.download_button.hide()
 
@@ -2705,7 +2740,7 @@ class PasswordWindow(QMainWindow):
                 if self.reporter is not None:
                     self.reporter.error('UPDATE_RESTART_FAILED', error)
                 msg = (
-                    f'Update {self.latest_version} installiert, aber der automatische '
+                    f'Update {self._download_version} installiert, aber der automatische '
                     f'Neustart ist fehlgeschlagen: {error}\n'
                     'Bitte die App über das KDE-Menü erneut öffnen.'
                 )
@@ -2732,6 +2767,13 @@ class PasswordWindow(QMainWindow):
             self.save_file = None
             self.download_stage = None
             self._rollback_pending = False
+            self.download_reply = None
+            self._download_channel = None
+            self._download_asset = None
+            self._download_version = None
+            self.download_button.setEnabled(True)
+            self.check_button.setEnabled(self.check_reply is None)
+            self._refresh_update_channel_enabled()
             reply.deleteLater()
 
 

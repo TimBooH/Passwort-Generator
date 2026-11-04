@@ -2,6 +2,8 @@
 
 Version 0.24.0 adds grouped in-memory history, unique password batches,
 ambiguous-character filtering and a live clipboard countdown (test channel).
+Version 0.24.0 also locks the update channel during downloads, clears its own
+copied password on exit and reports the generator's exact entropy.
 Version 0.23.0 established the single Ocean Glass interface and switches.
 Version 0.22.0 adds a persistent Stable/Unstable updater with verified prerelease
 assets and isolated installation paths on both supported platforms.

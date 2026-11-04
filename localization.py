@@ -158,6 +158,7 @@ EN = {
     'Update-Kanal:': 'Update channel:',
     'Unstable (Test)': 'Unstable (test)',
     'Stable oder Unstable auswählen': 'Select Stable or Unstable',
+    'Kanalwechsel während des Downloads nicht möglich.': 'Cannot switch channels during a download.',
     'Update-Kanal gewechselt · Prüfe GitHub …': 'Update channel changed · Checking GitHub …',
     'Dieser Update-Kanal ist bereits aktuell.': 'This update channel is up to date.',
     'Ungültige GitHub-Antwort.': 'Invalid GitHub response.',

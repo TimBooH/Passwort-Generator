@@ -1,27 +1,33 @@
-# PasswortGenerator v0.22.0 – Stable / Unstable direkt im Updater
+# PasswortGenerator v0.24.0 – Kompakte Oberfläche, Mehrfach-Passwörter und Sicherheitskorrekturen
 
-**Entwicklungsschritt 22 von 100.** Eine gemeinsame Stable-Veröffentlichung nach erfolgreichen Tests auf beiden Plattformen.
+**Entwicklungsschritt 24 von 100.** Gemeinsamer Release der getesteten Änderungen aus `unstable` für Linux und Windows.
 
 ## Deutsch
 
-- **Update-Kanal auswählbar:** In der bestehenden Kachel „Update & Version“ direkt zwischen **Stable** und **Unstable (Test)** wechseln. Die Auswahl wird gespeichert; die Updateprüfung erfolgt beim Start und anschließend alle zwei Stunden.
-- **Unstable ohne ZIP:** Die App erkennt den zuletzt erfolgreichen Test-Build direkt anhand einer Git-Commit-Kennung. Download und Installation erfolgen wie normale Updates mit einem Klick und einer ausdrücklichen Bestätigung für unfertige Testversionen.
-- **GitHub-Prerelease:** Unstable-Builds sind öffentlich erreichbare, als **TESTVERSION** gekennzeichnete Prereleases, nicht offizielle Stable-Releases. Erst wenn Linux und Windows beide Tests/Builds bestehen, veröffentlicht GitHub Actions die geprüften Dateien. Stable bleibt bei `/releases/latest` unverändert.
-- **Getrennte Installationen:** Unter Linux liegt Unstable neben Stable in `~/.local/opt/passwort-generator-unstable/` und aktualisiert sich künftig selbst. Unter Windows nutzt Unstable eine andere Installer-App-ID, einen separaten Program-Files-Ordner und eigene Verknüpfungen. Stable wird nicht überschrieben.
-- **Sichere Downloads:** Strikt geprüfte GitHub-URLs, erwartete Dateinamen, Dateigrößen und SHA-256-Prüfsummen. Keine ausführbare Datei wird installiert, wenn die Verifikation scheitert.
-- **Kanal zurückwechseln:** Beim Auswählen von Stable installiert die App den normalen, geprüften Stable-Installer/AppImage. Die andere Installation bleibt bestehen.
-- **Zweisprachig:** Deutsch und Englisch im gesamten Update-Bereich. Alle bisherigen Passwortfunktionen, das Ocean-Glass-Design und Einstellungen bleiben erhalten.
+- **Kompakte Ocean-Glass-Oberfläche:** Neu angeordnetes, kompaktes Hauptfenster mit **Verlauf** und **Einstellungen** oben, Sicherheitsemblem, Versionsanzeige und fünfteiliger Stärkeanzeige.
+- **Eigenes Einstellungsfenster:** Erweiterte Passwort-Regeln, Zwischenablageschutz, Sicherheitsanalyse, Update-Bereich mit Kanalwahl und die grafische Erklärung liegen gesammelt in einem separaten Einstellungsfenster.
+- **Mehrere Passwörter auf einmal:** Wahlweise 1, 5, 10 oder 20 garantiert unterschiedliche Passwörter mit denselben Regeln erzeugen.
+- **Gruppierter Sitzungsverlauf:** Erzeugte Passwörter werden pro Durchgang gruppiert, nur im Arbeitsspeicher gehalten und beim Beenden verworfen.
+- **Ähnliche Zeichen ausschließen:** Optional werden leicht verwechselbare Zeichen (`0 O o 1 I l L |`) weggelassen.
+- **Countdown der Zwischenablage:** Eine Restzeit zeigt an, wann das kopierte Passwort automatisch entfernt wird.
+- **Korrektur – Update-Kanal:** Während eines Update-Downloads lässt sich der Kanal nicht mehr wechseln. Ein Wechsel mitten im Download konnte das Update bisher still abbrechen lassen.
+- **Korrektur – Zwischenablage beim Beenden:** Beim Schließen der App, auch beim Neustart nach einem Update, wird ein selbst kopiertes Passwort jetzt gelöscht, sofern das automatische Leeren aktiv ist. Später kopierte Inhalte bleiben unangetastet.
+- **Korrektur – Passwortstärke:** Die angezeigte Entropie entspricht jetzt exakt dem Generator, einschließlich Pflichtzeichen und Mindestanzahlen. Bisher wurde die Stärke mit Mindestanzahlen deutlich überschätzt (z. B. Länge 10 mit je 4 Ziffern und Sonderzeichen: 52,9 statt 63,8 Bit, „Mittel“ statt „Stark“).
+- **Weitere Funktionen erhalten:** Passphrasen, Profile, Sprache Deutsch/Englisch, getrennte Stable-/Unstable-Installationen, Sicherung der vorherigen AppImage-Version und Prüfung von Dateigröße und SHA-256 bei Updates.
 
-**Hinweis:** Unstable-Test-Builds sind bewusst öffentlich abrufbar, aber nicht als offizielle stabile Version freigegeben.
+**Stable** ist unter `/releases/latest` verfügbar. **Unstable** bleibt ausdrücklich eine separate Testversion.
 
 ## English
 
-- **Choose update channel:** Switch between **Stable** and **Unstable (test)** directly on the Update page. The choice persists, with startup and two-hour checks.
-- **No ZIP downloads:** The app discovers the newest successful test build by its Git commit ID and installs it from GitHub after user confirmation.
-- **GitHub prerelease:** The build is clearly labelled **TEST VERSION** and is never the official Stable `/releases/latest`. Both platform builds must pass before preview publication.
-- **Separate installations:** Independent Linux AppImage directories and Windows installer app IDs, Program Files paths, and shortcuts; Stable is preserved.
-- **Verified downloads:** Exact GitHub release URLs, expected asset names, published byte lengths, and SHA-256 digests are all validated.
-- **Return to Stable:** Switching back installs the normal verified Stable package without removing the preview installation.
-- **Bilingual interface:** German and English UI, with all existing features and Ocean Glass retained.
+- **Compact Ocean Glass interface:** A rearranged, compact main window with **History** and **Settings** at the top, a security emblem, version header and a five-segment strength meter.
+- **Separate Settings window:** Advanced password rules, clipboard protection, security analysis, the update panel with channel choice and the illustrated guide are grouped in their own window.
+- **Multiple passwords at once:** Generate 1, 5, 10 or 20 guaranteed-unique passwords with the same rules.
+- **Grouped session history:** Generated passwords are grouped per run, kept in memory only and discarded on exit.
+- **Exclude similar characters:** Optionally omit easily confused characters (`0 O o 1 I l L |`).
+- **Clipboard countdown:** A timer shows when the copied password will be cleared automatically.
+- **Fix – update channel:** The channel can no longer be switched during an update download; doing so previously could make the update fail silently.
+- **Fix – clipboard on exit:** Closing the app, including the restart after an update, now clears a password the app copied, if automatic clearing is enabled. Newer clipboard content is left untouched.
+- **Fix – password strength:** The displayed entropy now matches the generator exactly, including mandatory characters and minimum counts. Strength with minimum counts was previously overstated noticeably (e.g. length 10 with 4 digits and 4 symbols: 52.9 instead of 63.8 bits, “Medium” instead of “Strong”).
+- **Existing features preserved:** Passphrases, profiles, German/English UI, separate Stable/Unstable installations, backup of the previous AppImage and size and SHA-256 verification of updates.
 
-**Note:** Preview builds are publicly downloadable, but explicitly experimental and separate from public Stable updates.
+**Stable** is available at `/releases/latest`. **Unstable** remains an explicitly labelled experimental channel.

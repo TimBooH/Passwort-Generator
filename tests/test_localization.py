@@ -24,6 +24,12 @@ class LocalizationTests(unittest.TestCase):
             'New version v0.18.0 available! Installed: v0.17.0',
         )
 
+    def test_channel_switch_blocked_during_download(self):
+        self.assertEqual(
+            translate('Kanalwechsel während des Downloads nicht möglich.', 'en'),
+            'Cannot switch channels during a download.',
+        )
+
     def test_strength_and_settings(self):
         self.assertEqual(translate('🛡  Stärke: Sehr stark', 'en'), '🛡  Strength: Very strong')
         self.assertEqual(translate('Sprache:', 'en'), 'Language:')
