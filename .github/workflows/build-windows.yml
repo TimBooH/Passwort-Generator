@@ -71,7 +71,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Syntax check failed' }
           python -m compileall -q tests
           if ($LASTEXITCODE -ne 0) { throw 'Test syntax check failed' }
-          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py', 'test_update_channels.py')) {
+          foreach ($test in @('test_password_core.py', 'test_glass_ui.py', 'test_release_history.py', 'test_localization.py', 'test_password_presets.py', 'test_windows_installer.py', 'test_v020_password_rules.py', 'test_updater.py', 'test_update_channels.py', 'test_password_entropy.py', 'test_clipboard_exit_ui.py', 'test_update_download_ui.py', 'test_strength_entropy_ui.py', 'test_ai_team.py')) {
             python -m unittest discover -s tests -p $test -v
             if ($LASTEXITCODE -ne 0) { throw "Failed test file: $test" }
           }

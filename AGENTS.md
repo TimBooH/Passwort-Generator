@@ -17,3 +17,19 @@ Der Projektinhaber möchte, dass freigegebene neue App-Änderungen **zuerst auf 
 6. Im Chat zwischen **Unstable-Test-Build** (GitHub-Actions-Artefakt / Unstable-Prerelease) und **öffentlichem Stable-Release** unterscheiden; Testergebnis und zutreffende Links nennen.
 
 Die Update-Prüfung in der App, der Changelog, das Glass-Design, die Passwortsicherheit, der Installationspfad auf Windows und die Sicherung der vorherigen AppImage-Version dürfen nicht unbeabsichtigt entfernt werden.
+
+## Codex–Claude-Zusammenarbeit
+
+Codex entwickelt und testet; Claude prüft unabhängig. Codex überprüft Claudes
+Befunde, korrigiert bestätigte Fehler und führt die erneute Prüfung durch.
+Der lokale Ablauf und die Bedienung stehen in [AI_WORKFLOW.md](AI_WORKFLOW.md).
+Für freigegebene Entwicklungsaufträge `tools/ai_team.py review` verwenden;
+`--fix` nur innerhalb des zur Umsetzung freigegebenen Umfangs. Die erforderliche
+Claude-Gegenprüfung nicht durch einen weiteren Codex-Lauf ersetzen.
+Der lokale Team-Runner verlangt die Freigabe beider Prüfer für denselben Stand;
+bei widersprüchlichen Bewertungen erneut prüfen, nicht einseitig hochladen.
+Bei fehlender Anmeldung oder fehlgeschlagenem Review anhalten und den konkreten
+Grund melden. Der Nutzer hat am 04.11.2026 dauerhaft freigegeben, dass Codex nach
+erfolgreicher Prüfung selbstständig auf `unstable` hochlädt; dafür nicht erneut
+nachfragen. Diese Freigabe umfasst weder `main` noch Stable-Veröffentlichungen.
+Danach beide GitHub-Builds und den Unstable-Prerelease bis zum Ergebnis prüfen.

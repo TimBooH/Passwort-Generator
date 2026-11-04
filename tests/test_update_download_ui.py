@@ -45,7 +45,11 @@ class UpdateDownloadUiTests(unittest.TestCase):
         settings_class = main.QSettings
 
         def checked_settings(*args, **kwargs):
-            settings = settings_class(*args, **kwargs)
+            # The organization/application overload always uses NativeFormat.
+            # An explicit INI filename also isolates settings on Windows.
+            settings = settings_class(
+                str(self.folder / 'download.ini'), settings_class.Format.IniFormat
+            )
             self.assert_temporary_settings(settings)
             return settings
 

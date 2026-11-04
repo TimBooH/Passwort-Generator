@@ -7,3 +7,4 @@ dist/
 *.spec
 AppDir/
 *.AppImage
+.ai-team/
