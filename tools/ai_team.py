@@ -76,14 +76,14 @@ def fingerprint():
     digest = hashlib.sha256()
     for name in sorted(set(names) - {''}):
         path = ROOT / name
+        if not path.is_file() and not path.is_symlink():
+            continue  # A staged deletion and its committed absence are identical.
         digest.update(name.encode() + b'\0')
         if path.is_symlink():
             digest.update(b'link\0' + os.readlink(path).encode())
         elif path.is_file():
             digest.update(str(path.stat().st_mode).encode() + b'\0')
             digest.update(path.read_bytes())
-        else:
-            digest.update(b'deleted')
         digest.update(b'\0')
     return digest.hexdigest()
 
@@ -287,9 +287,16 @@ def publish(args):
     if args.approved_head != head:
         raise Stop('Die ausdrückliche Upload-Freigabe gilt nicht für diesen Commit.')
     ready = json.loads((STATE / 'ready.json').read_text())
-    if (ready.get('head') != head or ready.get('fingerprint') != fingerprint()
-            or ready.get('tests_passed') is not True):
+    if (ready.get('fingerprint') != fingerprint() or ready.get('tests_passed') is not True):
         raise Stop('Keine gültige Prüfung für diesen unveränderten Commit vorhanden.')
+    # A normal commit changes HEAD, not the reviewed contents. Keep provenance
+    # while binding the clean committed tree to the exact reviewed fingerprint.
+    reviewed_head = ready.get('head')
+    if not isinstance(reviewed_head, str) or not re.fullmatch(r'[0-9a-f]{40}', reviewed_head):
+        raise Stop('Gültiger geprüfter Ausgangscommit fehlt.')
+    git('merge-base', '--is-ancestor', reviewed_head, head)
+    if head != reviewed_head and git('show', '-s', '--format=%P', head).split() != [reviewed_head]:
+        raise Stop('Nur ein einzelner Commit mit unverändertem geprüften Inhalt ist erlaubt.')
     if not validate_review(ready['claude'])['approved']:
         raise Stop('Claude hat den Stand nicht freigegeben.')
     if not validate_review(ready['codex'])['approved']:

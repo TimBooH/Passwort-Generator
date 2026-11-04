@@ -54,7 +54,8 @@ class ClipboardExitUiTests(unittest.TestCase):
         self.window.clear_clipboard_checkbox.setChecked(True)
         self.clipboard = self.app.clipboard()
         self.addCleanup(self.clipboard.clear)
-        self.window.copy_secret('exit-test-password')
+        self.window.output.setText('exit-test-password')
+        self.window.copy()
         self.assertTrue(self.window.clipboard_timer.isActive())
 
     def test_close_clears_own_password(self):
@@ -62,7 +63,6 @@ class ClipboardExitUiTests(unittest.TestCase):
         self.assertEqual(self.clipboard.text(), '')
         self.assertIsNone(self.window._clipboard_secret)
         self.assertFalse(self.window.clipboard_timer.isActive())
-        self.assertFalse(self.window.clipboard_countdown_timer.isActive())
 
     def test_close_preserves_newer_clipboard_content(self):
         self.clipboard.setText('newer user content')
@@ -71,7 +71,8 @@ class ClipboardExitUiTests(unittest.TestCase):
 
     def test_close_preserves_password_when_auto_clear_disabled(self):
         self.window.clear_clipboard_checkbox.setChecked(False)
-        self.window.copy_secret('disabled-password')
+        self.window.output.setText('disabled-password')
+        self.window.copy()
         self.window.close()
         self.assertEqual(self.clipboard.text(), 'disabled-password')
 
@@ -81,7 +82,6 @@ class ClipboardExitUiTests(unittest.TestCase):
             self.assertEqual(self.clipboard.text(), '')
             self.assertIsNone(self.window._clipboard_secret)
             self.assertFalse(self.window.clipboard_timer.isActive())
-            self.assertFalse(self.window.clipboard_countdown_timer.isActive())
             self.clipboard.setText('newer user content')
             self.window.clear_clipboard_on_exit()
             self.window.clear_clipboard_on_exit()
@@ -98,6 +98,7 @@ class ClipboardExitUiTests(unittest.TestCase):
 
     def test_exit_method_preserves_password_when_auto_clear_disabled(self):
         self.window.clear_clipboard_checkbox.setChecked(False)
-        self.window.copy_secret('disabled-password')
+        self.window.output.setText('disabled-password')
+        self.window.copy()
         self.window.clear_clipboard_on_exit()
         self.assertEqual(self.clipboard.text(), 'disabled-password')

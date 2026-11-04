@@ -33,8 +33,8 @@ window.resize(850, 770)
 window.show()
 app.processEvents()
 
-assert not window.analysis_button.isVisible()  # Visible via Settings > Passwort instead.
-assert not window.rules_button.isVisible()  # Advanced rules moved to Settings > Passwort.
+assert window.analysis_button.isVisible()
+assert window.rules_button.isVisible()
 assert window.rollback_button is not None
 assert window.privacy_focus_checkbox.isChecked()
 assert {s.key().toString() for s in window._shortcuts} == {

@@ -6,7 +6,7 @@ import string
 import math
 
 SYMBOLS = "!@#$%&*()-_=+[]{}:,.?"
-SIMILAR_CHARS = "0Oo1IlL|"  # Approved eight visually ambiguous characters.
+SIMILAR_CHARS = "Il1O0"
 
 
 def parse_version(value):
@@ -84,38 +84,6 @@ def make_password(length, *, use_lower=True, use_upper=True, use_digits=True,
     return ''.join(result)
 
 
-BATCH_CHOICES = (1, 5, 10, 20)
-
-
-def make_password_batch(count, length, **rules):
-    """Generate 1/5/10/20 unique passwords; fail atomically for bad rules.
-
-    Uses the same secrets-backed generator and constraints as single mode.
-    Retrying duplicates has a finite bound even with mocked/broken RNGs.
-    """
-    if type(count) is not int or count not in BATCH_CHOICES:
-        raise ValueError('Es sind nur 1, 5, 10 oder 20 Passwörter möglich.')
-    groups = password_groups(
-        use_lower=rules.get('use_lower', True),
-        use_upper=rules.get('use_upper', True),
-        use_digits=rules.get('use_digits', True),
-        use_symbols=rules.get('use_symbols', True),
-        exclude_similar=rules.get('exclude_similar', False),
-        excluded_chars=rules.get('excluded_chars', ''),
-    )
-    if len(''.join(groups)) ** length < count:
-        raise ValueError('Mit diesen Regeln sind nicht genügend verschiedene Passwörter möglich.')
-    result, seen = [], set()
-    for _ in range(max(100, count * 100)):
-        value = make_password(length, **rules)
-        if value not in seen:
-            seen.add(value)
-            result.append(value)
-            if len(result) == count:
-                return result
-    raise ValueError('Nicht genügend unterschiedliche Passwörter erzeugbar. Regeln anpassen.')
-
-
 def password_entropy_bits(length, *, use_lower=True, use_upper=True,
                           use_digits=True, use_symbols=True,
                           exclude_similar=False, excluded_chars='',
@@ -145,38 +113,6 @@ def password_entropy_bits(length, *, use_lower=True, use_upper=True,
     if sum(required) > length:
         raise ValueError('Die Passwortlänge ist für die Mindestanforderungen zu kurz.')
     return _generator_entropy_bits(length, [len(group) for group in groups], required)
-
-
-def _generator_entropy_bits(length, sizes, required):
-    """Evaluate -E[log2 P(s)] using binomial marginals of group counts.
-
-    With M = L - sum(r), K_i = r_i + Binomial(M, s_i/N), and
-    log P(s) = sum(log(K_i!/(K_i-r_i)!) - r_i*log(s_i))
-               - M*log(N) + log(M!) - log(L!).
-    Linearity of expectation needs only the marginals, reducing the exact
-    count-vector sum to O(groups * length) time. lgamma handles factorials.
-    """
-    remaining = length - sum(required)
-    total = sum(sizes)
-    factorials = [math.lgamma(n + 1) for n in range(length + 1)]
-    entropy = (remaining * math.log(total) + factorials[length]
-               - factorials[remaining])
-    for size, minimum in zip(sizes, required):
-        entropy += minimum * math.log(size)
-        if size == total:
-            expectation = factorials[length] - factorials[remaining]
-        else:
-            log_p = math.log(size / total)
-            log_q = math.log1p(-size / total)
-            expectation = math.fsum(
-                math.exp(factorials[remaining] - factorials[j]
-                         - factorials[remaining - j] + j * log_p
-                         + (remaining - j) * log_q)
-                * (factorials[j + minimum] - factorials[j])
-                for j in range(remaining + 1)
-            )
-        entropy -= expectation
-    return entropy / math.log(2)
 
 
 
@@ -222,6 +158,39 @@ PHRASE_SEPARATORS = (
     ('Unterstrich (_)', '_'),
     ('Punkt (.)', '.'),
 )
+
+
+def _generator_entropy_bits(length, sizes, required):
+    """Evaluate -E[log2 P(s)] using binomial marginals of group counts.
+
+    With M = L - sum(r), K_i = r_i + Binomial(M, s_i/N), and
+    log P(s) = sum(log(K_i!/(K_i-r_i)!) - r_i*log(s_i))
+               - M*log(N) + log(M!) - log(L!).
+    Linearity of expectation needs only the marginals, reducing the exact
+    count-vector sum to O(groups * length) time. lgamma handles factorials.
+    """
+    remaining = length - sum(required)
+    total = sum(sizes)
+    factorials = [math.lgamma(n + 1) for n in range(length + 1)]
+    entropy = (remaining * math.log(total) + factorials[length]
+               - factorials[remaining])
+    for size, minimum in zip(sizes, required):
+        entropy += minimum * math.log(size)
+        if size == total:
+            expectation = factorials[length] - factorials[remaining]
+        else:
+            log_p = math.log(size / total)
+            log_q = math.log1p(-size / total)
+            expectation = math.fsum(
+                math.exp(factorials[remaining] - factorials[j]
+                         - factorials[remaining - j] + j * log_p
+                         + (remaining - j) * log_q)
+                * (factorials[j + minimum] - factorials[j])
+                for j in range(remaining + 1)
+            )
+        entropy -= expectation
+    return entropy / math.log(2)
+
 
 
 def make_passphrase(word_count=6, separator='-', add_two_digit_number=False, language='de'):

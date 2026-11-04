@@ -1,5 +1,7 @@
 """Release numbering: 99 development milestones, then 1.0.0 as full release.
 
+Version 0.25.0 restores the v0.23.0 Stable interface and features, keeping
+verified update-channel, clipboard-on-exit and exact entropy corrections.
 Version 0.24.0 adds grouped in-memory history, unique password batches,
 ambiguous-character filtering and a live clipboard countdown (test channel).
 Version 0.24.0 also locks the update channel during downloads, clears its own
@@ -73,7 +75,7 @@ They are retained on GitHub for transparency and are treated as legacy builds.
 
 from password_core import parse_version
 
-APP_VERSION = "0.24.0"
+APP_VERSION = "0.25.0"
 FULL_RELEASE_VERSION = "1.0.0"
 TOTAL_RELEASE_STEPS = 100
 

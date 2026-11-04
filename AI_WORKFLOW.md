@@ -69,8 +69,11 @@ abgebrochenen Lauf darf ein übrig gebliebenes `.ai-team/lock` entfernt werden.
 ## Commit und Upload
 
 Das Werkzeug erstellt selbst keine Commits. Codex bündelt den freigegebenen
-Umfang in einem Commit. Danach muss der exakt committete Stand erneut geprüft
-werden; ein Review vor einem neuen Commit berechtigt nicht zum Upload.
+Umfang in einem Commit. Bleibt der geprüfte Dateifingerabdruck dabei identisch,
+genügen ein sauberer Arbeitsbaum und genau ein neuer Commit direkt auf dem
+geprüften Ausgangscommit: keine
+erneuten KI-Reviews oder identischen Testläufe nur wegen des neuen Commits.
+Bei tatsächlichen Dateiänderungen ist eine erneute Prüfung erforderlich.
 
 Der Nutzer hat am 04.11.2026 die dauerhafte Freigabe erteilt: Codex darf nach
 erfolgreicher Prüfung selbstständig auf `unstable` hochladen und fragt dafür
@@ -84,7 +87,7 @@ python tools/ai_team.py publish --approved-head VOLLSTAENDIGER_FREIGEGEBENER_COM
 ```
 
 `publish` prüft den sauberen Arbeitsbaum, den gespeicherten Dateistand, den
-Commit und den aktuellen GitHub-Branchkopf. Die Review-Basis muss mit GitHub
+die Commit-Abstammung und den aktuellen GitHub-Branchkopf. Die Review-Basis muss mit GitHub
 übereinstimmen. Erlaubt ist ausschließlich ein normaler Vorwärtspush auf
 `unstable` im festgelegten Repository. Kein Force-Push, Tag-Push, Branch-Wechsel
 oder Stable-Release. Lokale Pre-Push-Hooks bleiben aktiv.

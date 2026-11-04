@@ -7,19 +7,11 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
-_settings_temp = tempfile.TemporaryDirectory()
-atexit.register(_settings_temp.cleanup)
-os.environ['HOME'] = _settings_temp.name
-os.environ['XDG_CONFIG_HOME'] = str(Path(_settings_temp.name) / 'config')
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from PySide6.QtCore import QIODevice, QSaveFile, QSettings
 from PySide6.QtNetwork import QNetworkReply
 from PySide6.QtWidgets import QApplication
-
-QSettings.setDefaultFormat(QSettings.Format.IniFormat)
-QSettings.setPath(QSettings.Format.IniFormat, QSettings.Scope.UserScope,
-                  os.environ['XDG_CONFIG_HOME'])
 
 import main
 from main import PasswordWindow
@@ -42,20 +34,19 @@ class FakeReply:
 
 app = QApplication([])
 app.setStyle('Fusion')
-def checked_settings(*args, **kwargs):
-    settings = QSettings(*args, **kwargs)
-    assert Path(settings.fileName()).resolve().is_relative_to(
-        Path(_settings_temp.name).resolve()
-    ), 'QSettings muss im Temp-Verzeichnis liegen'
-    return settings
+settings_temp = tempfile.TemporaryDirectory()
+atexit.register(settings_temp.cleanup)
 
+class CheckedSettings(QSettings):
+    def __init__(self, *args, **kwargs):
+        super().__init__(str(Path(settings_temp.name) / 'settings.ini'), QSettings.Format.IniFormat)
+        assert Path(self.fileName()).resolve().is_relative_to(Path(settings_temp.name).resolve())
 
-# Check before PasswordWindow performs its first settings write/removal.
-with mock.patch.object(main, 'QSettings', side_effect=checked_settings):
-    window = PasswordWindow(auto_check=False)
-assert Path(window.settings.fileName()).resolve().is_relative_to(
-    Path(_settings_temp.name).resolve()
-), 'QSettings muss im Temp-Verzeichnis liegen'
+# Keep the patch active for the download handoff's target-channel settings too.
+settings_patch = mock.patch.object(main, 'QSettings', CheckedSettings)
+settings_patch.start()
+atexit.register(settings_patch.stop)
+window = PasswordWindow(auto_check=False)
 window.show()
 app.processEvents()
 assert window.tab_names[2] == 'Update'

@@ -101,6 +101,11 @@ class ReviewBoundaryTests(unittest.TestCase):
             source.unlink()
             self.assertNotEqual(before, team.fingerprint())
 
+    def test_committed_deletions_keep_the_same_content_fingerprint(self):
+        with tempfile.TemporaryDirectory() as tmp, mock.patch.object(team, 'ROOT', Path(tmp)), \
+                mock.patch.object(team, 'command', side_effect=['deleted.py\0', '']):
+            self.assertEqual(team.fingerprint(), team.fingerprint())
+
     def test_read_only_claude_has_no_shell_write_or_mcp_tools(self):
         with tempfile.TemporaryDirectory() as tmp, mock.patch.object(team, 'command',
                 return_value=json.dumps({'structured_output': APPROVED})) as call:
@@ -132,16 +137,37 @@ class PublicationTests(unittest.TestCase):
             return 'a' * 40
         if args[0] == 'ls-remote':
             return 'b' * 40 + '\trefs/heads/unstable'
+        if args[0] == 'show':
+            return 'b' * 40
         if args[0] == 'merge-base':
             return ''
         raise AssertionError(args)
 
     def test_changed_source_or_commit_never_pushes(self):
-        for key, value in [('head', 'c' * 40), ('fingerprint', 'changed'),
+        for key, value in [('fingerprint', 'changed'),
                            ('tests_passed', False), ('codex', REJECTED),
                            ('claude', REJECTED)]:
             team.write_json(self.state / 'ready.json', dict(self.ready, **{key: value}))
             with self.subTest(key=key), mock.patch.object(team, 'git', side_effect=self.git), \
+                    mock.patch.object(team, 'fingerprint', return_value='snapshot'), \
+                    mock.patch.object(team, 'command') as push:
+                with self.assertRaises(team.Stop):
+                    team.publish(self.args)
+                push.assert_not_called()
+
+    def test_invalid_ancestry_missing_head_and_intermediate_commits_never_push(self):
+        for kind in ('missing', 'not_ancestor', 'intermediate', 'merge'):
+            ready = dict(self.ready, head='b' * 40)
+            if kind == 'missing':
+                del ready['head']
+            team.write_json(self.state / 'ready.json', ready)
+            def checked_git(*args):
+                if args[0] == 'merge-base' and kind == 'not_ancestor':
+                    raise team.Stop('Not an ancestor')
+                if args[0] == 'show':
+                    return 'c' * 40 if kind == 'intermediate' else 'b' * 40 + ' ' + 'c' * 40
+                return self.git(*args)
+            with self.subTest(kind=kind), mock.patch.object(team, 'git', side_effect=checked_git), \
                     mock.patch.object(team, 'fingerprint', return_value='snapshot'), \
                     mock.patch.object(team, 'command') as push:
                 with self.assertRaises(team.Stop):
@@ -173,6 +199,15 @@ class PublicationTests(unittest.TestCase):
             self.assertEqual(args[-2:], [team.ORIGIN, 'a' * 40 + ':refs/heads/unstable'])
             self.assertNotIn('--force', args)
             self.assertNotIn('--no-verify', args)
+
+    def test_committing_unchanged_reviewed_files_needs_no_second_review(self):
+        team.write_json(self.state / 'ready.json', dict(self.ready, head='b' * 40))
+        with mock.patch.object(team, 'git', side_effect=self.git) as git, \
+                mock.patch.object(team, 'fingerprint', return_value='snapshot'), \
+                mock.patch.object(team, 'command') as push:
+            team.publish(self.args)
+            git.assert_any_call('merge-base', '--is-ancestor', 'b' * 40, 'a' * 40)
+            push.assert_called_once()
 
 
 class LoopTests(unittest.TestCase):

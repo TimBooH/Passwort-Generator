@@ -18,19 +18,7 @@ def icon_pixmap(name, size=28, color='#EDF7FF'):
     pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
     p.setPen(pen)
     p.setBrush(Qt.BrushStyle.NoBrush)
-    if name == 'shield':
-        path = QPainterPath(QPointF(16, 2))
-        for point in ((27, 7), (26, 19), (22, 26), (16, 30),
-                      (10, 26), (6, 19), (5, 7), (16, 2)):
-            path.lineTo(*point)
-        p.drawPath(path)
-        p.drawLine(11, 16, 15, 20)
-        p.drawLine(15, 20, 22, 12)
-    elif name == 'lock':
-        p.drawRoundedRect(QRectF(7, 13, 18, 16), 3, 3)
-        p.drawArc(QRectF(10, 3, 12, 20), 0, 180 * 16)
-        p.drawEllipse(QRectF(15, 19, 2, 3))
-    elif name == 'key':
+    if name == 'key':
         p.drawEllipse(QRectF(17, 3, 12, 12))
         path = QPainterPath(QPointF(19, 13))
         for x, y in ((5, 27), (5, 22), (9, 22), (9, 18), (13, 18)):
@@ -73,14 +61,12 @@ def icon_pixmap(name, size=28, color='#EDF7FF'):
         p.drawLine(21, 9, 27, 9)
         for y in (14, 19, 24):
             p.drawLine(12, y, 22, y)
-    elif name in ('eye', 'eye-off'):
+    elif name == 'eye':
         path = QPainterPath(QPointF(2, 16))
         path.cubicTo(10, 4, 22, 4, 30, 16)
         path.cubicTo(22, 28, 10, 28, 2, 16)
         p.drawPath(path)
         p.drawEllipse(QRectF(12, 12, 8, 8))
-        if name == 'eye-off':
-            p.drawLine(4, 28, 28, 4)
     elif name == 'history':
         for y in (8, 16, 24):
             p.drawPoint(5, y)

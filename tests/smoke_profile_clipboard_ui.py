@@ -23,16 +23,18 @@ window.resize(850, 760)
 window.show()
 app.processEvents()
 
-# The compact header keeps History and Settings visible, not Update/Info.
-assert [b.text() for b in window._compact_nav_buttons] == [
-    'Passwort', 'Passphrase', 'Verlauf', 'Einstellungen'
+# Button labels and order: Password -> Update -> Settings -> Info.
+assert [window.nav_buttons[i].text() for i in (0, 2, 1)] == [
+    'Passwort', 'Update', 'Einstellungen'
 ]
-window.settings_button.click()
-app.processEvents()
-assert window._settings_dialog is not None
-assert window._settings_views.currentIndex() == 0
-window._settings_dialog.close()
-app.processEvents()
+assert window.nav_buttons[0].x() < window.nav_buttons[2].x()
+assert window.nav_buttons[2].x() < window.nav_buttons[1].x()
+assert window.nav_buttons[1].x() < window.info_nav_button.x()
+window.nav_buttons[1].click()
+assert window.tabs.currentIndex() == 1
+window.nav_buttons[2].click()
+assert window.tabs.currentIndex() == 2
+window.nav_buttons[0].click()
 assert window.tabs.currentIndex() == 0
 
 assert window.preset_combo.currentData() == 'standard'

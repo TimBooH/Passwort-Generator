@@ -78,20 +78,6 @@ class StrengthEntropyUiTests(unittest.TestCase):
         self.assertIn('Geschätzte Entropie: 52.9 Bit', information.call_args.args[2])
 
     def test_generate_single_uses_exact_entropy(self):
-        self.window.batch_count_combo.setCurrentIndex(self.window.batch_count_combo.findData(1))
         self.window.generate()
         self.assertEqual(len(self.window.output.text()), 10)
-        self.assert_exact_strength()
-
-    def test_batch_selection_uses_same_entropy(self):
-        self.window.batch_count_combo.setCurrentIndex(self.window.batch_count_combo.findData(5))
-        self.window.generate()
-        self.assertEqual(len(self.window._current_batch), 5)
-        self.assert_exact_strength()
-        secret = self.window._current_batch[-1]
-        # Changing controls after generation must not change stored batch entropy.
-        self.window._advanced_rules['min_digits'] = 0
-        self.window.strength_bar.setValue(0)
-        self.window._select_batch_password(secret)
-        self.assertEqual(self.window.output.text(), secret)
         self.assert_exact_strength()

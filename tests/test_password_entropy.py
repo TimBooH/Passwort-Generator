@@ -17,7 +17,7 @@ from password_core import (
 REFERENCE_CASES = (
     (8, {}, 49.94),
     (20, {}, 127.29),
-    (8, {'exclude_similar': True}, 48.83),
+    (8, {'exclude_similar': True}, 49.10),
     (10, {'min_digits': 4, 'min_symbols': 4}, 52.88),
     (12, {'min_digits': 5, 'min_symbols': 5}, 62.99),
     (16, {'min_digits': 7, 'min_symbols': 7}, 83.05),
